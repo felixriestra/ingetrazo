@@ -20,10 +20,19 @@ elif not isinstance(_inst, QApplication):
     pytest.skip("a non-widget QGuiApplication is already active",
                 allow_module_level=True)
 
+from core.cutlist import GrainAxis, StockDefinition, WorkshopSettings  # noqa: E402
 from core.group import Group                                     # noqa: E402
 from core.mesh import Mesh                                       # noqa: E402
 from core.scene import Scene                                     # noqa: E402
-from plugins.cutlist import CutListTool, parts_from_selection     # noqa: E402
+from plugins.cutlist import (                                     # noqa: E402
+    CutListDialog,
+    CutListTool,
+    load_default_stocks,
+    load_default_workshop,
+    parts_from_selection,
+    remember_stocks,
+    remember_workshop,
+)
 
 
 def _box_group(name: str, length: float, width: float, thickness: float,
@@ -114,7 +123,6 @@ def test_dialog_opens_without_crashing(qtbot=None):
         board = _box_group("Shelf", length=0.76, width=0.52, thickness=0.018)
         win.viewport.scene.groups.append(board)
         win.viewport.scene.selection = {board}
-        from plugins.cutlist import CutListDialog
         dialog = CutListDialog(win.viewport, parent=win)
         try:
             assert dialog._parts  # populated from the selection on init
@@ -123,3 +131,84 @@ def test_dialog_opens_without_crashing(qtbot=None):
     finally:
         win._saved_version = win.viewport.scene.version
         win.close()
+
+
+# ---------------------------------------------------------------------------
+# Stock / workshop persistence (QSettings) — tests/conftest.py points
+# QSettings at a session-temp store, so these never touch the developer's
+# real preferences.
+# ---------------------------------------------------------------------------
+
+def test_stock_round_trips_through_a_dict():
+    from plugins.cutlist import _stock_from_dict, _stock_to_dict
+    stock = StockDefinition(name="Baltic birch", material="Birch plywood",
+                             thickness=18.0, length=2440.0, width=1220.0,
+                             available_sheets=3, grain_axis=GrainAxis.LENGTH)
+    restored = _stock_from_dict(_stock_to_dict(stock))
+    assert restored.name == stock.name
+    assert restored.material == stock.material
+    assert restored.thickness == stock.thickness
+    assert restored.length == stock.length
+    assert restored.width == stock.width
+    assert restored.available_sheets == stock.available_sheets
+    assert restored.grain_axis == stock.grain_axis
+
+
+def test_unlimited_stock_round_trips_as_none():
+    from plugins.cutlist import _stock_from_dict, _stock_to_dict
+    stock = StockDefinition(name="MDF", material="MDF", thickness=10.0,
+                             length=2500.0, width=1250.0, available_sheets=None)
+    restored = _stock_from_dict(_stock_to_dict(stock))
+    assert restored.available_sheets is None
+
+
+def test_workshop_round_trips_through_a_dict():
+    from plugins.cutlist import _workshop_from_dict, _workshop_to_dict
+    workshop = WorkshopSettings(kerf=3.2, short_edge_cleanup=4.0, long_edge_trim=12.0,
+                                 minimum_remnant_width=120.0, minimum_remnant_length=350.0)
+    restored = _workshop_from_dict(_workshop_to_dict(workshop))
+    assert restored == workshop
+
+
+def test_stocks_and_workshop_persist_across_dialogs():
+    """The exact scenario that motivated this: generate a plan (which syncs
+    and remembers), close the dialog, open a fresh one — Stock & Setup is
+    not empty."""
+    from views.main_window import MainWindow
+
+    win = MainWindow()
+    try:
+        board = _box_group("Shelf", length=0.76, width=0.52, thickness=0.018)
+        win.viewport.scene.groups.append(board)
+        win.viewport.scene.selection = {board}
+
+        first = CutListDialog(win.viewport, parent=win)
+        first._stocks = [StockDefinition(name="Remembered ply", material="HD plywood",
+                                          thickness=18.0, length=2440.0, width=1220.0)]
+        first._populate_stock_table()  # so _sync_stock_edits finds a matching row
+        first._kerf_spin.setValue(4.0)  # a real UI edit, not a direct model change
+        first.close()  # closeEvent syncs the table/spinboxes back before remembering
+
+        second = CutListDialog(win.viewport, parent=win)
+        try:
+            names = [s.name for s in second._stocks]
+            assert "Remembered ply" in names
+            assert second._workshop.kerf == pytest.approx(4.0)
+        finally:
+            second.close()
+    finally:
+        win._saved_version = win.viewport.scene.version
+        win.close()
+
+
+def test_load_functions_tolerate_missing_or_corrupt_settings():
+    from PySide6.QtCore import QSettings
+    QSettings().remove("cutlist/default_stocks")
+    QSettings().remove("cutlist/workshop_settings")
+    assert load_default_stocks() == []
+    assert load_default_workshop() == WorkshopSettings()
+
+    QSettings().setValue("cutlist/default_stocks", "not json")
+    QSettings().setValue("cutlist/workshop_settings", "not json")
+    assert load_default_stocks() == []
+    assert load_default_workshop() == WorkshopSettings()

@@ -64,6 +64,100 @@ _PART_PALETTE = ["#f3c98b", "#9ec5e5", "#b7d7a8", "#d5b5e5",
                  "#f4a7a7", "#a7d8d2", "#e6d59a"]
 
 
+# ---------------------------------------------------------------------------
+# Stock/workshop persistence (QSettings, same JSON-blob convention as the
+# composer's "composer/default_cota_style" — see views/composer.py). Parts
+# and their material/grain settings stay session-only (they come from
+# whatever is selected right now); the stock list and workshop numbers are
+# workshop facts that outlive any one selection, so they are worth
+# remembering across dialog opens and documents.
+# ---------------------------------------------------------------------------
+
+_STOCKS_KEY = "cutlist/default_stocks"
+_WORKSHOP_KEY = "cutlist/workshop_settings"
+
+
+def _stock_to_dict(s: StockDefinition) -> dict:
+    return {"name": s.name, "material": s.material, "thickness": s.thickness,
+            "length": s.length, "width": s.width,
+            "available_sheets": s.available_sheets,
+            "grain_axis": s.grain_axis.value}
+
+
+def _stock_from_dict(d: dict) -> StockDefinition:
+    return StockDefinition(
+        name=str(d.get("name", "Stock")), material=str(d.get("material", "Unassigned")),
+        thickness=float(d.get("thickness", 18.0)), length=float(d.get("length", 2440.0)),
+        width=float(d.get("width", 1220.0)),
+        available_sheets=d["available_sheets"] if d.get("available_sheets") is not None else None,
+        grain_axis=GrainAxis(d.get("grain_axis", "none")))
+
+
+def _workshop_to_dict(w: WorkshopSettings) -> dict:
+    return {"kerf": w.kerf, "short_edge_cleanup": w.short_edge_cleanup,
+            "long_edge_trim": w.long_edge_trim,
+            "minimum_remnant_width": w.minimum_remnant_width,
+            "minimum_remnant_length": w.minimum_remnant_length}
+
+
+def _workshop_from_dict(d: dict) -> WorkshopSettings:
+    fields = {"kerf", "short_edge_cleanup", "long_edge_trim",
+              "minimum_remnant_width", "minimum_remnant_length"}
+    return WorkshopSettings(**{k: float(v) for k, v in d.items() if k in fields})
+
+
+def load_default_stocks() -> list[StockDefinition]:
+    """The stock list remembered from the last time any Cut List dialog ran
+    ``_sync_stock_edits`` — a fresh dialog starts with them already in the
+    Stock & Setup table instead of empty."""
+    import json
+    from PySide6.QtCore import QSettings
+    raw = QSettings().value(_STOCKS_KEY, "")
+    try:
+        data = json.loads(str(raw or "")) if raw else []
+    except Exception:  # noqa: BLE001
+        data = []
+    stocks = []
+    for d in data if isinstance(data, list) else []:
+        try:
+            stocks.append(_stock_from_dict(d))
+        except Exception:  # noqa: BLE001 — one bad entry does not lose the rest
+            pass
+    return stocks
+
+
+def load_default_workshop() -> WorkshopSettings:
+    import json
+    from PySide6.QtCore import QSettings
+    raw = QSettings().value(_WORKSHOP_KEY, "")
+    try:
+        data = json.loads(str(raw or "")) if raw else {}
+    except Exception:  # noqa: BLE001
+        data = {}
+    try:
+        return _workshop_from_dict(data) if isinstance(data, dict) and data else WorkshopSettings()
+    except Exception:  # noqa: BLE001 — a corrupt blob falls back to defaults
+        return WorkshopSettings()
+
+
+def remember_stocks(stocks: list[StockDefinition]) -> None:
+    import json
+    from PySide6.QtCore import QSettings
+    try:
+        QSettings().setValue(_STOCKS_KEY, json.dumps([_stock_to_dict(s) for s in stocks]))
+    except Exception:  # noqa: BLE001 — a stock that will not serialise
+        pass
+
+
+def remember_workshop(workshop: WorkshopSettings) -> None:
+    import json
+    from PySide6.QtCore import QSettings
+    try:
+        QSettings().setValue(_WORKSHOP_KEY, json.dumps(_workshop_to_dict(workshop)))
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _part_color(part_id: str) -> QColor:
     h = 0
     for b in part_id.encode("utf-8"):
@@ -227,12 +321,15 @@ class CutListDialog(QDialog):
         self._viewport = viewport
         self._parts: list[ImportedPart] = []
         self._settings: dict[str, PartSettings] = {}
-        self._stocks: list[StockDefinition] = []
-        self._workshop = WorkshopSettings()
+        # Remembered across dialog opens and documents (QSettings) — a
+        # fresh dialog does not start from an empty Stock & Setup tab.
+        self._stocks: list[StockDefinition] = load_default_stocks()
+        self._workshop = load_default_workshop()
         self._plan = None
         self.setWindowTitle(tr("Cut List"))
         self.resize(760, 620)
         self._build_ui()
+        self._populate_stock_table()
         self._load_from_selection()
 
     # -- layout ----------------------------------------------------------
@@ -462,6 +559,15 @@ class CutListDialog(QDialog):
             long_edge_trim=self._long_edge_spin.value(),
             minimum_remnant_width=self._min_remnant_w_spin.value(),
             minimum_remnant_length=self._min_remnant_l_spin.value())
+        remember_stocks(self._stocks)
+        remember_workshop(self._workshop)
+
+    def closeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        # Catches edits made but never run through Generate — Stock & Setup
+        # is meant to survive closing the dialog, not just closing it after
+        # a successful plan.
+        self._sync_stock_edits()
+        super().closeEvent(event)
 
     # -- plan generation / preview -----------------------------------------
 
