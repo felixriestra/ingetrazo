@@ -99,6 +99,13 @@ hiddenimports += [
     # "cannot import name 'ai' from 'core'" in every packaged build.
     'core.ai',
     'core.bim',
+    # Same lesson, same failure shape: plugins/cutlist.py imports these only
+    # at plugin-load time, so a packaged build (verified on macOS) loaded
+    # the plugin as "cutlist (load error)" — ModuleNotFoundError: No module
+    # named 'core.cutlist' — while `python main.py` from source never saw
+    # it, because the real interpreter just finds core/cutlist.py on disk.
+    'core.cutlist',
+    'core.cutlist_svg',
     'tools.place_group',
     'tools.paste',
     'georef.points',
