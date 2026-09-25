@@ -1,0 +1,175 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Linear slot"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001038:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001038:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001038:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001038:rapid:7",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 7
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001038:cutting:9",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 9
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001038:rapid:11",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 11
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001038:auxiliary:12",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001038",
+      "operationName" : "Slot",
+      "startCommandIndex" : 12
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

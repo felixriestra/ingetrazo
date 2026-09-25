@@ -1,0 +1,151 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Chamfer width 1.0 · depth 1.0 · center offset -1.1102230246251565e-16"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 5
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 16000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 200,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 90,
+          "y" : 10,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 90,
+          "y" : 65,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 10,
+          "y" : 65,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001040:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001040",
+      "operationName" : "Chamfer",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001040:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001040",
+      "operationName" : "Chamfer",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 5,
+      "id" : "00000000-0000-4000-8000-000000001040:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001040",
+      "operationName" : "Chamfer",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001040:rapid:10",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001040",
+      "operationName" : "Chamfer",
+      "startCommandIndex" : 10
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001040:auxiliary:11",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001040",
+      "operationName" : "Chamfer",
+      "startCommandIndex" : 11
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}
