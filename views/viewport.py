@@ -39,6 +39,7 @@ import copy
 import itertools
 import math
 import os
+import inspect
 import re
 import time as _time_mod
 from array import array
@@ -11181,7 +11182,13 @@ class Viewport(QOpenGLWidget):
                 # after a Move-copy. Only tools that declare it understand.
                 handler = getattr(self.active_tool, "on_array_value", None)
                 if handler is not None:
-                    handler(self, value[1], value[2])
+                    if len(value) <= 3:
+                        handler(self, value[1], value[2])
+                    elif "step" in inspect.signature(handler).parameters:
+                        handler(self, value[1], value[2], step=value[3])
+                    else:                       # "5x10m" means nothing here
+                        self.flash_status(tr(
+                            "Type the count alone here, e.g. 3x"))
                 self._set_value_buffer("")
                 return True
             if isinstance(value, tuple) and value and value[0] == "radius":
@@ -11278,6 +11285,15 @@ class Viewport(QOpenGLWidget):
         m = re.fullmatch(r"(?:(\d+)\s*[x*]|[x*]\s*(\d+))", stripped.lower())
         if m is not None:
             return ("array", int(m.group(1) or m.group(2)), "x")
+        # "5x10m": five copies ten metres apart in one entry (#111) — the
+        # count and the spacing that SketchUp asks for in two steps.
+        m = re.fullmatch(r"(\d+)\s*[x*]\s*(.+)", stripped.lower())
+        if m is not None:
+            step = Viewport._parse_value_buffer(m.group(2))
+            if isinstance(step, (int, float)) and not isinstance(step, bool) \
+                    and step > 0:
+                return ("array", int(m.group(1)), "x", float(step))
+            return None
         m = re.fullmatch(r"(?:/\s*(\d+)|(\d+)\s*/)", stripped)
         if m is not None:
             return ("array", int(m.group(1) or m.group(2)), "/")

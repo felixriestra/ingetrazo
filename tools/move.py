@@ -314,11 +314,32 @@ class MoveTool(Tool):
         self._commit(viewport, delta)
         return True
 
-    def on_array_value(self, viewport, count: int, mode: str) -> bool:
+    def on_array_value(self, viewport, count: int, mode: str,
+                       step: float | None = None) -> bool:
         """SketchUp's arrays, typed right after a Move-copy: ``3x`` lays
         three copies at multiples of the distance (external), ``/3`` three
         copies dividing it (internal). Retyping re-lays the array; the
-        window closes at the next click or tool change."""
+        window closes at the next click or tool change.
+
+        ``5x10m`` (#111) carries the spacing too: typed right after a copy
+        it re-lays the copies ten metres apart along the copy's direction;
+        typed DURING a Ctrl-drag it makes the copy there and then — the
+        cursor gave the direction, the entry the count and the spacing."""
+        if step is not None and self.start_point is not None:
+            if not self._copy or self.hover_point is None or self.grab is None:
+                return False
+            direction = self.hover_point - self.grab
+            if direction.length() < 1e-9:
+                return False
+            self._commit(viewport, direction.normalized() * step)
+            if self._last is None:
+                return False
+            return self.on_array_value(viewport, count, mode)
+        if step is not None and self._last is not None:
+            d = self._last["delta"]
+            if d.length() < 1e-9:
+                return False
+            self._last["delta"] = d.normalized() * step
         last = self._last
         if last is None or self.start_point is not None or count < 1:
             return False

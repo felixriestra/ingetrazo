@@ -666,6 +666,7 @@
  "Import image": "Importar imagen",
  "Import image failed": "No se pudo importar la imagen",
  "Import survey points CSV": "Importar CSV de puntos topográficos",
+ "Type the count alone here, e.g. 3x": "Aquí escribe solo la cantidad, por ejemplo 3x",
  "Imported {name}": "Importado {name}",
  "{name} has no geometry — nothing to import.": "{name} no tiene geometría: no hay nada que importar.",
  "Imported {name}: {edges} edges in {groups} tagged groups": "Importado {name}: {edges} aristas en {groups} grupos etiquetados",

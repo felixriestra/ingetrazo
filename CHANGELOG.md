@@ -26,6 +26,11 @@ follow [SemVer](https://semver.org).
   siempre o el que traiga un `.skp`; se guarda en el documento, en las
   escenas y en la biblioteca de estilos.
 
+- **Copias con cantidad y separación en una sola entrada** (#111): al mover
+  con Ctrl, escribir `5x10m` hace cinco copias separadas 10 m en la dirección
+  del cursor; justo después de una copia, recoloca las copias con esa
+  separación. `3x` y `/3` siguen como en SketchUp.
+
 ### Cambiado
 - **Icono de Zoom a extensión** (#112): ahora es la lupa con tres flechas
   hacia las esquinas, como en SketchUp, para que quien viene de allí lo

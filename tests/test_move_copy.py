@@ -191,3 +191,41 @@ def test_the_value_box_understands_the_array_forms():
     assert parse("3/") == ("array", 3, "/")
     assert parse("3") == 3.0                          # a plain length still is one
     assert parse("3/4\"") != ("array", 3, "/")        # the imperial fraction survives
+
+
+def test_count_and_spacing_in_one_entry_after_a_copy():
+    """#111: «5x10m» — five copies ten metres apart, typed once."""
+    scene = Scene()
+    scene.selection = [_square(scene)]
+    vp = _Vp(scene)
+    tool = MoveTool()
+    tool.on_click(_ctx(vp, 0, 0))
+    tool.on_key(vp, Qt.Key_Control, Qt.NoModifier)
+    tool.on_click(_ctx(vp, 2, 0))                     # one copy at +2 (direction)
+    assert tool.on_array_value(vp, 3, "x", step=10.0)
+    assert _xs(scene) == [0.0, 10.0, 20.0, 30.0]
+    vp.history.undo()
+    assert _xs(scene) == [0.0]
+
+
+def test_count_and_spacing_typed_during_the_ctrl_drag():
+    """The cursor gives the direction, the entry the count and the step."""
+    scene = Scene()
+    scene.selection = [_square(scene)]
+    vp = _Vp(scene)
+    tool = MoveTool()
+    tool.on_click(_ctx(vp, 0, 0))
+    tool.on_key(vp, Qt.Key_Control, Qt.NoModifier)
+    tool.on_hover(_ctx(vp, 0.7, 0))                   # pointing along +X
+    assert tool.on_array_value(vp, 4, "x", step=2.5)
+    assert _xs(scene) == [0.0, 2.5, 5.0, 7.5, 10.0]
+    assert tool.start_point is None                   # the operation is done
+
+
+def test_the_value_box_reads_count_times_spacing():
+    from views.viewport import Viewport
+    parse = Viewport._parse_value_buffer
+    assert parse("5x10m") == ("array", 5, "x", 10.0)
+    assert parse("5x10") == ("array", 5, "x", 10.0)
+    assert parse("3*250cm") == ("array", 3, "x", 2.5)
+    assert parse("5x-2") is None                      # a spacing is a distance
