@@ -5164,6 +5164,16 @@ class ComposerWindow(QMainWindow):
         super().__init__(main_window)
         self.setWindowFlag(Qt.Window, True)
         self._window = main_window
+        import sys as _sys
+        if _sys.platform == "darwin":
+            # macOS has ONE menu bar, and a window without its own shows its
+            # parent's: the model's menus — and their key equivalents — stayed
+            # live over the composer, so Cmd+0 blanked the model window
+            # (#114) and Cmd+Z / Cmd+C / Cmd+V would have acted on the model
+            # too. A menu bar of its own (empty) hands the keys back to the
+            # composer's shortcuts.
+            from PySide6.QtWidgets import QMenuBar
+            self.setMenuBar(QMenuBar(self))
         # Auto-render (LayOut's "Auto"): the viewport announces every model
         # version; stale frames get a badge and, when auto is on and the
         # window is visible, the raster ones re-render by themselves after a
