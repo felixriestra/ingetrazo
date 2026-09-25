@@ -1,0 +1,255 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Inside polygon profile · computer compensation"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 28,
+          "y" : 52,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 72,
+          "y" : 52,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 72,
+          "y" : 23,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 28,
+          "y" : 52,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 72,
+          "y" : 52,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 72,
+          "y" : 23,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 28,
+          "y" : 23,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001009:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001009:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 6,
+      "id" : "00000000-0000-4000-8000-000000001009:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001009:rapid:11",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 11
+    },
+    {
+      "commandCount" : 6,
+      "id" : "00000000-0000-4000-8000-000000001009:cutting:13",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 13
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001009:rapid:19",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 19
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001009:auxiliary:20",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001009",
+      "operationName" : "Inside",
+      "startCommandIndex" : 20
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

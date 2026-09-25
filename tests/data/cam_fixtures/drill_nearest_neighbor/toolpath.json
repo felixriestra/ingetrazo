@@ -1,0 +1,394 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Drilling"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 3
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 6000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 150,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 8
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 30,
+          "y" : 30,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 30,
+          "y" : 30,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 150,
+        "to" : {
+          "x" : 30,
+          "y" : 30,
+          "z" : 8
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 30,
+          "y" : 30,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 50,
+          "y" : 37.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 50,
+          "y" : 37.5,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 150,
+        "to" : {
+          "x" : 50,
+          "y" : 37.5,
+          "z" : 8
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 50,
+          "y" : 37.5,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 55,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 55,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 150,
+        "to" : {
+          "x" : 80,
+          "y" : 55,
+          "z" : 8
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 55,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 20,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 150,
+        "to" : {
+          "x" : 80,
+          "y" : 20,
+          "z" : 8
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 20,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 55,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 55,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 150,
+        "to" : {
+          "x" : 20,
+          "y" : 55,
+          "z" : 8
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 55,
+          "z" : 25
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 55,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001023:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001023:cutting:6",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 6
+    },
+    {
+      "commandCount" : 3,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:7",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 7
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001023:cutting:10",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 10
+    },
+    {
+      "commandCount" : 3,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:11",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 11
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001023:cutting:14",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 14
+    },
+    {
+      "commandCount" : 3,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:15",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 15
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001023:cutting:18",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 18
+    },
+    {
+      "commandCount" : 3,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:19",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 19
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001023:cutting:22",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 22
+    },
+    {
+      "commandCount" : 3,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:23",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 23
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001023:cutting:26",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 26
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001023:rapid:27",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 27
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001023:auxiliary:29",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001023",
+      "operationName" : "Drill",
+      "startCommandIndex" : 29
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

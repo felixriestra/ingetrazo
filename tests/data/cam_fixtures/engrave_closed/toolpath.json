@@ -1,0 +1,151 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Polyline engraving"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 4
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 18000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 200,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 19.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 40,
+          "y" : 50,
+          "z" : 19.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 60,
+          "y" : 20,
+          "z" : 19.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 19.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 19.5
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001025:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001025",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001025:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001025",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 5,
+      "id" : "00000000-0000-4000-8000-000000001025:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001025",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001025:rapid:10",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001025",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 10
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001025:auxiliary:11",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001025",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 11
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

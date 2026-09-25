@@ -1,0 +1,17 @@
+{
+  "machineDurationSeconds" : 62.97511085944458,
+  "ok" : true,
+  "operationCommandCounts" : {
+    "00000000-0000-4000-8000-000000001022" : 31
+  },
+  "statistics" : {
+    "cuttingLength" : 78,
+    "estimatedDurationSeconds" : 31.2,
+    "motionCount" : 25,
+    "rapidLength" : 369.5184387533285,
+    "toolChangeCount" : 1
+  },
+  "verification" : [
+
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "error" : "Operation \"Drill\" failed: Drilling point (150.0, 20.0) lies outside the stock.",
+  "ok" : false
+}

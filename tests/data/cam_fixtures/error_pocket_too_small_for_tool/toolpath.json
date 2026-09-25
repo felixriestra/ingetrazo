@@ -1,0 +1,443 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Polygon pocket with islands"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Pocket roughing pass 1 of 2"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 33,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 33,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Pocket finishing pass 1 of 1 at depth pass 1 of 2"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 33,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 33,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 18.5
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Pocket roughing pass 2 of 2"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 33,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 33,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Pocket finishing pass 1 of 1 at depth pass 2 of 2"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 33,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 33,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 43,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 42,
+          "y" : 32,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 12,
+      "id" : "00000000-0000-4000-8000-000000001035:roughing:4",
+      "kind" : "roughing",
+      "operationID" : "00000000-0000-4000-8000-000000001035",
+      "operationName" : "Pocket",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 8,
+      "id" : "00000000-0000-4000-8000-000000001035:finishing:16",
+      "kind" : "finishing",
+      "operationID" : "00000000-0000-4000-8000-000000001035",
+      "operationName" : "Pocket",
+      "startCommandIndex" : 16
+    },
+    {
+      "commandCount" : 12,
+      "id" : "00000000-0000-4000-8000-000000001035:roughing:24",
+      "kind" : "roughing",
+      "operationID" : "00000000-0000-4000-8000-000000001035",
+      "operationName" : "Pocket",
+      "startCommandIndex" : 24
+    },
+    {
+      "commandCount" : 8,
+      "id" : "00000000-0000-4000-8000-000000001035:finishing:36",
+      "kind" : "finishing",
+      "operationID" : "00000000-0000-4000-8000-000000001035",
+      "operationName" : "Pocket",
+      "startCommandIndex" : 36
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

@@ -1,0 +1,325 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Outside polygon profile · computer compensation"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 8.5,
+          "y" : 7.000000059604645,
+          "z" : 20
+        }
+      }
+    },
+    {
+      "arcCounterclockwise" : {
+        "centerOffset" : {
+          "x" : -1.5,
+          "y" : 0,
+          "z" : 0
+        },
+        "feed" : 250,
+        "to" : {
+          "x" : 8.5,
+          "y" : 7.000000059604645,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 67.99999999960465,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 47.99999999960464,
+          "y" : 68,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 48,
+          "y" : 38.000000000395346,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 92.99999999960465,
+          "y" : 38,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 93,
+          "y" : 7.000000000395346,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7.000000000395346,
+          "y" : 7.000000059604645,
+          "z" : 17.5
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 8.5,
+          "y" : 7.000000059604645,
+          "z" : 20
+        }
+      }
+    },
+    {
+      "arcCounterclockwise" : {
+        "centerOffset" : {
+          "x" : -1.5,
+          "y" : 0,
+          "z" : 0
+        },
+        "feed" : 250,
+        "to" : {
+          "x" : 8.5,
+          "y" : 7.000000059604645,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 67.99999999960465,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 47.99999999960464,
+          "y" : 68,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 48,
+          "y" : 38.000000000395346,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 92.99999999960465,
+          "y" : 38,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 93,
+          "y" : 7.000000000395346,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7.000000000395346,
+          "y" : 7.000000059604645,
+          "z" : 15
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001012:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001012:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 9,
+      "id" : "00000000-0000-4000-8000-000000001012:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001012:rapid:14",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 14
+    },
+    {
+      "commandCount" : 9,
+      "id" : "00000000-0000-4000-8000-000000001012:cutting:16",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 16
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001012:rapid:25",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 25
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001012:auxiliary:26",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001012",
+      "operationName" : "Outside",
+      "startCommandIndex" : 26
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}
