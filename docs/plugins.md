@@ -102,6 +102,28 @@ session (the window layout remembers it by `objectName`), and returns the
 dock in charge — calling it again with the same name returns the first
 one, so it is safe to call on every activation.
 
+## Viewport overlays
+
+To draw world geometry over the model (toolpaths, markers), append a
+callable to `viewport.overlay_painters`:
+
+```python
+def paint(painter, viewport):                 # QPainter, logical pixels
+    a = viewport.world_to_pixel(QVector3D(0, 0, 0))    # metres → (x, y)
+    b = viewport.world_to_pixel(QVector3D(1, 0, 0))
+    if a and b:                                   # None: behind the camera
+        painter.drawLine(QPointF(*a), QPointF(*b))
+
+viewport.overlay_painters.append(paint)
+viewport.update()                                # repaint now
+```
+
+Painters run on every overlay pass, after the georef layers and before
+the dimensions and labels, with the painter state saved and restored
+around each one. A painter that raises is logged once and removed. For
+many points, `viewport.world_to_pixels(array_n_by_3)` returns
+`(px, py, in_front)` NumPy arrays in one call.
+
 ## Developing interactively
 
 **Extensions → Python Console** (`Ctrl+Shift+P`) is a live REPL over the

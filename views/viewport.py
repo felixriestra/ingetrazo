@@ -1035,6 +1035,10 @@ class Viewport(QOpenGLWidget):
         self._hover_geo_node = None
         # World point on the profiled route to mark (profile→plan link), or None.
         self._route_marker = None
+        # Plugin overlay painters (host hook H3): callables
+        # ``fn(painter, viewport)`` run on every overlay pass, after the
+        # georef layers and before the annotations. See _draw_plugin_overlays.
+        self.overlay_painters: list = []
 
         # 3D draped terrain (Track G, G2 full).
         self._terrain_vao = None
@@ -5607,6 +5611,10 @@ class Viewport(QOpenGLWidget):
         # Imported survey points (GPS / total station) — Track G.
         self._draw_geo_points(painter)
 
+        # Plugin layers (the CAM toolpaths): world geometry like the georef
+        # paths above, under the document's own dimensions and labels.
+        self._draw_plugin_overlays(painter)
+
         # Profile→plan marker: the route point at the station hovered in the
         # profile panel (Track G).
         if self._route_marker is not None:
@@ -7217,6 +7225,47 @@ class Viewport(QOpenGLWidget):
         if t0 > t1:
             return None
         return [(x0 + dx * t0, y0 + dy * t0), (x0 + dx * t1, y0 + dy * t1)]
+
+    def _draw_plugin_overlays(self, painter: QPainter) -> None:
+        """Run every ``overlay_painters`` entry with the painter in the
+        widget's logical pixels (project with :meth:`world_to_pixel`).
+
+        Each call is fenced: the painter state is saved and restored around
+        it, so a plugin's pen or transform cannot leak into what the host
+        draws next, and an exception is logged ONCE per painter and the
+        painter dropped — a paint event raising on every frame would flood
+        the log and leave the viewport half drawn for good."""
+        if not self.overlay_painters:
+            return
+        for fn in list(self.overlay_painters):
+            painter.save()
+            try:
+                fn(painter, self)
+            except Exception:  # noqa: BLE001 — a plugin must not break paint
+                import logging
+                logging.getLogger("ingetrazo.plugins").exception(
+                    "overlay painter %r failed; removed", fn)
+                try:
+                    self.overlay_painters.remove(fn)
+                except ValueError:
+                    pass
+            finally:
+                painter.restore()
+
+    def world_to_pixel(self, world: QVector3D) -> Optional[tuple[float, float]]:
+        """Public API (plugins): world point (metres) → widget pixel
+        ``(x, y)`` in logical pixels, or ``None`` when the point is behind
+        the camera. The same projection the host's own overlays use."""
+        return self._world_to_pixel(world)
+
+    def world_to_pixels(self, pts):
+        """Public API (plugins): an ``(N, 3)`` float array of world points
+        (metres) → ``(px, py, in_front)`` NumPy arrays, vectorised — for
+        overlays with thousands of points, where a Python loop over
+        :meth:`world_to_pixel` would cost frames. Points with
+        ``in_front == False`` are behind the camera; skip them."""
+        import numpy as np
+        return self._project_px(np.asarray(pts, dtype=float).reshape(-1, 3))
 
     def _world_to_pixel(self, world: QVector3D) -> Optional[tuple[float, float]]:
         """World point → screen pixel (or None if behind the camera)."""
