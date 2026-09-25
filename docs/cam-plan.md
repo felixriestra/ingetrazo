@@ -370,8 +370,11 @@ people work on it.
 | **Upstream drift** while the fork carries H1–H4 and the plugin. | Keep the host changes as four small, separate commits; rebase on `origin/main` regularly. The plugin itself touches no host files beyond those. |
 | **float32 scene coordinates.** | Extract and re-base to the machining plane in float64 immediately (see Architecture). |
 
-## Remaining open question
+## Units: millimetres and inches (decided)
 
-**Inch support in v1.** The plan includes `G20` and inch display, since it's
-cheap once the engine is mm-only internally. Drop it if your users are
-metric only.
+**Both are supported in v1.** Each job picks mm or inch; the UI shows and
+takes lengths in the job's units, and the post writes `G21` or `G20` with
+coordinates, feeds and depths in those units. The engine stays mm/float64
+internally, so inch support lives only at the edges: the UI conversion
+and the post. The parity fixtures and goldens cover at least one inch job
+per dialect (round-trip checked in inch coordinates).
