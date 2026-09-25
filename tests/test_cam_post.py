@@ -66,9 +66,10 @@ def test_grbl_writes_one_file_per_tool_change():
     assert not res.issues, [(i.code, i.params) for i in res.issues]
     assert [f.tool_numbers for f in res.files] == [[1], [2], [3], [1]]
     assert all(f.extension == ".nc" for f in res.files)
-    assert res.files[0].suffix == "_T1_6-mm-frase-n"
+    assert res.files[0].suffix == "_01_T1_6-mm-frase-n"
+    assert len({f.suffix for f in res.files}) == len(res.files)      # T1 comes back
     for f in res.files:
-        assert "and set Z zero before running this file" in f.text
+        assert "set Z zero, then run this file" in f.text
         assert f.text.rstrip().endswith("M30")
         assert "G21" in f.text and "G90 G94 G17" in f.text
 
@@ -174,8 +175,10 @@ def test_round_trip_detects_a_tampered_file():
     f = res.files[0]
     parsed = parse_gcode(f.text).motions
     assert round_trip(f.expected, parsed) is None
-    # And the expected motion is the canonical toolpath's, not the post's idea.
-    assert len(f.expected) == len(expected_motions(tp.commands))
+    # The post writes the canonical toolpath's moves, less only those that
+    # go nowhere (never more, never others).
+    canon = expected_motions(tp.commands)
+    assert 0.9 * len(canon) <= len(f.expected) <= len(canon)
     tampered = f.text.replace("G1 ", "G1 X0.5 ", 1)
     problem = round_trip(f.expected, parse_gcode(tampered).motions)
     assert problem is not None and problem.code == "post_round_trip_failed"

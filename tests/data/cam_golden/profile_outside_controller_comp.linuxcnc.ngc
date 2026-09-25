@@ -1,0 +1,39 @@
+%
+(IngeTrazo CAM - LinuxCNC)
+(Job: Outside controller comp)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+G21
+G17 G90 G91.1 G94 G40 G49 G80
+G64 P0.01
+G54
+(Operation: Outside)
+(Outside profile)
+(Tool T1: 6.0 mm Flat End Mill)
+T1 M6
+G43 H1
+S12000 M3
+G4 P3
+G0 Z30
+G41
+G0 X10 Y10
+G1 Z18 F250
+G1 Y65 F800
+G1 X90
+G1 Y10
+G1 X10
+G0 Z30
+G1 Z16 F250
+G1 Y65 F800
+G1 X90
+G1 Y10
+G1 X10
+G0 Z30
+G40
+M5
+M9
+M2
+%

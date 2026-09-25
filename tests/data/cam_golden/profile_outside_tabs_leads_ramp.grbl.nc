@@ -1,0 +1,79 @@
+(IngeTrazo CAM - GRBL)
+(Job: Outside tabs)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+(Load T1 [6.0 mm Flat End Mill], set Z zero, then run this file)
+G90 G94 G17
+G21
+G54
+(Operation: Outside)
+(Outside profile)
+(Tool T1: 6.0 mm Flat End Mill)
+S12000 M3
+G4 P3
+G0 Z30
+G0 X54 Y7
+G1 Z20 F250
+G1 X52 Z17
+G1 X54 F800
+G1 X50
+G1 X16.25
+G1 Z18 F250
+G1 X10.25 F800
+G1 Z17 F250
+G1 X7 F800
+G1 Y68
+G1 X83.75
+G1 Z18 F250
+G1 X89.75 F800
+G1 Z17 F250
+G1 X93 F800
+G1 Y7
+G1 X50
+G1 X46
+G0 Z30
+G0 X54
+G1 Z17 F250
+G1 X52 Z14
+G1 X54 F800
+G1 X50
+G1 X16.25
+G1 Z18 F250
+G1 X10.25 F800
+G1 Z14 F250
+G1 X7 F800
+G1 Y68
+G1 X83.75
+G1 Z18 F250
+G1 X89.75 F800
+G1 Z14 F250
+G1 X93 F800
+G1 Y7
+G1 X50
+G1 X46
+G0 Z30
+G0 X54
+G1 Z14 F250
+G1 X52 Z12
+G1 X54 F800
+G1 X50
+G1 X16.25
+G1 Z18 F250
+G1 X10.25 F800
+G1 Z12 F250
+G1 X7 F800
+G1 Y68
+G1 X83.75
+G1 Z18 F250
+G1 X89.75 F800
+G1 Z12 F250
+G1 X93 F800
+G1 Y7
+G1 X50
+G1 X46
+G0 Z30
+M5
+M30

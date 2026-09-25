@@ -200,7 +200,6 @@
   "Stock: {width} x {depth} x {height} {unit}": "Material: {width} x {depth} x {height} {unit}",
   "Work zero: {origin}": "Zero peça: {origin}",
   "Safe height: {safe} {unit}": "Altura de segurança: {safe} {unit}",
-  "Load tool T{number} ({name}) and set Z zero before running this file": "Coloque a ferramenta T{number} ({name}) e zere o eixo Z antes de executar este arquivo",
   "Check the toolpath with an air cut before the first real cut": "Confira o percurso com um corte no ar antes do primeiro corte real",
   "front-left corner": "canto dianteiro esquerdo",
   "front edge centre": "centro da borda dianteira",
@@ -214,5 +213,6 @@
   "stock top": "face superior do material",
   "stock bottom": "base do material",
   "{d} mm flat end mill": "Fresa de topo reto de {d} mm",
-  "{d} mm drill": "Broca de {d} mm"
+  "{d} mm drill": "Broca de {d} mm",
+  "Load T{number} ({name}), set Z zero, then run this file": "Coloque T{number} ({name}), zere o Z e execute este arquivo"
 }
