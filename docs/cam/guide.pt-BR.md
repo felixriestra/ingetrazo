@@ -83,7 +83,12 @@ movimentos simples.
 **LinuxCNC** (2.9 ou posterior). Um único arquivo `.ngc`. As trocas de
 ferramenta usam `T# M6` com `G43 H#`, então os comprimentos vêm da tabela
 de ferramentas da sua máquina. A furação usa ciclos fixos
-(`G81`/`G82`/`G83`).
+(`G81`/`G82`/`G83`). A exportação também grava uma **tabela de ferramentas** (`.tbl`) ao
+lado do programa, com os números e diâmetros das ferramentas do
+trabalho: um `T# M6` de uma ferramenta que falta na tabela da máquina
+interrompe o programa. Os comprimentos ficam em 0, para medir na
+máquina. A tabela usa as unidades do trabalho, que devem ser as da
+máquina.
 
 Os dois aceitam milímetros (`G21`) ou polegadas (`G20`), conforme as
 **Unidades** do trabalho. Os comentários saem no seu idioma, reduzidos a

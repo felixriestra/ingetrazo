@@ -76,7 +76,11 @@ moves.
 
 **LinuxCNC** (2.9 or later). One `.ngc` file. Tool changes are `T# M6`
 with `G43 H#`, so the tool lengths come from your machine's tool table.
-Drilling uses canned cycles (`G81`/`G82`/`G83`).
+Drilling uses canned cycles (`G81`/`G82`/`G83`). Export also writes a **tool table** (`.tbl`) next to the program with
+the job's tool numbers and diameters, for LinuxCNC's tool table: a
+`T# M6` for a tool the machine's table lacks stops the program. Lengths
+are left at 0, to be touched off on the machine. The table is in the
+job's units, which must be the machine's.
 
 Both take millimetres (`G21`) or inches (`G20`). The **Units** setting
 of the job decides which. Comments are in your language, reduced to

@@ -207,3 +207,20 @@ def test_arcs_can_be_flattened_for_linuxcnc():
     body = "\n".join(ln for ln in res.files[0].text.splitlines() if not ln.startswith("("))
     assert "G2 " not in body and "G3 " not in body
     assert not res.issues
+
+
+def test_linuxcnc_gets_a_tool_table_for_the_tools_it_uses():
+    """A LinuxCNC machine stops at ``T4 M6`` when its tool table has no T4
+    (found by running the programs through LinuxCNC's own interpreter)."""
+    job = _job("linuxcnc")
+    _tp, res = _post(job)
+    lines = res.tool_table.splitlines()
+    assert lines[0].startswith(";")
+    assert [ln.split()[0] for ln in lines[1:]] == ["T1", "T2", "T3"]
+    assert "D6.0000" in lines[1] and "Z+0.0000" in lines[1]
+    assert all(ord(ch) < 128 for ch in res.tool_table)
+    inch = _job("linuxcnc", "inches")
+    _tp, res = _post(inch)
+    assert "D0.2362" in res.tool_table.splitlines()[1]
+    _tp, res = _post(_job("grbl"))
+    assert res.tool_table is None

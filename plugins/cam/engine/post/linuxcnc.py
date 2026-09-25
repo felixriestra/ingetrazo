@@ -23,7 +23,7 @@ import math
 from ..issues import CamError
 from ..toolpath import (Arc, Comment, Coolant, CutterCompensation, DrillCycle, Dwell, Linear,
                         Rapid, RetractZ, SpindleStart, SpindleStop, ToolChange, expand_drill)
-from .base import PostResult, ProgramFile, Writer, header_lines
+from .base import PostResult, ProgramFile, Writer, ascii_comment, header_lines
 
 TITLE = "LinuxCNC"
 
@@ -98,7 +98,26 @@ def post(job, toolpath, translate=None) -> PostResult:
     result = PostResult()
     result.files.append(ProgramFile("", w.extension, w.text(), tools_used))
     result.files[-1].expected = w.expected
+    result.tool_table = tool_table(job, tools_used)
     return result
+
+
+def tool_table(job, numbers=None) -> str:
+    """A LinuxCNC tool table (``.tbl``) for the job's tools — or just
+    ``numbers`` — so ``T<n> M6`` finds every tool the program asks for.
+
+    Diameters are real (cutter compensation uses them); lengths are 0,
+    because only the machine can measure them: touch off each tool (or
+    load this table into the machine's and keep its measured Z). Written
+    in the job's units, which must match the machine's configuration."""
+    k = 1 / 25.4 if job.is_inch else 1.0
+    lines = [f";IngeTrazo CAM tool table - {'inch' if job.is_inch else 'mm'} - set Z per tool on the machine"]
+    for t in sorted(job.tools, key=lambda t: t.number):
+        if numbers is not None and t.number not in numbers:
+            continue
+        lines.append(f"T{t.number} P{t.number} D{t.diameter * k:.4f} Z+0.0000 "
+                     f";{ascii_comment(t.name)}")
+    return "\n".join(lines) + "\n"
 
 
 def _drill(w: LinuxCncWriter, c: DrillCycle) -> None:

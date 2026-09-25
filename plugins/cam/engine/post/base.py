@@ -113,6 +113,8 @@ class ProgramFile:
 class PostResult:
     files: list = field(default_factory=list)
     issues: list = field(default_factory=list)
+    #: LinuxCNC only: a ``.tbl`` tool table for the tools the program uses.
+    tool_table: str | None = None
 
 
 def arc_as_motion(start, c: Arc, *, flatten: bool, chordal: float):

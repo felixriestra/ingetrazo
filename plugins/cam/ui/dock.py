@@ -940,6 +940,11 @@ class CamDock(QDockWidget):
         for f, target in zip(result.files, targets):
             target.write_text(f.text, encoding="ascii", newline="\n")
             written.append(str(target))
+        if result.tool_table:
+            # LinuxCNC stops at a T<n> M6 its tool table lacks: give it one.
+            tbl = base.with_name(base.name + ".tbl")
+            tbl.write_text(result.tool_table, encoding="ascii", newline="\n")
+            written.append(str(tbl))
         self._set_status(tr("Saved {count} file(s): {names}", count=len(written),
                             names=", ".join(Path(p).name for p in written)))
         return written
