@@ -1,0 +1,289 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Polyline engraving"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 4
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 18000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 200,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 19.6
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 40,
+          "y" : 50,
+          "z" : 19.6
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 60,
+          "y" : 20,
+          "z" : 19.6
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 19.6
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 200,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 19.2
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 40,
+          "y" : 50,
+          "z" : 19.2
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 60,
+          "y" : 20,
+          "z" : 19.2
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 19.2
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 200,
+        "to" : {
+          "x" : 20,
+          "y" : 20,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 40,
+          "y" : 50,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 60,
+          "y" : 20,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 600,
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 19
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 80,
+          "y" : 50,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001024:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001024:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001024:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001024:rapid:9",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 9
+    },
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001024:cutting:11",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 11
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001024:rapid:15",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 15
+    },
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001024:cutting:17",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 17
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001024:rapid:21",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 21
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001024:auxiliary:22",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001024",
+      "operationName" : "Engrave",
+      "startCommandIndex" : 22
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

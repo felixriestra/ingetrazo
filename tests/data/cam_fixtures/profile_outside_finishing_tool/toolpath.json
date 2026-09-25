@@ -1,0 +1,428 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Outside polygon profile · computer compensation"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 67.99999999960465,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 92.99999999960465,
+          "y" : 68,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 93,
+          "y" : 7.000000000395346,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7.000000000395346,
+          "y" : 7.000000059604645,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7,
+          "y" : 67.99999999960465,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 92.99999999960465,
+          "y" : 68,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 93,
+          "y" : 7.000000000395346,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 7.000000000395346,
+          "y" : 7.000000059604645,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 7,
+          "y" : 7.000000059604645,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Profile finishing tool"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 2
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Profile finishing pass at depth pass 1 of 2"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 8.5,
+          "y" : 66.5,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 91.5,
+          "y" : 66.5,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 91.5,
+          "y" : 8.5,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 17
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "comment" : {
+        "_0" : "Profile finishing pass at depth pass 2 of 2"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 8.5,
+          "y" : 66.5,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 91.5,
+          "y" : 66.5,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 91.5,
+          "y" : 8.5,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 14
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 8.5,
+          "y" : 8.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 8,
+      "id" : "00000000-0000-4000-8000-000000001011:roughing:4",
+      "kind" : "roughing",
+      "operationID" : "00000000-0000-4000-8000-000000001011",
+      "operationName" : "Outside",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 8,
+      "id" : "00000000-0000-4000-8000-000000001011:roughing:12",
+      "kind" : "roughing",
+      "operationID" : "00000000-0000-4000-8000-000000001011",
+      "operationName" : "Outside",
+      "startCommandIndex" : 12
+    },
+    {
+      "commandCount" : 9,
+      "id" : "00000000-0000-4000-8000-000000001011:finishing:26",
+      "kind" : "finishing",
+      "operationID" : "00000000-0000-4000-8000-000000001011",
+      "operationName" : "Outside",
+      "startCommandIndex" : 26
+    },
+    {
+      "commandCount" : 9,
+      "id" : "00000000-0000-4000-8000-000000001011:finishing:35",
+      "kind" : "finishing",
+      "operationID" : "00000000-0000-4000-8000-000000001011",
+      "operationName" : "Outside",
+      "startCommandIndex" : 35
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

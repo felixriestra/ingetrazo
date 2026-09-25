@@ -1,0 +1,265 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Outside polygon profile · controller compensation"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "cutterCompensation" : {
+        "_0" : "left"
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 90,
+          "y" : 10,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 90,
+          "y" : 65,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 10,
+          "y" : 65,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 90,
+          "y" : 10,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 90,
+          "y" : 65,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 10,
+          "y" : 65,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 800,
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 10,
+          "y" : 10,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "cutterCompensation" : {
+        "_0" : "off"
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 5,
+      "id" : "00000000-0000-4000-8000-000000001014:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001014:rapid:5",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 6,
+      "id" : "00000000-0000-4000-8000-000000001014:cutting:6",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 6
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001014:rapid:12",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 12
+    },
+    {
+      "commandCount" : 6,
+      "id" : "00000000-0000-4000-8000-000000001014:cutting:14",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 14
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001014:rapid:20",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 20
+    },
+    {
+      "commandCount" : 3,
+      "id" : "00000000-0000-4000-8000-000000001014:auxiliary:21",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001014",
+      "operationName" : "Outside",
+      "startCommandIndex" : 21
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

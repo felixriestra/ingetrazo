@@ -1,0 +1,21 @@
+{
+  "machineDurationSeconds" : 259.6888823625281,
+  "ok" : true,
+  "operationCommandCounts" : {
+    "00000000-0000-4000-8000-000000001002" : 64
+  },
+  "statistics" : {
+    "cuttingLength" : 3036.751882310227,
+    "estimatedDurationSeconds" : 229.8238352474802,
+    "motionCount" : 58,
+    "rapidLength" : 133.8581338582008,
+    "toolChangeCount" : 1
+  },
+  "verification" : [
+    {
+      "commandIndex" : 61,
+      "message" : "Lateral rapid motion intersects the stock volume.",
+      "severity" : "error"
+    }
+  ]
+}

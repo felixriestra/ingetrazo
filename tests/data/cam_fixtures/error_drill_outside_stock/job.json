@@ -1,0 +1,199 @@
+{
+  "createdAt" : 0,
+  "design" : {
+    "sketches" : [
+
+    ]
+  },
+  "fixtures" : [
+
+  ],
+  "formatVersion" : 1,
+  "importedReliefImages" : [
+
+  ],
+  "importedSTLModels" : [
+
+  ],
+  "jobNotes" : "",
+  "machine" : {
+    "controller" : "mach",
+    "coolantDelaySeconds" : 0.5,
+    "cuttingAcceleration" : 150,
+    "enforcesTravelLimits" : false,
+    "genericISOProgramNumber" : 1000,
+    "id" : "9B11C570-8EAD-4DF3-AE23-D85A71A06A01",
+    "maximumFeed" : 5000,
+    "maximumSpindleRPM" : 24000,
+    "minimumSpindleRPM" : 6000,
+    "name" : "Generic 3-Axis Mill",
+    "postprocessor" : "mach4Mill",
+    "rapidAcceleration" : 300,
+    "rapidFeed" : 8000,
+    "rigidityFactor" : 1,
+    "spindleRampSeconds" : 3,
+    "toolChangeSeconds" : 20,
+    "travelMaximum" : {
+      "x" : 1000,
+      "y" : 1000,
+      "z" : 300
+    },
+    "travelMinimum" : {
+      "x" : 0,
+      "y" : 0,
+      "z" : -200
+    },
+    "workOriginInMachineCoordinates" : {
+      "x" : 0,
+      "y" : 0,
+      "z" : 0
+    }
+  },
+  "machiningTolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  },
+  "modifiedAt" : 0,
+  "name" : "Drill outside",
+  "operations" : [
+    {
+      "calculationState" : {
+        "needsRecalculation" : {
+
+        }
+      },
+      "id" : "00000000-0000-4000-8000-000000001038",
+      "isEnabled" : true,
+      "kind" : "drilling",
+      "name" : "Drill",
+      "parameters" : {
+        "drilling" : {
+          "_0" : {
+            "depth" : 5,
+            "points" : [
+              {
+                "x" : 150,
+                "y" : 20,
+                "z" : 0
+              }
+            ]
+          }
+        }
+      },
+      "strategy" : {
+        "compensation" : "computer",
+        "direction" : "climb",
+        "entry" : "plunge",
+        "finishingPasses" : 1,
+        "geometry" : {
+          "automatic" : {
+
+          }
+        },
+        "leadInLength" : 0,
+        "leadOutLength" : 0,
+        "ordering" : "input",
+        "stockAllowance" : 0,
+        "tabs" : [
+
+        ],
+        "topHeight" : 0
+      },
+      "toolID" : "00000000-0000-4000-8000-000000000103"
+    }
+  ],
+  "setup" : {
+    "clearanceHeight" : 5,
+    "safeHeight" : 10,
+    "workOffset" : "G54"
+  },
+  "stock" : {
+    "depth" : 75,
+    "height" : 20,
+    "isConfigured" : true,
+    "jobSidedness" : "singleSided",
+    "material" : "clearWood",
+    "origin" : {
+      "x" : 0,
+      "y" : 0,
+      "z" : 0
+    },
+    "referencePoint" : "bottomLeft",
+    "shape" : "rectangular",
+    "width" : 100,
+    "zeroPosition" : "machineBed"
+  },
+  "tools" : [
+    {
+      "cornerRadius" : 0,
+      "cuttingFeed" : 800,
+      "diameter" : 6,
+      "fluteCount" : 2,
+      "fluteLength" : 20,
+      "id" : "00000000-0000-4000-8000-000000000101",
+      "kind" : "flatEndMill",
+      "name" : "6.0 mm Flat End Mill",
+      "number" : 1,
+      "overallLength" : 50,
+      "plungeFeed" : 250,
+      "recommendedStepdownNotes" : [
+
+      ],
+      "spindleRPM" : 12000
+    },
+    {
+      "cornerRadius" : 0,
+      "cuttingFeed" : 800,
+      "diameter" : 3,
+      "fluteCount" : 2,
+      "fluteLength" : 12,
+      "id" : "00000000-0000-4000-8000-000000000102",
+      "kind" : "flatEndMill",
+      "name" : "3.0 mm Flat End Mill",
+      "number" : 2,
+      "overallLength" : 50,
+      "plungeFeed" : 250,
+      "recommendedStepdownNotes" : [
+
+      ],
+      "spindleRPM" : 12000
+    },
+    {
+      "cornerRadius" : 0,
+      "cuttingFeed" : 300,
+      "diameter" : 5,
+      "fluteCount" : 2,
+      "fluteLength" : 30,
+      "id" : "00000000-0000-4000-8000-000000000103",
+      "kind" : "drill",
+      "name" : "5 mm Drill",
+      "number" : 3,
+      "overallLength" : 60,
+      "plungeFeed" : 150,
+      "recommendedStepdownNotes" : [
+
+      ],
+      "spindleRPM" : 6000
+    },
+    {
+      "cornerRadius" : 0,
+      "cuttingFeed" : 600,
+      "diameter" : 2,
+      "fluteCount" : 2,
+      "fluteLength" : 8,
+      "id" : "00000000-0000-4000-8000-000000000104",
+      "kind" : "flatEndMill",
+      "name" : "2 mm Engraver",
+      "number" : 4,
+      "overallLength" : 40,
+      "plungeFeed" : 200,
+      "recommendedStepdownNotes" : [
+
+      ],
+      "spindleRPM" : 18000
+    }
+  ],
+  "units" : "millimeters"
+}

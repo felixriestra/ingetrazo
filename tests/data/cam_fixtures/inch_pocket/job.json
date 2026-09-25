@@ -1,0 +1,170 @@
+{
+  "createdAt" : 0,
+  "design" : {
+    "sketches" : [
+
+    ]
+  },
+  "fixtures" : [
+
+  ],
+  "formatVersion" : 1,
+  "importedReliefImages" : [
+
+  ],
+  "importedSTLModels" : [
+
+  ],
+  "jobNotes" : "",
+  "machine" : {
+    "controller" : "mach",
+    "coolantDelaySeconds" : 0.5,
+    "cuttingAcceleration" : 5.905511811023622,
+    "enforcesTravelLimits" : false,
+    "genericISOProgramNumber" : 1000,
+    "id" : "9B11C570-8EAD-4DF3-AE23-D85A71A06A01",
+    "maximumFeed" : 196.8503937007874,
+    "maximumSpindleRPM" : 24000,
+    "minimumSpindleRPM" : 6000,
+    "name" : "Generic 3-Axis Mill",
+    "postprocessor" : "mach4Mill",
+    "rapidAcceleration" : 11.811023622047244,
+    "rapidFeed" : 314.96062992125985,
+    "rigidityFactor" : 1,
+    "spindleRampSeconds" : 3,
+    "toolChangeSeconds" : 20,
+    "travelMaximum" : {
+      "x" : 39.37007874015748,
+      "y" : 39.37007874015748,
+      "z" : 11.811023622047244
+    },
+    "travelMinimum" : {
+      "x" : 0,
+      "y" : 0,
+      "z" : -7.874015748031496
+    },
+    "workOriginInMachineCoordinates" : {
+      "x" : 0,
+      "y" : 0,
+      "z" : 0
+    }
+  },
+  "machiningTolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.00039370078740157485,
+    "chordal" : 0.0007874015748031497,
+    "linear" : 0.00039370078740157485
+  },
+  "modifiedAt" : 0,
+  "name" : "Inch pocket",
+  "operations" : [
+    {
+      "calculationState" : {
+        "needsRecalculation" : {
+
+        }
+      },
+      "id" : "00000000-0000-4000-8000-000000001034",
+      "isEnabled" : true,
+      "kind" : "pocket",
+      "name" : "Pocket",
+      "parameters" : {
+        "pocket" : {
+          "_0" : {
+            "depth" : 0.2,
+            "inset" : 10,
+            "stepDown" : 0.1,
+            "stepoverFraction" : 0.5,
+            "stockAllowance" : 0
+          }
+        }
+      },
+      "strategy" : {
+        "compensation" : "computer",
+        "direction" : "climb",
+        "entry" : "plunge",
+        "finishingPasses" : 1,
+        "geometry" : {
+          "region" : {
+            "_0" : {
+              "boundary" : [
+                {
+                  "x" : 1,
+                  "y" : 0.75
+                },
+                {
+                  "x" : 3,
+                  "y" : 0.75
+                },
+                {
+                  "x" : 3,
+                  "y" : 2.25
+                },
+                {
+                  "x" : 1,
+                  "y" : 2.25
+                }
+              ],
+              "islands" : [
+
+              ],
+              "openEdgeIndices" : [
+
+              ]
+            }
+          }
+        },
+        "leadInLength" : 0,
+        "leadOutLength" : 0,
+        "ordering" : "input",
+        "stockAllowance" : 0,
+        "tabs" : [
+
+        ],
+        "topHeight" : 0
+      },
+      "toolID" : "00000000-0000-4000-8000-000000000111"
+    }
+  ],
+  "setup" : {
+    "clearanceHeight" : 0.2,
+    "safeHeight" : 0.4,
+    "workOffset" : "G54"
+  },
+  "stock" : {
+    "depth" : 3,
+    "height" : 0.75,
+    "isConfigured" : true,
+    "jobSidedness" : "singleSided",
+    "material" : "clearWood",
+    "origin" : {
+      "x" : 0,
+      "y" : 0,
+      "z" : 0
+    },
+    "referencePoint" : "bottomLeft",
+    "shape" : "rectangular",
+    "width" : 4,
+    "zeroPosition" : "machineBed"
+  },
+  "tools" : [
+    {
+      "cornerRadius" : 0,
+      "cuttingFeed" : 40,
+      "diameter" : 0.25,
+      "fluteCount" : 2,
+      "fluteLength" : 0.75,
+      "id" : "00000000-0000-4000-8000-000000000111",
+      "kind" : "flatEndMill",
+      "name" : "1\/4 in Flat End Mill",
+      "number" : 1,
+      "overallLength" : 2.5,
+      "plungeFeed" : 12,
+      "recommendedStepdownNotes" : [
+
+      ],
+      "spindleRPM" : 16000
+    }
+  ],
+  "units" : "inches"
+}
