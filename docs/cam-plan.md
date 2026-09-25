@@ -1,6 +1,12 @@
 # CAM in IngeTrazo: porting the 2DCam engine to Python
 
-> Status: **approved direction, not started**. Lives in the
+> Status (2026-09-25): **v1 implemented in the fork, experimental.**
+> Host hooks H1–H4, the engine (parity with the 2DCam corpus, deliberate
+> differences in `docs/cam-2dcam-deviations.md`), GRBL and LinuxCNC posts
+> with frozen goldens, the plugin UI, es/pt-BR catalogues and the user
+> guide (`docs/cam/`) are done. Still open from M4: the native-speaker
+> review of the glossary, simulator runs (LinuxCNC `sim`, `grbl-sim`),
+> Flatpak/AppImage/Windows smoke runs, and test cuts on real machines. Lives in the
 > `felixriestra/ingetrazo` fork, on branch `cam-plugin`, until the code is
 > stable; nothing goes upstream before then.
 > Workspace: `~/Documents/MacApps/IGTCam/` (the fork clone is in
