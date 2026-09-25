@@ -54,6 +54,11 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Escalar ya no destroza la geometría suelta**: al arrastrar una pinza a
+  factores muy pequeños y volver varias veces, algunos vértices quedaban sin
+  escalar y las caras se rompían al soltar (vídeo de un usuario, en Linux y
+  Windows). La vista previa se calcula siempre desde las posiciones
+  originales.
 - **Un grupo girado sobre su centro seguía dibujado donde estaba**: el visor
   reconoce «sin cambios» por una suma de coordenadas, y girar sobre el
   centro no la cambia. Con las pinzas de rotación (que giran siempre sobre

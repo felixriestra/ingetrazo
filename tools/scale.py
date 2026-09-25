@@ -38,7 +38,7 @@ from __future__ import annotations
 import itertools
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QVector3D
+from PySide6.QtGui import QMatrix4x4, QVector3D
 
 from core.history import (CompoundCommand, ScaleGroupCommand,
                           ScaleVerticesCommand, scale_matrix)
@@ -399,6 +399,7 @@ class ScaleTool(Tool):
         self._grip = grip
         self._anchor = self._anchor_for(grip)
         self._factors = (1.0, 1.0, 1.0)
+        self._capture_originals(viewport)
         self._grabbed_px = screen_xy
         self._moved = False
         viewport.update()
@@ -543,35 +544,64 @@ class ScaleTool(Tool):
         viewport.update()
 
     # ---- Live preview -------------------------------------------------------
-    def _scale_live(self, viewport, step: tuple) -> None:
-        if all(abs(f - 1.0) < 1e-12 for f in step):
-            return
-        m = scale_matrix(self._anchor, step, self._axes)
+    def _capture_originals(self, viewport) -> None:
+        """Where everything that scales stood when the grip was taken. The
+        live preview is computed from THESE on every move — never as a step
+        from the previous frame. Chained steps drift in float32, and a drag
+        that went down to 0.04 and back ended with some vertices a hair off
+        their starting cell: the commit, which finds the vertices by their
+        starting positions, missed them, scaled the rest and tore the
+        faces (a user's video, 25-09: a rounded box shredded on release).
+        Measured: 300 moves of that kind, 194 of 1600 vertices lost."""
+        from PySide6.QtGui import QMatrix4x4
+        orig_v: list = []
+        orig_x: list = []
         for group in self._groups:
             if getattr(group, "xform", None) is not None:
-                group.xform = m * group.xform   # instance: O(1)
+                orig_x.append((group, QMatrix4x4(group.xform)))
             else:
                 gmesh = group.mesh
-                for vx in list(gmesh.vertices):
-                    gmesh.move_vertex(vx, m.map(vx.position) - vx.position)
-        for vx in self._verts:
-            viewport.scene.mesh.move_vertex(
-                vx, m.map(vx.position) - vx.position)
-        for im in self._images:
-            im.origin = m.map(im.origin)
-            im.u = m.mapVector(im.u)
-            im.v = m.mapVector(im.v)
+                orig_v.extend((gmesh, v, QVector3D(v.position))
+                              for v in gmesh.vertices)
+        mesh = viewport.scene.mesh
+        orig_v.extend((mesh, v, QVector3D(v.position)) for v in self._verts)
+        self._orig_v = orig_v
+        self._orig_x = orig_x
+        self._orig_im = [(im, QVector3D(im.origin), QVector3D(im.u),
+                          QVector3D(im.v)) for im in self._images]
+
+    def _set_preview(self, viewport, factors: tuple) -> None:
+        """Put everything at *factors* about the anchor, from the originals.
+        At (1, 1, 1) it is an exact restore: the starting positions go back
+        as they were stored, not through a matrix."""
+        if getattr(self, "_orig_v", None) is None:
+            return
+        identity = all(abs(f - 1.0) < 1e-12 for f in factors)
+        m = None if identity else scale_matrix(self._anchor, factors,
+                                               self._axes)
+        for mesh, v, p0 in self._orig_v:
+            target = p0 if m is None else m.map(p0)
+            mesh.move_vertex(v, target - v.position)
+        for group, x0 in self._orig_x:
+            group.xform = QMatrix4x4(x0) if m is None else m * x0
+        for im, o0, u0, v0 in self._orig_im:
+            if m is None:
+                im.origin, im.u, im.v = (QVector3D(o0), QVector3D(u0),
+                                         QVector3D(v0))
+            else:
+                im.origin, im.u, im.v = (m.map(o0), m.mapVector(u0),
+                                         m.mapVector(v0))
         viewport.scene.version += 1
 
     def _apply_preview(self, viewport, target: tuple) -> None:
-        step = tuple(t / f for t, f in zip(target, self._factors))
-        self._scale_live(viewport, step)
+        if all(abs(t - f) < 1e-12 for t, f in zip(target, self._factors)):
+            return
+        self._set_preview(viewport, target)
         self._factors = target
 
     def _revert_preview(self, viewport) -> None:
         if any(abs(f - 1.0) > 1e-12 for f in self._factors):
-            self._scale_live(
-                viewport, tuple(1.0 / f for f in self._factors))
+            self._set_preview(viewport, (1.0, 1.0, 1.0))
             self._factors = (1.0, 1.0, 1.0)
 
     # ---- Commit -------------------------------------------------------------
@@ -616,6 +646,7 @@ class ScaleTool(Tool):
         self._grip = None
         self._anchor = None
         self._factors = (1.0, 1.0, 1.0)
+        self._orig_v = None                 # the operation is over
         self._box_version = -1              # geometry moved: rebuild the box
         self._refresh_box(viewport)
         viewport.update()
@@ -631,6 +662,7 @@ class ScaleTool(Tool):
         self._positions = []
         self._verts = []
         self._images = []
+        self._orig_v = None
         self._box_version = -1
         self._grabbed_px = None
         self._moved = False
