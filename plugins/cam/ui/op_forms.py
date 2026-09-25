@@ -41,6 +41,10 @@ def kind_label(kind: str) -> str:
         "drilling": tr("Drilling"),
         "engraving": tr("Engraving"),
         "facing": tr("Facing"),
+        "bore": tr("Bore"),
+        "slot": tr("Slot"),
+        "chamfer": tr("Chamfer"),
+        "openPocket": tr("Open pocket"),
     }.get(kind, kind)
 
 
@@ -161,6 +165,14 @@ class OperationForm(QWidget):
         self.dwell.setSuffix(" s")
         self.nearest = QCheckBox(tr("Shortest route between holes"))
         self.closed = QCheckBox(tr("Closed path"))
+        self.bore_diameter = LengthSpin(2000.0)
+        self.width = LengthSpin(2000.0)
+        self.inside = QCheckBox(tr("On a hole's edge"))
+        self.open_edges = QLineEdit()
+        self.open_edges.setPlaceholderText(tr("none"))
+        self.open_edges.setToolTip(tr(
+            "Edges the cutter may pass beyond (the board's edge), as numbers counted "
+            "from the outline's first corner: 1, 3"))
 
         self._rows = [
             ("name", tr("Name"), self.name),
@@ -183,10 +195,18 @@ class OperationForm(QWidget):
             ("dwell", tr("Dwell at the bottom"), self.dwell),
             ("nearest", "", self.nearest),
             ("closed", "", self.closed),
+            ("bore_diameter", tr("Hole diameter"), self.bore_diameter),
+            ("width", tr("Width"), self.width),
+            ("inside", "", self.inside),
+            ("open_edges", tr("Open edges"), self.open_edges),
         ]
         for _key, label, w in self._rows:
             f.addRow(label, w)
         self.name.editingFinished.connect(self._apply)
+        self.open_edges.editingFinished.connect(self._apply)
+        for w in (self.bore_diameter, self.width):
+            w.valueChanged.connect(self._apply)
+        self.inside.toggled.connect(self._apply)
         for w in (self.tool, self.finishing_tool, self.direction, self.entry, self.compensation):
             w.currentIndexChanged.connect(self._apply)
         for w in (self.depth, self.step_down, self.allowance, self.lead_in, self.lead_out,
@@ -205,9 +225,18 @@ class OperationForm(QWidget):
             rows |= {"finishing_tool", "step_down", "allowance", "direction", "entry",
                      "compensation", "finishing", "lead_in", "lead_out", "tabs", "tab_width",
                      "tab_height"}
-        elif kind == "pocket":
+        elif kind in ("pocket", "openPocket"):
             rows |= {"finishing_tool", "step_down", "stepover", "allowance", "direction",
                      "entry", "finishing"}
+            if kind == "openPocket":
+                rows -= {"allowance"}
+                rows |= {"open_edges"}
+        elif kind == "bore":
+            rows |= {"bore_diameter", "step_down"}
+        elif kind == "slot":
+            rows |= {"width", "step_down", "stepover"}
+        elif kind == "chamfer":
+            rows |= {"width", "direction", "finishing", "inside"}
         elif kind == "facing":
             rows |= {"stepover", "direction", "entry"}
         elif kind == "drilling":
@@ -218,7 +247,7 @@ class OperationForm(QWidget):
 
     def set_units(self, inch: bool) -> None:
         for w in (self.depth, self.step_down, self.allowance, self.lead_in, self.lead_out,
-                  self.tab_width, self.tab_height, self.peck):
+                  self.tab_width, self.tab_height, self.peck, self.bore_diameter, self.width):
             w.set_inch(inch)
 
     def set_operation(self, op, job) -> None:
@@ -260,6 +289,14 @@ class OperationForm(QWidget):
             self.dwell.setValue(getattr(p, "dwellSeconds", 0.0))
             self.nearest.setChecked(st.ordering == "nearestNeighbor")
             self.closed.setChecked(bool(getattr(p, "isClosed", False)))
+            if hasattr(p, "diameter"):
+                self.bore_diameter.set_mm(p.diameter)
+            if hasattr(p, "width"):
+                self.width.set_mm(p.width)
+            self.inside.setChecked(bool(getattr(p, "inside", False)))
+            g = st.geometry
+            self.open_edges.setText(", ".join(str(i + 1) for i in sorted(g.openEdgeIndices))
+                                    if isinstance(g, Region) else "")
         finally:
             self._loading = False
 
@@ -310,6 +347,21 @@ class OperationForm(QWidget):
             st.ordering = "nearestNeighbor" if self.nearest.isChecked() else "input"
         if hasattr(p, "isClosed"):
             p.isClosed = self.closed.isChecked()
+        if hasattr(p, "diameter"):
+            p.diameter = self.bore_diameter.mm()
+        if hasattr(p, "width"):
+            p.width = self.width.mm()
+        if hasattr(p, "inside"):
+            p.inside = self.inside.isChecked()
+        if op.kind == "openPocket" and isinstance(st.geometry, Region):
+            n = len(st.geometry.boundary)
+            picked = set()
+            for part in self.open_edges.text().replace(";", ",").split(","):
+                part = part.strip()
+                if part.isdigit() and 1 <= int(part) <= n:
+                    picked.add(int(part) - 1)
+            st.geometry.openEdgeIndices = sorted(picked)
+            self.open_edges.setText(", ".join(str(i + 1) for i in sorted(picked)))
         self.changed.emit()
 
 

@@ -30,7 +30,7 @@ import pytest
 
 from plugins.cam.engine import compiler, io, verify
 from plugins.cam.engine.issues import CamError
-from plugins.cam.engine.toolpath import Linear, expanded
+from plugins.cam.engine.toolpath import Arc, Linear, arc_points, expanded
 
 ROOT = Path(__file__).parent / "data" / "cam_fixtures"
 CASES = json.loads((ROOT / "index.json").read_text())
@@ -59,6 +59,14 @@ DEVIATIONS = {
     "profile_outside_lshape_helix": "gouge",
     # 2DCam's conventional facing leaves with a rapid through the stock.
     "facing_conventional_ramp": "retract",
+    # A bore wider than twice the tool: 2DCam's single ring leaves a solid
+    # core; the port clears it with concentric circles.
+    "bore_basic": "superset",
+    "bore_large_core": "superset",
+    # Open pockets: 2DCam leaves the outer contour pass open (its last
+    # edge uncut); the port closes it.
+    "open_pocket_automatic": "superset",
+    "open_pocket_region_all_open": "superset",
 }
 
 
@@ -74,7 +82,8 @@ def _load(case):
 
 
 def _horizontal_segments(commands):
-    """``(a, b)`` of every cutting move that stays at one Z."""
+    """``(a, b)`` of every cutting move that stays at one Z — flat arcs as
+    chords of at most 2°."""
     out, cur = [], None
     for c in expanded(commands):
         to = getattr(c, "to", None)
@@ -82,9 +91,12 @@ def _horizontal_segments(commands):
             if hasattr(c, "z") and cur is not None:          # RetractZ
                 cur = (cur[0], cur[1], c.z)
             continue
-        if isinstance(c, Linear) and cur is not None and abs(cur[2] - to[2]) < 1e-6 \
-                and math.dist(cur[:2], to[:2]) > 1e-6:
-            out.append((cur, to))
+        if cur is not None and abs(cur[2] - to[2]) < 1e-6:
+            if isinstance(c, Linear) and math.dist(cur[:2], to[:2]) > 1e-6:
+                out.append((cur, to))
+            elif isinstance(c, Arc):
+                pts = arc_points(cur, c, max_step_deg=2.0)
+                out.extend(zip(pts, pts[1:]))
         cur = to
     return out
 
@@ -141,6 +153,9 @@ def test_parity(case):
     levels = lambda segs: {round(a[2], 6) for a, _ in segs}          # noqa: E731
     if why == "xy":
         h = _directed(_samples(_flatten_z(mine)), _flatten_z(their))
+    elif why == "superset":
+        assert levels(their) <= levels(mine)
+        h = _directed(_samples(their), mine)
     else:
         assert levels(mine) == levels(their)
         if why == "superset":

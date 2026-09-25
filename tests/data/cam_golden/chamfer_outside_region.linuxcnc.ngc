@@ -1,0 +1,31 @@
+%
+(IngeTrazo CAM - LinuxCNC)
+(Job: Chamfer region)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+G21
+G17 G90 G91.1 G94 G40 G49 G80
+G64 P0.01
+G54
+(Operation: Chamfer)
+(Chamfer)
+(Tool T5: 90 deg V-bit)
+T5 M6
+G43 H5
+S16000 M3
+G4 P3
+G0 Z30
+G0 X10 Y10
+G1 Z19 F200
+G1 Y65 F600
+G1 X90
+G1 Y10
+G1 X10
+G0 Z30
+M5
+M9
+M2
+%

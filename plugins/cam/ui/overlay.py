@@ -52,6 +52,10 @@ class ToolpathOverlay:
         #: ``(world_point, radius_m)``; ``None`` when not playing back.
         self.play_index: int | None = None
         self.play_tool = None
+        #: The selected operation's outline: ``[(a_world, b_world, open)]``
+        #: per edge, drawn thin (open edges dashed) and numbered.
+        self.outline: list = []
+        self.outline_numbers = False
 
     def clear(self) -> None:
         self.__init__()
@@ -103,6 +107,23 @@ class ToolpathOverlay:
         self.kind = np.asarray(kinds, dtype=np.int8)
         self.op = np.asarray(ops, dtype=np.int32)
         self.cmd = np.asarray(cmds, dtype=np.int64)
+
+    def set_outline(self, state, op) -> None:
+        """Show ``op``'s region outline (plane coordinates in the stored
+        job); numbered, with open edges dashed, for an open pocket."""
+        self.outline, self.outline_numbers = [], False
+        g = getattr(getattr(op, "strategy", None), "geometry", None) if op else None
+        if g is None or not g.boundary:
+            return
+        from ..state import Frame
+        frame = state.frame or Frame()
+        opened = set(g.openEdgeIndices) if op.kind == "openPocket" else set()
+        n = len(g.boundary)
+        for i in range(n):
+            a, b = g.boundary[i], g.boundary[(i + 1) % n]
+            self.outline.append((np.asarray(frame.to_world(a[0], a[1], 0.0)),
+                                 np.asarray(frame.to_world(b[0], b[1], 0.0)), i in opened))
+        self.outline_numbers = op.kind == "openPocket"
 
     def set_playhead(self, state, index, work_point, radius_mm) -> None:
         """Show playback at command ``index`` with the tool at
@@ -166,6 +187,32 @@ class ToolpathOverlay:
             self._lines(painter, viewport, self.a, self.b, (self.kind == PLUNGE_KIND) & done)
         if self.play_tool is not None:
             self._draw_tool(painter, viewport)
+        if self.outline:
+            self._draw_outline(painter, viewport)
+
+    def _draw_outline(self, painter, viewport) -> None:
+        from PySide6.QtGui import QFont
+        A = np.asarray([e[0] for e in self.outline])
+        B = np.asarray([e[1] for e in self.outline])
+        ax, ay, aok = viewport.world_to_pixels(A)
+        bx, by, bok = viewport.world_to_pixels(B)
+        font = QFont()
+        font.setPointSize(9)
+        font.setBold(True)
+        painter.setFont(font)
+        for i, (_a, _b, is_open) in enumerate(self.outline):
+            if not (aok[i] and bok[i]):
+                continue
+            pen = QPen(QColor(30, 160, 60) if is_open else QColor(40, 40, 40, 200),
+                       2.0 if is_open else 1.2)
+            if is_open:
+                pen.setStyle(Qt.DashLine)
+            painter.setPen(pen)
+            painter.drawLine(QLineF(ax[i], ay[i], bx[i], by[i]))
+            if self.outline_numbers:
+                mx, my = (ax[i] + bx[i]) / 2, (ay[i] + by[i]) / 2
+                painter.setPen(QColor(30, 160, 60) if is_open else QColor(20, 20, 20))
+                painter.drawText(QPointF(mx + 4, my - 4), str(i + 1))
 
     def _draw_tool(self, painter, viewport) -> None:
         """The cutter at the playhead: its footprint circle on the machining

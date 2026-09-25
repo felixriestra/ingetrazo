@@ -46,6 +46,10 @@ Selecciona caras, aristas o una pieza y usa
 | Taladrado | agujeros redondos (círculos) | un agujero por centro, con picoteo si se quiere |
 | Grabado | aristas abiertas o cerradas | sigue la propia línea |
 | Planeado | nada (todo el material) | aplana la cara superior |
+| Vaciado abierto | una cara que toca el borde del tablero | como un vaciado, pero saliendo por sus bordes abiertos: un rebaje, una muesca |
+| Mandrinado | agujeros redondos | un agujero redondo fresado con movimientos circulares, sin broca |
+| Ranura | un rectángulo alargado, o una arista recta | una ranura recta del ancho del rectángulo (o de la herramienta) |
+| Chaflán | una cara (su contorno y sus agujeros), aristas | un chaflán a 45° (o al ángulo de la fresa) en el borde superior, con fresa en V |
 
 Cada operación tiene una herramienta, una profundidad y una **profundidad
 por pasada**. El resto de ajustes depende de la operación:
@@ -68,6 +72,25 @@ por pasada**. El resto de ajustes depende de la operación:
   herramientas de la máquina. Solo funciona en LinuxCNC.
 - **Taladrado.** El *picoteo* taladra por tramos y saca la viruta entre
   ellos. La *pausa* se detiene en el fondo.
+- **Mandrinado.** Cualquier agujero redondo mayor que la fresa: baja en
+  espiral una profundidad por pasada por vuelta y termina la pared con un
+  círculo plano. Los agujeros anchos se vacían hasta el centro.
+  **Pieza → operaciones** usa un mandrinado para los agujeros redondos
+  que ninguna broca de la tabla iguala.
+- **Ranura.** Desde un rectángulo, la ranura es ese rectángulo, con el
+  radio de la fresa en sus esquinas interiores. Desde una arista recta, es
+  un canal del ancho de la herramienta, un radio más largo en cada extremo.
+- **Chaflán.** Necesita una **fresa en V** (de chaflán) en la tabla de
+  herramientas (los trabajos nuevos traen una de 90°). El *ancho* es
+  cuánto se quita del borde. La profundidad para ello depende del ángulo:
+  con 90°, la profundidad es igual al ancho. Una cara da un chaflán
+  alrededor de su contorno y otro dentro de cada agujero; *En el borde de
+  un agujero* cambia el lado.
+- **Vaciado abierto.** Los bordes que están sobre el contorno del tablero
+  se detectan y se marcan **abiertos** solos. La fresa los atraviesa, y
+  guarda su radio respecto de los demás bordes. *Bordes abiertos* los
+  lista por número; selecciona la operación para ver los números (y los
+  bordes abiertos, en verde a trazos) en el modelo.
 
 ## Controladores
 

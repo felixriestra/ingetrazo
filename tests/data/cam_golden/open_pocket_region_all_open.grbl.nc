@@ -1,0 +1,128 @@
+(IngeTrazo CAM - GRBL)
+(Job: Open pocket region)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+(Load T1 [6.0 mm Flat End Mill], set Z zero, then run this file)
+G90 G94 G17
+G21
+G54
+(Operation: Open)
+(Open pocket)
+(Tool T1: 6.0 mm Flat End Mill)
+S12000 M3
+G4 P3
+G0 Z30
+(Pocket roughing pass 1 of 2)
+G0 X0 Y20
+G1 Z18 F250
+G1 X40 F800
+G1 Y55
+G1 X0
+G1 Y20
+G0 Z30
+G1 Z18 F250
+G1 X40 F800
+G0 Z30
+G0 Y23.5
+G1 Z18 F250
+G1 X0 F800
+G0 Z30
+G0 Y27
+G1 Z18 F250
+G1 X40 F800
+G0 Z30
+G0 Y30.5
+G1 Z18 F250
+G1 X0 F800
+G0 Z30
+G0 Y34
+G1 Z18 F250
+G1 X40 F800
+G0 Z30
+G0 Y37.5
+G1 Z18 F250
+G1 X0 F800
+G0 Z30
+G0 Y41
+G1 Z18 F250
+G1 X40 F800
+G0 Z30
+G0 Y44.5
+G1 Z18 F250
+G1 X0 F800
+G0 Z30
+G0 Y48
+G1 Z18 F250
+G1 X40 F800
+G0 Z30
+G0 Y51.5
+G1 Z18 F250
+G1 X0 F800
+G0 Z30
+(Pocket finishing pass 1 of 1 at depth pass 1 of 2)
+G0 Y20
+G1 Z18 F250
+G1 X40 F800
+G1 Y55
+G1 X0
+G1 Y20
+G0 Z30
+(Pocket roughing pass 2 of 2)
+G1 Z16 F250
+G1 X40 F800
+G1 Y55
+G1 X0
+G1 Y20
+G0 Z30
+G1 Z16 F250
+G1 X40 F800
+G0 Z30
+G0 Y23.5
+G1 Z16 F250
+G1 X0 F800
+G0 Z30
+G0 Y27
+G1 Z16 F250
+G1 X40 F800
+G0 Z30
+G0 Y30.5
+G1 Z16 F250
+G1 X0 F800
+G0 Z30
+G0 Y34
+G1 Z16 F250
+G1 X40 F800
+G0 Z30
+G0 Y37.5
+G1 Z16 F250
+G1 X0 F800
+G0 Z30
+G0 Y41
+G1 Z16 F250
+G1 X40 F800
+G0 Z30
+G0 Y44.5
+G1 Z16 F250
+G1 X0 F800
+G0 Z30
+G0 Y48
+G1 Z16 F250
+G1 X40 F800
+G0 Z30
+G0 Y51.5
+G1 Z16 F250
+G1 X0 F800
+G0 Z30
+(Pocket finishing pass 1 of 1 at depth pass 2 of 2)
+G0 Y20
+G1 Z16 F250
+G1 X40 F800
+G1 Y55
+G1 X0
+G1 Y20
+G0 Z30
+M5
+M30

@@ -21,7 +21,9 @@ from __future__ import annotations
 
 import math
 
-from .models import (MM_PER_INCH, TWODCAM_REFERENCE_POINTS, FacingParameters, DrillingParameters, EngravingParameters,
+from .models import (MM_PER_INCH, TWODCAM_REFERENCE_POINTS, BoreParameters, ChamferParameters,
+                     FacingParameters, DrillingParameters, EngravingParameters,
+                     OpenPocketParameters, SlotParameters,
                      Job, Machine, MachineSetup, Operation, PocketParameters, PostOptions,
                      ProfileParameters, Region, Stock, Strategy, Tab, Tolerance, Tool,
                      ToolHolder, new_id)
@@ -169,23 +171,37 @@ def _strategy(d, L) -> Strategy:
     return st
 
 
-_LENGTH_PARAMS = ("depth", "stepDown", "inset", "stockAllowance", "peckDepth")
+_LENGTH_PARAMS = ("depth", "stepDown", "inset", "stockAllowance", "peckDepth", "diameter",
+                  "width")
+#: Parameters that are 3D points (``{"x", "y", "z"}``); chamfer points are 2D.
+_POINT_PARAMS = ("center", "start", "end")
+
+_PARAM_CLASSES = {"facing": FacingParameters, "outsideProfile": ProfileParameters,
+                  "insideProfile": ProfileParameters, "pocket": PocketParameters,
+                  "drilling": DrillingParameters, "engraving": EngravingParameters,
+                  "bore": BoreParameters, "slot": SlotParameters,
+                  "chamfer": ChamferParameters, "openPocket": OpenPocketParameters}
 
 
 def _parameters(kind, payload, L):
     payload = payload or {}
-    cls = {"facing": FacingParameters, "outsideProfile": ProfileParameters,
-           "insideProfile": ProfileParameters, "pocket": PocketParameters,
-           "drilling": DrillingParameters, "engraving": EngravingParameters}.get(kind)
+    cls = _PARAM_CLASSES.get(kind)
     if cls is None:
         return None
-    kw = _fields(cls, payload, skip=("points",))
+    kw = _fields(cls, payload, skip=("points",) + _POINT_PARAMS)
     for key in _LENGTH_PARAMS:
         if key in kw:
             kw[key] = L(kw[key])
     obj = cls(**kw)
+    s = L(1.0)
+    for key in _POINT_PARAMS:
+        if key in payload and hasattr(obj, key):
+            setattr(obj, key, tuple(v * s for v in _p3(payload[key])))
     if "points" in payload and hasattr(obj, "points"):
-        obj.points = [tuple(v * L(1.0) for v in _p3(p)) for p in payload["points"]]
+        if cls is ChamferParameters:
+            obj.points = [(p["x"] * s, p["y"] * s) for p in payload["points"]]
+        else:
+            obj.points = [tuple(v * s for v in _p3(p)) for p in payload["points"]]
     return obj
 
 
@@ -281,8 +297,14 @@ def _operation_dict(o: Operation) -> dict:
     p = o.parameters
     pd = {}
     if p is not None and hasattr(p, "__dataclass_fields__"):
-        pd = {k: v for k, v in p.__dict__.items() if k != "points"}
-        if hasattr(p, "points"):
+        pd = {k: v for k, v in p.__dict__.items() if k != "points" and k not in _POINT_PARAMS}
+        for key in _POINT_PARAMS:
+            if hasattr(p, key):
+                v = tuple(getattr(p, key))
+                pd[key] = _d3(v + (0.0,) * (3 - len(v)))
+        if isinstance(p, ChamferParameters):
+            pd["points"] = [_d2(pt) for pt in p.points]
+        elif hasattr(p, "points"):
             pd["points"] = [_d3(tuple(pt) + (0.0,) * (3 - len(pt))) for pt in p.points]
     d = {"id": o.id, "name": o.name, "kind": o.kind, "isEnabled": o.isEnabled,
          "parameters": {o.kind: {"_0": pd}}, "strategy": _strategy_dict(o.strategy),

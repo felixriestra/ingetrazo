@@ -46,6 +46,10 @@ Selecione faces, arestas ou uma peça e use
 | Furação | furos redondos (círculos) | um furo por centro, com pica-pau se quiser |
 | Gravação | arestas abertas ou fechadas | segue a própria linha |
 | Faceamento | nada (todo o material) | aplaina a face superior |
+| Rebaixo aberto | uma face que toca a borda da chapa | como um rebaixo, mas saindo pelas bordas abertas: um rebaixo de borda, um entalhe |
+| Mandrilamento | furos redondos | um furo redondo fresado com movimentos circulares, sem broca |
+| Rasgo | um retângulo alongado, ou uma aresta reta | um rasgo reto da largura do retângulo (ou da ferramenta) |
+| Chanfro | uma face (seu contorno e seus furos), arestas | um chanfro a 45° (ou no ângulo da fresa) na borda superior, com fresa em V |
 
 Cada operação tem uma ferramenta, uma profundidade e uma **profundidade
 por passada**. Os demais ajustes dependem da operação:
@@ -69,6 +73,25 @@ por passada**. Os demais ajustes dependem da operação:
   da máquina. Só funciona no LinuxCNC.
 - **Furação.** O *pica-pau* fura em etapas e tira o cavaco entre elas. A
   *pausa* espera no fundo.
+- **Mandrilamento.** Qualquer furo redondo maior que a fresa: desce em
+  espiral uma profundidade por passada por volta e termina a parede com um
+  círculo plano. Os furos largos são limpos até o centro.
+  **Peça → operações** usa um mandrilamento para os furos redondos que
+  nenhuma broca da tabela corresponde.
+- **Rasgo.** A partir de um retângulo, o rasgo é esse retângulo, com o
+  raio da fresa nos cantos internos. A partir de uma aresta reta, é um
+  canal da largura da ferramenta, um raio mais longo em cada ponta.
+- **Chanfro.** Precisa de uma **fresa em V** (de chanfro) na tabela de
+  ferramentas (os trabalhos novos trazem uma de 90°). A *largura* é
+  quanto se tira da borda. A profundidade para isso depende do ângulo:
+  com 90°, a profundidade é igual à largura. Uma face dá um chanfro em
+  volta do contorno e outro dentro de cada furo; *Na borda de um furo*
+  troca o lado.
+- **Rebaixo aberto.** As bordas que estão no contorno da chapa são
+  detectadas e marcadas **abertas** sozinhas. A fresa as atravessa, e
+  mantém seu raio em relação às outras bordas. *Bordas abertas* as lista
+  por número; selecione a operação para ver os números (e as bordas
+  abertas, em verde tracejado) no modelo.
 
 ## Controladores
 

@@ -53,4 +53,11 @@ first, then in `es.json` and `pt-BR.json`.
 | Air cut | Corte en vacío | Corte no ar | |
 | Gouge | Corte en la pieza (rebaje indebido) | Corte na peça (penetração indevida) | Verifier message |
 | Post-processor | Postprocesador | Pós-processador | |
+| Bore (milled round hole) | Mandrinado | Mandrilamento | Circular interpolation, not a drill |
+| Slot | Ranura | Rasgo | |
+| Chamfer | Chaflán | Chanfro | |
+| Open pocket | Vaciado abierto | Rebaixo aberto | A pocket reaching the board's edge |
+| Open edge | Borde abierto | Borda aberta | |
+| V-bit | Fresa en V | Fresa em V | |
+| Included angle | Ángulo de la punta | Ângulo da ponta | |
 | Set Z zero | Poner el cero en Z | Zerar o eixo Z | |

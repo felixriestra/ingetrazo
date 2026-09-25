@@ -209,7 +209,7 @@ def check_gouges(job, compiled) -> list:
     tp = compiled.toolpath
     for op in job.operations:
         if op.id not in compiled.operation_ranges or op.kind not in (
-                "outsideProfile", "insideProfile", "pocket"):
+                "outsideProfile", "insideProfile", "pocket", "openPocket", "bore", "slot"):
             continue
         if op.strategy.compensation == "controller":
             continue                  # the controller offsets the programmed edge
@@ -244,10 +244,16 @@ def check_gouges(job, compiled) -> list:
             continue
         P = np.asarray(pts, dtype=float)
         r_max = max(radius_by_tool.values(), default=0.0)
-        dist = _distance_to_loops(P[:, :2], loops, cutoff=r_max + 1.0)
-        inside = _inside_even_odd(P[:, :2], loops)
         radius = np.array([radius_by_tool.get(tool_at.get(i), 0.0) for i in idx])
-        wrong_side = inside if keep_out_inside else ~inside
+        if keep_out_inside is None:
+            # Open pocket: only the closed edges (``loops`` holds them as
+            # 2-point segments) are walls; the cutter may cross the rest.
+            dist = _distance_to_segments(P[:, :2], loops, cutoff=r_max + 1.0)
+            wrong_side = np.zeros(len(P), dtype=bool)
+        else:
+            dist = _distance_to_loops(P[:, :2], loops, cutoff=r_max + 1.0)
+            inside = _inside_even_odd(P[:, :2], loops)
+            wrong_side = inside if keep_out_inside else ~inside
         bad = wrong_side | (dist < radius - tol)
         if bad.any():
             k = int(np.argmax(np.where(bad, radius - dist + wrong_side * 1e6, -np.inf)))
@@ -261,9 +267,32 @@ def check_gouges(job, compiled) -> list:
 
 def _protected(job, op):
     """The loops a cutter must keep clear of, and whether the forbidden
-    side is the INSIDE of those loops (even-odd)."""
+    side is the INSIDE of those loops (even-odd) — or ``None`` for an open
+    pocket, whose "loops" are its wall segments."""
     from .ops.common import automatic_rect
     g = op.strategy.geometry
+    p = op.parameters
+    if op.kind == "bore":
+        n = 180
+        R = p.diameter * 0.5
+        # The circumscribed polygon: its edges are no nearer the centre
+        # than the true circle, so a cutter clear of it is clear of the hole.
+        Rc = R / math.cos(math.pi / n)
+        return [[(p.center[0] + Rc * math.cos(2 * math.pi * k / n),
+                  p.center[1] + Rc * math.sin(2 * math.pi * k / n)) for k in range(n)]], False
+    if op.kind == "slot":
+        tool = job.tool(op.toolID)
+        r = tool.diameter * 0.5 if tool is not None else 0.0
+        return [_slot_outline(p.start, p.end, p.width * 0.5, r)], False
+    if op.kind == "openPocket":
+        if g is None:
+            return [automatic_rect(job.stock, p.inset)], False
+        n = len(g.boundary)
+        opened = set(g.openEdgeIndices)
+        walls = [[g.boundary[i], g.boundary[(i + 1) % n]] for i in range(n) if i not in opened]
+        for isl in g.islands:
+            walls.extend([[isl[i], isl[(i + 1) % len(isl)]] for i in range(len(isl))])
+        return walls, None
     try:
         if op.kind == "pocket":
             boundary = g.boundary if g is not None else automatic_rect(job.stock, op.parameters.inset)
@@ -273,6 +302,34 @@ def _protected(job, op):
     except Exception:  # noqa: BLE001 — an invalid region was reported by the compiler
         return [], False
     return [boundary], op.kind == "outsideProfile"
+
+
+def _slot_outline(a, b, half_width, r) -> list:
+    """What a slot cuts: the rectangle its cutter centres sweep (``start``
+    to ``end``, ``width − d`` across) grown by the tool radius."""
+    from . import geometry as geo
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = max(math.hypot(dx, dy), 1e-12)
+    nx, ny = -dy / length, dx / length
+    m = max(half_width - r, 0.0)
+    inner = [(a[0] - nx * m, a[1] - ny * m), (b[0] - nx * m, b[1] - ny * m),
+             (b[0] + nx * m, b[1] + ny * m), (a[0] + nx * m, a[1] + ny * m)]
+    if m < 1e-3:                 # one row: a line; 1 µm wide so Clipper keeps it
+        m = 1e-3
+        inner = [(a[0] - nx * m, a[1] - ny * m), (b[0] - nx * m, b[1] - ny * m),
+                 (b[0] + nx * m, b[1] + ny * m), (a[0] + nx * m, a[1] + ny * m)]
+    (grown,) = geo.offset_loop(inner, r, "round", 0.002)[:1]
+    return grown
+
+
+def _distance_to_segments(P, segments, cutoff: float | None = None) -> np.ndarray:
+    """Distance to the nearest of open ``segments`` ([[a, b], …])."""
+    if not segments:
+        return np.full(len(P), np.inf if cutoff is None else float(cutoff))
+    A = np.asarray([s[0] for s in segments], dtype=float)
+    B = np.asarray([s[1] for s in segments], dtype=float)
+    d = _pairs_min(P, A, B)
+    return d if cutoff is None else np.minimum(d, cutoff)
 
 
 def _distance_to_loops(P, loops, cutoff: float | None = None) -> np.ndarray:

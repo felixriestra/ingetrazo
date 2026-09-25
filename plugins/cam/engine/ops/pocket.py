@@ -24,7 +24,10 @@ from ..toolpath import Comment, Linear, Rapid, Section, Toolpath
 from . import common
 
 
-def generate(stock, setup, tool, params, strategy, tolerance, finishing_tool=None) -> Toolpath:
+def generate(stock, setup, tool, params, strategy, tolerance, finishing_tool=None,
+             is_open: bool = False) -> Toolpath:
+    """A closed pocket, or with ``is_open`` an open pocket: the edges named
+    by the region's ``openEdgeIndices`` let the cutter pass beyond them."""
     finishing_tool = finishing_tool or tool
     common.check_stock(stock)
     common.check_depth(params.depth, stock)
@@ -39,15 +42,23 @@ def generate(stock, setup, tool, params, strategy, tolerance, finishing_tool=Non
 
     finish_r = finishing_tool.diameter * 0.5 + strategy.stockAllowance
     rough_r = tool.diameter * 0.5 + strategy.stockAllowance + params.stockAllowance
+    open_segments = []
     if strategy.geometry is not None:
         boundary, islands = strategy.geometry.boundary, list(strategy.geometry.islands)
+        if is_open:
+            n = len(boundary)
+            open_segments = [(boundary[i % n], boundary[(i + 1) % n])
+                             for i in strategy.geometry.openEdgeIndices if 0 <= i < n]
     else:
+        # The whole stock top, inset: its edges have no material beyond
+        # them, so 2DCam's "open" automatic pocket is this closed one.
         boundary, islands = common.automatic_rect(stock, params.inset), []
     tol = geo.cleanup_tolerance(min(tool.diameter, finishing_tool.diameter))
     boundary = geo.remove_short_seams(boundary, tol)
     cleaned_islands = [geo.remove_short_seams(i, tol) for i in islands]
     if boundary is None or any(i is None for i in cleaned_islands):
         raise CamError("invalid_boundary")
+    open_edges = _open_edges(boundary, open_segments, tol)
 
     # Round joins are flattened into chords, and a chord lies INSIDE its arc
     # by up to the arc tolerance: the cutter would clip every corner it
@@ -55,8 +66,21 @@ def generate(stock, setup, tool, params, strategy, tolerance, finishing_tool=Non
     # offsetting half of it further keeps every chord outside the true
     # radius, at a cost of at most one chordal tolerance of stock.
     arc_tol = tolerance.chordal * 0.5
-    rough = geo.offset(boundary, cleaned_islands, -(rough_r + arc_tol), "round", arc_tol)
-    finish = geo.offset(boundary, cleaned_islands, -(finish_r + arc_tol), "round", arc_tol)
+
+    def centre_region(radius):
+        # Grown by exactly what the offset then takes back: the cutter
+        # centre ends ON each open edge — the cutter clears right up to it
+        # and one radius past, and not a millimetre further.
+        grow = radius + arc_tol
+        outers = _grown(boundary, open_edges, grow) if open_edges else [boundary]
+        pieces = []
+        for outer in outers:
+            pieces.extend(geo.offset(outer, cleaned_islands, -(radius + arc_tol), "round",
+                                     arc_tol))
+        return pieces
+
+    rough = centre_region(rough_r)
+    finish = centre_region(finish_r)
     finish_count = max(0, strategy.finishingPasses)
     if not rough or (finish_count > 0 and not finish):
         raise CamError("region_too_small_for_tool", diameter=tool.diameter)
@@ -90,7 +114,7 @@ def generate(stock, setup, tool, params, strategy, tolerance, finishing_tool=Non
     def inside_rough(p):
         return sum(1 for lp in all_rough if geo.contains(p, lp, 0.0)) % 2 == 1
 
-    cmds = common.header("Pocket", tool)
+    cmds = common.header("Open pocket" if is_open else "Pocket", tool)
     sections: list = []
 
     def depth_z(n):
@@ -178,3 +202,56 @@ def _contour_set(cmds, loops, z, safe_z, feed, plunge_feed) -> None:
 def _section(sections, kind, start, cmds) -> None:
     if len(cmds) > start:
         sections.append(Section(kind, start, len(cmds) - start))
+
+
+def _open_edges(boundary, segments, tol) -> list:
+    """Indices of ``boundary`` edges lying on one of the open ``segments``
+    (matched by geometry: seam cleanup may have renumbered the vertices)."""
+    if not segments:
+        return []
+    n = len(boundary)
+    out = []
+    for i in range(n):
+        a, b = boundary[i], boundary[(i + 1) % n]
+        mid = ((a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5)
+        if any(geo.point_segment_distance(mid, s0, s1) <= max(tol, 1e-6)
+               and geo.point_segment_distance(a, s0, s1) <= max(tol, 1e-6)
+               and geo.point_segment_distance(b, s0, s1) <= max(tol, 1e-6)
+               for s0, s1 in segments):
+            out.append(i)
+    return out
+
+
+def _grown(boundary, open_edges, reach) -> list:
+    """The region with every open edge pushed ``reach`` outward (and the
+    corner between two open edges filled), as outer loops: offsetting that
+    inward by the cutter radius lets the cutter centre reach the open
+    edges themselves while it keeps its radius from the closed ones."""
+    loop = geo.oriented(boundary, True)              # CCW: outward = right normal
+    if geo.signed_area(boundary) < 0:
+        n = len(boundary)
+        open_edges = [(n - 2 - i) % n for i in open_edges]   # edges renumbered by reversal
+    n = len(loop)
+    extra = []
+
+    def outward(i):
+        a, b = loop[i], loop[(i + 1) % n]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        length = max((dx * dx + dy * dy) ** 0.5, 1e-12)
+        return (dy / length, -dx / length)
+
+    opened = set(open_edges)
+    for i in opened:
+        a, b = loop[i], loop[(i + 1) % n]
+        o = outward(i)
+        extra.append([a, b, (b[0] + o[0] * reach, b[1] + o[1] * reach),
+                      (a[0] + o[0] * reach, a[1] + o[1] * reach)])
+        if (i + 1) % n in opened:                     # corner shared with the next open edge
+            v, o2 = b, outward((i + 1) % n)
+            extra.append([v, (v[0] + o[0] * reach, v[1] + o[1] * reach),
+                          (v[0] + (o[0] + o2[0]) * reach, v[1] + (o[1] + o2[1]) * reach),
+                          (v[0] + o2[0] * reach, v[1] + o2[1] * reach)])
+    # All counter-clockwise: under the non-zero rule an overlap of a CW and
+    # a CCW piece would cancel out.
+    pieces = geo.union([loop] + [geo.oriented(e, True) for e in extra])
+    return [outer for outer, _holes in pieces]
