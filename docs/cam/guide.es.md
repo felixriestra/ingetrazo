@@ -1,0 +1,111 @@
+# CAM en IngeTrazo — guía de uso
+
+**Extensiones ▸ CAM…** convierte lo que modelas en código G para una
+fresadora o router con **GRBL** o **LinuxCNC**. Mecaniza en 2,5D: contornos,
+agujeros y vaciados cortados en capas planas, en vertical desde el plano de
+mecanizado.
+
+> **Experimental.** Las trayectorias se verifican antes de exportarlas, pero
+> ninguna comprobación sustituye a tus ojos. Ejecuta cada programa nuevo
+> primero como **corte en vacío**, con el cero en Z bien por encima del
+> material. Comprueba que la máquina va a donde esperas.
+
+## Inicio rápido: un tablero con agujeros
+
+1. Modela la pieza como un sólido: un tablero con sus agujeros y vaciados.
+   Conviértela en grupo, o separa un componente en piezas.
+2. Selecciona la pieza en el modelo o en la bandeja Piezas.
+3. Abre **Extensiones ▸ CAM…**. En la pestaña **Trabajo**, pulsa
+   **Pieza → operaciones**. CAM añade todas las operaciones que necesita la
+   pieza:
+   - un **vaciado** por cada agujero ciego, a su profundidad;
+   - **taladrado** para cada agujero pasante redondo que coincida con una
+     broca de la tabla de herramientas;
+   - un **perfilado interior** para los demás agujeros pasantes;
+   - un **perfilado exterior** alrededor del contorno, con cuatro puentes.
+4. Revisa las herramientas en la pestaña **Herramientas**. El diámetro, la
+   longitud de corte, los avances y la velocidad del husillo deben ser los
+   de tu fresa, no los de ejemplo.
+5. Elige el **controlador**, las **unidades** y el **cero pieza** en la
+   pestaña **Trabajo**. El cero pieza es el punto que tocarás en la máquina:
+   uno de los nueve puntos del material, en su cara superior o en su base.
+6. Abre **Salida**. El trabajo se calcula solo y las trayectorias aparecen
+   en el modelo. La verificación debe decir **No se encontraron problemas**.
+7. Pulsa **Exportar código G…**.
+
+## Operaciones
+
+Selecciona caras, aristas o una pieza y usa
+**Operaciones ▸ Añadir desde la selección**.
+
+| Operación | A partir de | Corta |
+|---|---|---|
+| Perfilado exterior | una cara, aristas cerradas, el contorno de una pieza | por fuera: la pieza queda |
+| Perfilado interior | agujeros de una cara, aristas cerradas | por dentro: el agujero sale |
+| Vaciado | una cara con sus agujeros como islas, o aristas cerradas | vacía toda la zona hasta una profundidad |
+| Taladrado | agujeros redondos (círculos) | un agujero por centro, con picoteo si se quiere |
+| Grabado | aristas abiertas o cerradas | sigue la propia línea |
+| Planeado | nada (todo el material) | aplana la cara superior |
+
+Cada operación tiene una herramienta, una profundidad y una **profundidad
+por pasada**. El resto de ajustes depende de la operación:
+
+- **Dirección.** *En concordancia* deja el material a la derecha de la
+  fresa con el husillo a derechas. Suele dar mejor acabado en una máquina
+  rígida. *En oposición* es lo contrario.
+- **Entrada.** *Penetración vertical* baja recta. *Rampa* baja a lo largo
+  del corte y vuelve para limpiar la cuña. *Hélice* baja en espiral, solo
+  donde cabe junto a la pieza; si no cabe, usa rampa.
+- **Sobrematerial** y **Pasadas de acabado.** Desbasta un poco por fuera
+  de la medida y termina con una pasada ligera. Esa pasada puede usar una
+  **herramienta de acabado** distinta.
+- **Puentes.** Sujetan la pieza recortada al tablero. Indica su número,
+  ancho y alto. Córtalos después con una fresa de copiar o un cúter.
+- **Entrada y salida tangencial.** Empiezan y terminan el corte a lo largo
+  de un borde, no sobre él.
+- **Compensación del radio.** *En el programa* es lo habitual. *En el
+  controlador* escribe `G41`/`G42` y deja la compensación a la tabla de
+  herramientas de la máquina. Solo funciona en LinuxCNC.
+- **Taladrado.** El *picoteo* taladra por tramos y saca la viruta entre
+  ellos. La *pausa* se detiene en el fondo.
+
+## Controladores
+
+**GRBL** (GRBL 1.1, grblHAL, FluidNC). GRBL no tiene cambiador de
+herramientas, así que un trabajo con varias herramientas se escribe como
+**un archivo por cambio de herramienta**, numerado en orden de ejecución
+(`tablero_01_T1_….nc`, `tablero_02_T3_….nc`…). Ejecútalos en orden. Entre
+uno y otro, cambia la herramienta y **vuelve a poner el cero en Z**, porque
+cada herramienta tiene su longitud. Los ciclos de taladrado se escriben
+como movimientos simples.
+
+**LinuxCNC** (2.9 o posterior). Un solo archivo `.ngc`. Los cambios de
+herramienta usan `T# M6` con `G43 H#`, así que las longitudes salen de la
+tabla de herramientas de tu máquina. El taladrado usa ciclos fijos
+(`G81`/`G82`/`G83`).
+
+Los dos admiten milímetros (`G21`) o pulgadas (`G20`), según las
+**Unidades** del trabajo. Los comentarios van en tu idioma, reducidos a
+ASCII.
+
+## El trabajo viaja con el modelo
+
+El trabajo se guarda en el `.igz` y cada cambio se puede deshacer. Si
+cambias el modelo después, pulsa **Actualizar desde la pieza** en la
+pestaña **Trabajo**. Las operaciones siguen al nuevo contorno y a los
+nuevos agujeros, y conservan sus ajustes. Una operación que ya no coincide
+conserva su geometría anterior, y CAM la nombra.
+
+## Verificación
+
+No se puede exportar mientras la verificación indique un error:
+
+- una fresa que cortaría en la pieza (un *rebaje indebido*);
+- un movimiento rápido dentro del material o a través de él;
+- un corte por debajo de la base del material;
+- una profundidad mayor que la longitud de corte de la herramienta;
+- una velocidad o un avance fuera de los límites de la máquina (se
+  ajustan en la pestaña Trabajo).
+
+Cada archivo escrito se vuelve a leer como lo leería el controlador, y
+debe reproducir la trayectoria con un error máximo de 0,001 mm.

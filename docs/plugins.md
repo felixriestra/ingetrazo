@@ -238,6 +238,12 @@ belong in extensions like this one, not in the core.
 - `plugins/ai_assistant.py` — the in-app AI assistant (Ctrl+Shift+A): a
   multi-provider chat agent that models through `core.ai`. The reference
   for dialogs with worker threads and per-provider settings.
+- `plugins/cam/` — CAM: 2.5D toolpaths and G-code for GRBL and LinuxCNC
+  (a port of the 2DCam engine). The reference for **package** plugins: its
+  own catalogues (`i18n/*.json` with its own `tr()`), a dock
+  (`add_plugin_dock`), a viewport overlay (`overlay_painters`), document
+  data (`plugin_data`), and a Qt-free engine tested headlessly. User
+  guide: `docs/cam/guide.en.md` (also `.es`, `.pt-BR`).
 - `plugins/ai_bridge.py` — the MCP bridge: a localhost TCP server that
   lets an external agent (Claude Code/Desktop) drive the document. The
   reference for socket servers and main-thread relays.
@@ -245,6 +251,7 @@ belong in extensions like this one, not in the core.
 ## Roadmap
 
 - Tool registration — **done** (Extensions menu, this page).
+- Viewport overlays and document data — **done** (above).
 - Importer / exporter registration.
 - Side-panel registration, document data, viewport overlays and snap
   providers — **done** (`setup(app)`, above).
