@@ -220,3 +220,18 @@ def test_extract_faces_and_edges_on_the_top_plane():
     assert part.thickness == pytest.approx(18.0, abs=1e-3)
     kinds = sorted((h.through, bool(h.circle)) for h in part.regions[0][1])
     assert kinds == [(False, False), (True, False), (True, True)]
+
+
+def test_toolpaths_stay_drawn_while_another_tray_is_in_front(settings_file):
+    """The dock is tabbed with the trays; looking at Properties must not
+    make the toolpaths vanish from the model — only closing CAM does."""
+    from plugins.cam.ui.dock import show_dock
+    win, _g = _window_with_board(settings_file)
+    dock = show_dock(win.viewport)
+    win.tray.raise_()
+    _app.processEvents()
+    assert dock.overlay.visible
+    dock.toggleViewAction().trigger()           # closed from the Window menu
+    _app.processEvents()
+    assert not dock.overlay.visible
+    dock.dispose()
