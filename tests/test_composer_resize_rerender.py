@@ -43,3 +43,33 @@ def test_a_resized_view_renders_again_at_its_new_size(monkeypatch):
         comp.close()
         win._saved_version = win.viewport.scene.version
         win.close()
+
+
+def test_a_released_resize_does_not_render_on_the_spot(monkeypatch):
+    """#80, second half: the finished drag marks the frame stale and hands
+    the render to the 400 ms auto timer, so the mouse release never blocks
+    on the 300 dpi pass."""
+    from views.composer import ComposerWindow, FrameItem
+    from views.main_window import MainWindow
+
+    renders = []
+    monkeypatch.setattr(ComposerWindow, "render_frame",
+                        lambda self, frame: renders.append(frame))
+    win = MainWindow()
+    comp = ComposerWindow(win)
+    comp.show()
+    try:
+        comp._set_auto_render(True)
+        comp._stale.clear()
+        renders.clear()
+        item = next(it for it in comp.canvas.items()
+                    if isinstance(it, FrameItem))
+        assert not comp.is_stale(item.model)
+        comp._on_view_resized(item)
+        assert comp.is_stale(item.model)         # the badge asks for it
+        assert comp._auto_timer.isActive()       # ... and the pass is queued
+        assert renders == []                     # nothing on the release
+    finally:
+        comp.close()
+        win._saved_version = win.viewport.scene.version
+        win.close()
