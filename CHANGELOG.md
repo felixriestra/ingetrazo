@@ -54,6 +54,10 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Una imagen de referencia ya no queda tapada por lo que está detrás**:
+  un triángulo trazado sobre una foto en el suelo y empujado hacia abajo
+  pintaba sus caras sobre la foto vista desde arriba. Lo que se traza encima
+  de la imagen sigue viéndose encima.
 - **Escalar ya no destroza la geometría suelta**: al arrastrar una pinza a
   factores muy pequeños y volver varias veces, algunos vértices quedaban sin
   escalar y las caras se rompían al soltar (vídeo de un usuario, en Linux y

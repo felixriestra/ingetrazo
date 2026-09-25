@@ -2718,11 +2718,10 @@ class Viewport(QOpenGLWidget):
     def _draw_image_planes(self) -> None:
         """Reference images, as textured quads under the model.
 
-        Depth **test** on, depth **write** off — the same treatment the base
-        map gets, and here it is what makes tracing work: the picture is
-        occluded by anything already in front of it, but writes no depth of
-        its own, so a line drawn exactly ON the image still wins the depth
-        test and appears over it instead of z-fighting into invisibility.
+        Depth test on. An opaque image writes depth pushed back by a polygon
+        offset, so a line or face drawn exactly ON it still wins the depth
+        test (tracing works, no z-fighting) and whatever lies behind it stays
+        hidden; a faded image writes none, so the model shows through.
 
         Shading is pinned to 1.0: a reference scan has to read at its true
         tones, not dimmed by the face lighting.
@@ -2775,6 +2774,18 @@ class Viewport(QOpenGLWidget):
                            for v, u, w in quad)
             opacity = max(0.0, min(1.0, float(getattr(im, "opacity", 1.0))))
             self._program.setUniformValue1f(self._loc_opacity, opacity)
+            # An OPAQUE image does write depth — pushed back by a polygon
+            # offset larger than the faces' (1, 1), so what is drawn ON it
+            # (lines, and faces traced over it) still wins, while what lies
+            # BEHIND it stays hidden. Without depth, a prism pushed down
+            # from a triangle traced on a photo painted its sides over the
+            # photo from above the ground (a user's video, 25-09). A faded
+            # image keeps writing none: the model behind must show through.
+            opaque = opacity >= 0.999
+            self._gl.glDepthMask(GL_TRUE if opaque else GL_FALSE)
+            if opaque:
+                self._gl.glEnable(GL_POLYGON_OFFSET_FILL)
+                self._gl.glPolygonOffset(4.0, 8.0)
             self._img_vbo.bind()
             self._img_vbo.allocate(raw, len(raw))
             self._img_vbo.release()
@@ -2783,6 +2794,8 @@ class Viewport(QOpenGLWidget):
             self._gl.glDrawArrays(GL_TRIANGLES, 0, 6)
             tex.release(0)
             vao.release()
+            if opaque:
+                self._gl.glDisable(GL_POLYGON_OFFSET_FILL)
         self._program.setUniformValue1f(self._loc_opacity, 1.0)
         self._gl.glDepthMask(GL_TRUE)
         self._program.setUniformValue(self._loc_use_tex, 0)
