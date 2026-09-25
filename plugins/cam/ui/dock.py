@@ -129,6 +129,11 @@ class CamDock(QDockWidget):
         row.addWidget(self.btn_setup)
         row.addWidget(self.btn_part)
         lay.addLayout(row)
+        self.btn_refresh = QPushButton(tr("Refresh from the part"))
+        self.btn_refresh.setToolTip(tr("Read the part's outline and holes again after "
+                                       "changing the model. Parameters are kept."))
+        self.btn_refresh.clicked.connect(self._on_refresh)
+        lay.addWidget(self.btn_refresh)
 
         box = QGroupBox(tr("Job"))
         f = QFormLayout(box)
@@ -570,6 +575,38 @@ class CamDock(QDockWidget):
         self._refresh_all()
         self._changed()
         self._set_status(tr("Machining plane and stock set from the selection."))
+
+    def _find_group(self, uid):
+        from core.group import iter_placements
+        for top in self.viewport.scene.groups:
+            for g, _m in iter_placements(top):
+                if getattr(g, "uid", None) == uid:
+                    return g
+        return None
+
+    def _on_refresh(self) -> None:
+        from ..extract import extract_part
+        uid = self.state.sourceGroup
+        group = self._find_group(uid) if uid else None
+        if group is None:
+            self._set_status(tr("The part this job was made from is no longer in the model. "
+                                "The job keeps its geometry."), error=True)
+            return
+        try:
+            ex = extract_part(group, self.state.frame)
+        except CamError as exc:
+            self._report_error(exc.issue)
+            return
+        updated, unmatched = build.refresh_from_part(self.state, ex)
+        self._refresh_all()
+        self._changed()
+        if unmatched:
+            self._set_status(tr("Refreshed {count} operation(s). These no longer match the "
+                                "part and kept their old geometry: {names}",
+                                count=len(updated), names=", ".join(unmatched)), error=True)
+        else:
+            self._set_status(tr("Refreshed {count} operation(s) from the part.",
+                                count=len(updated)))
 
     def _on_part_operations(self) -> None:
         try:

@@ -235,3 +235,27 @@ def test_toolpaths_stay_drawn_while_another_tray_is_in_front(settings_file):
     _app.processEvents()
     assert not dock.overlay.visible
     dock.dispose()
+
+
+def test_refresh_follows_the_part_and_keeps_parameters(settings_file):
+    """The model changes after the job was made: Refresh moves every part
+    operation to the new geometry and keeps what the user set."""
+    from plugins.cam.ui.dock import show_dock
+    win, g = _window_with_board(settings_file)
+    dock = show_dock(win.viewport)
+    dock._on_part_operations()
+    outline = dock.state.job.operations[-1]
+    outline.parameters.stepDown = 4.0
+    # Stretch the board 20 mm along X (every vertex right of 0.25 m).
+    for v in g.mesh.vertices:
+        if v.position.x() > 0.25:
+            v.position.setX(v.position.x() + 0.020)
+    win.viewport.notify_scene_changed()
+    dock._on_refresh()
+    us = [p[0] for p in outline.strategy.geometry.boundary]
+    assert max(us) - min(us) == pytest.approx(320.0, abs=1e-3)
+    assert outline.parameters.stepDown == 4.0
+    win.viewport.scene.groups.remove(g)
+    dock._on_refresh()
+    assert "no longer in the model" in dock.status.text()
+    dock.dispose()

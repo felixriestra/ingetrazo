@@ -238,6 +238,18 @@ def _self_check() -> int:
     if not ok:
         problems.append("pyclipper")
 
+    # The CAM plugin is a PACKAGE plugin: before H1 the bundles carried
+    # plugins/*.py only, and a package plugin was simply absent. Its engine
+    # and both catalogues are what it cannot run without.
+    for label, path in (
+        ("CAM plugin", root / "plugins" / "cam" / "engine" / "compiler.py"),
+        ("CAM catalogues", root / "plugins" / "cam" / "i18n" / "pt-BR.json"),
+    ):
+        ok = path.is_file()
+        print(f"  {label:<15}: {'found' if ok else 'MISSING'}  {path}")
+        if not ok:
+            problems.append(label)
+
     # The .skp fallback converter is optional (user-installed, runs under
     # Wine); report presence without failing on absence.
     wine = shutil.which("wine")

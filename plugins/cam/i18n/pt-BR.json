@@ -214,5 +214,10 @@
   "stock bottom": "base do material",
   "{d} mm flat end mill": "Fresa de topo reto de {d} mm",
   "{d} mm drill": "Broca de {d} mm",
-  "Load T{number} ({name}), set Z zero, then run this file": "Coloque T{number} ({name}), zere o Z e execute este arquivo"
+  "Load T{number} ({name}), set Z zero, then run this file": "Coloque T{number} ({name}), zere o Z e execute este arquivo",
+  "Refresh from the part": "Atualizar a partir da peça",
+  "Read the part's outline and holes again after changing the model. Parameters are kept.": "Lê de novo o contorno e os furos da peça depois de alterar o modelo. Os parâmetros são mantidos.",
+  "The part this job was made from is no longer in the model. The job keeps its geometry.": "A peça que originou este trabalho não está mais no modelo. O trabalho mantém sua geometria.",
+  "Refreshed {count} operation(s). These no longer match the part and kept their old geometry: {names}": "{count} operação(ões) atualizada(s). Estas não correspondem mais à peça e mantiveram a geometria anterior: {names}",
+  "Refreshed {count} operation(s) from the part.": "{count} operação(ões) atualizada(s) a partir da peça."
 }
