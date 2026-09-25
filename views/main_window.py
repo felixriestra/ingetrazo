@@ -1072,7 +1072,13 @@ class MainWindow(QMainWindow):
         # away and comes back; the strip at the right edge stays.
         window_menu.addAction(self._act_sidebar)
 
-        window_menu.addSeparator()
+        # Plugin docks (add_plugin_dock) list their toggles here, after
+        # this separator — created lazily, the first time each one opens.
+        self._window_menu = window_menu
+        self._plugin_dock_sep = window_menu.addSeparator()
+        self._plugin_dock_sep.setVisible(False)
+
+        self._plugin_dock_anchor = window_menu.addSeparator()
         prefs_action = QAction(tr("Preferences…"), self)
         prefs_action.triggered.connect(self._on_preferences)
         window_menu.addAction(prefs_action)
@@ -1488,6 +1494,61 @@ class MainWindow(QMainWindow):
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
         QDesktopServices.openUrl(QUrl(self.PLUGIN_GUIDE_URL))
+
+    # ---- Plugin docks (host hook H2) ----------------------------------------
+    def add_plugin_dock(self, dock, area=None, *, show: bool = True):
+        """Register a plugin's ``QDockWidget`` with the window and return
+        the dock that is now in charge.
+
+        Plugins build their panels lazily — the first time their tool runs,
+        long after ``restoreState`` laid the window out at start-up — so
+        this is where a late dock gets what the built-in trays get for
+        free:
+
+        - **its saved place.** ``restoreDockWidget`` puts it back where the
+          user left it last session (area, size, floating, tabbed) if the
+          window state knows its ``objectName``. That name is therefore
+          REQUIRED and must be stable across versions; ``saveState`` cannot
+          remember a dock without one.
+        - **a Window-menu entry** (its ``toggleViewAction``), so a closed
+          panel always has a way back.
+        - **a first place.** A right-side dock with no saved state is tabbed
+          with the trays instead of squeezing them into a column.
+
+        Registering the same ``objectName`` twice returns the dock already
+        registered (the second one is left alone for the caller to drop), so
+        a tool can call this on every activation. ``show`` opens the dock
+        and brings its tab to the front.
+        """
+        name = dock.objectName()
+        if not name:
+            raise ValueError("a plugin dock needs a stable objectName() so "
+                             "the window layout can remember it")
+        docks = self.__dict__.setdefault("_plugin_docks", {})
+        existing = docks.get(name)
+        if existing is None:
+            area = Qt.RightDockWidgetArea if area is None else area
+            docks[name] = dock
+            if not self.restoreDockWidget(dock):
+                self.addDockWidget(area, dock)
+                anchor = getattr(self, "georef_tray", None)
+                if (area == Qt.RightDockWidgetArea and anchor is not None
+                        and self.dockWidgetArea(anchor) == area):
+                    self.tabifyDockWidget(anchor, dock)
+            menu = getattr(self, "_window_menu", None)
+            if menu is not None:
+                toggle = dock.toggleViewAction()
+                self._plugin_dock_sep.setVisible(True)
+                menu.insertAction(self._plugin_dock_anchor, toggle)
+            existing = dock
+        if show:
+            existing.show()
+            existing.raise_()
+        return existing
+
+    def plugin_docks(self) -> dict:
+        """``objectName`` → dock for every dock added by a plugin."""
+        return dict(self.__dict__.get("_plugin_docks", {}))
 
     def _activate_plugin_tool(self, key: str) -> None:
         """Run a plugin tool from the Extensions menu.
