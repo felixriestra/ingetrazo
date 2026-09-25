@@ -1,0 +1,156 @@
+{
+  "commands" : [
+    {
+      "comment" : {
+        "_0" : "Circular-interpolation bore"
+      }
+    },
+    {
+      "toolChange" : {
+        "number" : 1
+      }
+    },
+    {
+      "spindleStart" : {
+        "clockwise" : true,
+        "rpm" : 12000
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : true
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 62,
+          "y" : 37.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "linear" : {
+        "feed" : 250,
+        "to" : {
+          "x" : 62,
+          "y" : 37.5,
+          "z" : 20
+        }
+      }
+    },
+    {
+      "arcCounterclockwise" : {
+        "centerOffset" : {
+          "x" : -12,
+          "y" : 0,
+          "z" : 0
+        },
+        "feed" : 250,
+        "to" : {
+          "x" : 62,
+          "y" : 37.5,
+          "z" : 18
+        }
+      }
+    },
+    {
+      "arcCounterclockwise" : {
+        "centerOffset" : {
+          "x" : -12,
+          "y" : 0,
+          "z" : 0
+        },
+        "feed" : 250,
+        "to" : {
+          "x" : 62,
+          "y" : 37.5,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "arcCounterclockwise" : {
+        "centerOffset" : {
+          "x" : -12,
+          "y" : 0,
+          "z" : 0
+        },
+        "feed" : 800,
+        "to" : {
+          "x" : 62,
+          "y" : 37.5,
+          "z" : 16
+        }
+      }
+    },
+    {
+      "rapid" : {
+        "to" : {
+          "x" : 62,
+          "y" : 37.5,
+          "z" : 30
+        }
+      }
+    },
+    {
+      "coolant" : {
+        "enabled" : false
+      }
+    },
+    {
+      "spindleStop" : {
+
+      }
+    }
+  ],
+  "sections" : [
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001037:auxiliary:0",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001037",
+      "operationName" : "Bore",
+      "startCommandIndex" : 0
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001037:rapid:4",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001037",
+      "operationName" : "Bore",
+      "startCommandIndex" : 4
+    },
+    {
+      "commandCount" : 4,
+      "id" : "00000000-0000-4000-8000-000000001037:cutting:5",
+      "kind" : "cutting",
+      "operationID" : "00000000-0000-4000-8000-000000001037",
+      "operationName" : "Bore",
+      "startCommandIndex" : 5
+    },
+    {
+      "commandCount" : 1,
+      "id" : "00000000-0000-4000-8000-000000001037:rapid:9",
+      "kind" : "rapid",
+      "operationID" : "00000000-0000-4000-8000-000000001037",
+      "operationName" : "Bore",
+      "startCommandIndex" : 9
+    },
+    {
+      "commandCount" : 2,
+      "id" : "00000000-0000-4000-8000-000000001037:auxiliary:10",
+      "kind" : "auxiliary",
+      "operationID" : "00000000-0000-4000-8000-000000001037",
+      "operationName" : "Bore",
+      "startCommandIndex" : 10
+    }
+  ],
+  "tolerance" : {
+    "angularDegrees" : 0.5,
+    "arc" : 0.01,
+    "chordal" : 0.02,
+    "linear" : 0.01
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "error" : "Operation \"Bore\" failed: Bore diameter must be larger than the selected tool; received 5.0.",
+  "ok" : false
+}

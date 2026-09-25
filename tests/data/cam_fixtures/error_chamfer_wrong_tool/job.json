@@ -56,7 +56,7 @@
     "linear" : 0.01
   },
   "modifiedAt" : 0,
-  "name" : "Past the flute",
+  "name" : "Chamfer flat",
   "operations" : [
     {
       "calculationState" : {
@@ -64,17 +64,19 @@
 
         }
       },
-      "id" : "00000000-0000-4000-8000-000000001049",
+      "id" : "00000000-0000-4000-8000-000000001046",
       "isEnabled" : true,
-      "kind" : "outsideProfile",
-      "name" : "Outside",
+      "kind" : "chamfer",
+      "name" : "Chamfer",
       "parameters" : {
-        "outsideProfile" : {
+        "chamfer" : {
           "_0" : {
-            "depth" : 15,
-            "inset" : 5,
-            "stepDown" : 15,
-            "stockAllowance" : 0
+            "depth" : 1,
+            "isClosed" : true,
+            "points" : [
+
+            ],
+            "width" : 1
           }
         }
       },
@@ -122,7 +124,7 @@
         ],
         "topHeight" : 0
       },
-      "toolID" : "00000000-0000-4000-8000-000000000102"
+      "toolID" : "00000000-0000-4000-8000-000000000101"
     }
   ],
   "setup" : {
@@ -214,6 +216,25 @@
 
       ],
       "spindleRPM" : 18000
+    },
+    {
+      "cornerRadius" : 0,
+      "cuttingFeed" : 600,
+      "diameter" : 12,
+      "fluteCount" : 2,
+      "fluteLength" : 10,
+      "id" : "00000000-0000-4000-8000-000000000105",
+      "includedAngle" : 90,
+      "kind" : "chamferMill",
+      "name" : "90 deg V-bit",
+      "number" : 5,
+      "overallLength" : 50,
+      "plungeFeed" : 200,
+      "recommendedStepdownNotes" : [
+
+      ],
+      "spindleRPM" : 16000,
+      "tipDiameter" : 0
     }
   ],
   "units" : "millimeters"
