@@ -100,3 +100,21 @@ def test_the_self_check_reports_pyclipper(capsys):
     main._self_check()
     out = capsys.readouterr().out
     assert re.search(r"pyclipper\s*: found", out), out
+
+
+def test_the_self_check_reports_the_cam_plugin(capsys):
+    import main
+
+    main._self_check()
+    out = capsys.readouterr().out
+    assert re.search(r"CAM plugin\s*: found", out), out
+    assert re.search(r"CAM catalogues\s*: found", out), out
+
+
+def test_the_cam_plugin_is_bundled_whole():
+    files = {Path(dst, Path(src).name).as_posix()
+             for src, dst in bundled_package_files(ROOT / "plugins")}
+    for need in ("plugins/cam/__init__.py", "plugins/cam/engine/compiler.py",
+                 "plugins/cam/engine/post/grbl.py", "plugins/cam/ui/dock.py",
+                 "plugins/cam/i18n/es.json", "plugins/cam/i18n/pt-BR.json"):
+        assert need in files, need

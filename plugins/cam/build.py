@@ -251,3 +251,75 @@ def _extent(pts):
     us = [p[0] for p in pts]
     vs = [p[1] for p in pts]
     return (max(us) - min(us), max(vs) - min(vs))
+
+
+# ---- refreshing a job from its part ----------------------------------------------
+
+#: A new outline replaces an operation's old one when their centres are
+#: this close (mm): a board edited by a few centimetres still matches.
+REFRESH_MATCH_MM = 50.0
+
+
+def refresh_from_part(state, ex) -> tuple:
+    """Re-read the geometry of every operation that came from the part.
+
+    ``ex`` is a fresh :func:`~.extract.extract_part` on the job's frame.
+    Each part operation takes the nearest loop of its own role — the
+    outline for an outside profile, a hole for the others, round holes'
+    centres for drilling — and keeps all its parameters. Returns
+    ``(updated, unmatched)`` operation names; an unmatched operation keeps
+    its old geometry, so nothing is silently cut in a new place."""
+    outlines = [o for o, _h in ex.regions]
+    holes = [h for _o, hs in ex.regions for h in hs]
+    updated, unmatched = [], []
+    for op in state.job.operations:
+        if state.sources.get(op.id, {}).get("kind") != "part":
+            continue
+        if op.kind == "drilling":
+            circles = [h.circle for h in holes if h.circle]
+            pts = []
+            for p in op.parameters.points:
+                c = min(circles, key=lambda c: (c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2,
+                        default=None)
+                if c is None or (c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2 > REFRESH_MATCH_MM ** 2:
+                    pts = None
+                    break
+                pts.append((c[0], c[1], 0.0))
+            if pts is None:
+                unmatched.append(op.name)
+            else:
+                op.parameters.points = pts
+                updated.append(op.name)
+            continue
+        region = op.strategy.geometry
+        if region is None:
+            continue
+        pool = outlines if op.kind == "outsideProfile" else holes
+        old = _centroid(region.boundary)
+        best = min(pool, key=lambda lp: _d2(_centroid(lp.points), old), default=None)
+        if best is None or _d2(_centroid(best.points), old) > REFRESH_MATCH_MM ** 2:
+            unmatched.append(op.name)
+            continue
+        region.boundary = list(best.points)
+        if op.kind == "pocket" and best.depth:
+            op.parameters.depth = round(best.depth, 4)
+        updated.append(op.name)
+    state.bounds = None
+    for op in state.job.operations:
+        g = op.strategy.geometry
+        if g is not None:
+            state.include_bounds(g.boundary)
+        for p in getattr(op.parameters, "points", None) or ():
+            state.include_bounds([p])
+    if ex.thickness:
+        state.job.stock.height = round(ex.thickness, 4)
+        state.job.stock.align_origin_to_reference()
+    return updated, unmatched
+
+
+def _centroid(pts):
+    return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
+
+
+def _d2(a, b) -> float:
+    return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2
