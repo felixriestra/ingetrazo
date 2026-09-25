@@ -32,6 +32,9 @@ Point3D = tuple  # (x, y, z)
 
 MM_PER_INCH = 25.4
 
+#: Work-zero reference points 2DCam's ``StockReferencePoint`` can decode.
+TWODCAM_REFERENCE_POINTS = ("topLeft", "topRight", "bottomLeft", "bottomRight", "center")
+
 
 def new_id() -> str:
     """A fresh identifier, formatted as Swift's ``UUID.uuidString``."""
@@ -54,7 +57,10 @@ class Stock:
     origin: Point3D = (0.0, 0.0, 0.0)
     shape: str = "rectangular"            # v1 machines rectangular stock
     material: str = "clearWood"
-    referencePoint: str = "bottomLeft"    # topLeft|topRight|bottomLeft|bottomRight|center
+    #: The 9-point work zero: 2DCam's five (corners, ``center``) plus the
+    #: edge midpoints ``bottomCenter``, ``topCenter``, ``centerLeft``,
+    #: ``centerRight`` (the port's; see :mod:`.io` for how they are saved).
+    referencePoint: str = "bottomLeft"
     zeroPosition: str = "machineBed"      # materialSurface|machineBed
     isConfigured: bool = True
 
@@ -77,6 +83,10 @@ class Stock:
             "topLeft": (0.0, -self.depth),
             "topRight": (-self.width, -self.depth),
             "center": (-self.width * 0.5, -self.depth * 0.5),
+            "bottomCenter": (-self.width * 0.5, 0.0),
+            "topCenter": (-self.width * 0.5, -self.depth),
+            "centerLeft": (0.0, -self.depth * 0.5),
+            "centerRight": (-self.width, -self.depth * 0.5),
         }.get(self.referencePoint, (0.0, 0.0))
         z = -self.height if self.zeroPosition == "materialSurface" else 0.0
         self.origin = (x, y, z)

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import math
 
-from .models import (MM_PER_INCH, FacingParameters, DrillingParameters, EngravingParameters,
+from .models import (MM_PER_INCH, TWODCAM_REFERENCE_POINTS, FacingParameters, DrillingParameters, EngravingParameters,
                      Job, Machine, MachineSetup, Operation, PocketParameters, PostOptions,
                      ProfileParameters, Region, Stock, Strategy, Tab, Tolerance, Tool,
                      ToolHolder, new_id)
@@ -121,6 +121,8 @@ def job_from_dict(d: dict) -> Job:
     job.tools = [_tool(td, L) for td in d.get("tools") or []]
     job.operations = [_operation(od, L) for od in d.get("operations") or []]
 
+    if ext is not None and ext.get("referencePoint"):
+        job.stock.referencePoint = str(ext["referencePoint"])
     post = (ext or {}).get("post")
     if isinstance(post, dict):
         job.post = PostOptions(**_fields(PostOptions, post))
@@ -211,10 +213,17 @@ def job_to_dict(job: Job) -> dict:
         "name": job.name,
         "units": "millimeters",
         "igtcam": {"format": FORMAT, "displayUnits": job.units,
-                   "post": dict(job.post.__dict__)},
+                   "post": dict(job.post.__dict__),
+                   **({"referencePoint": st.referencePoint}
+                      if st.referencePoint not in TWODCAM_REFERENCE_POINTS else {})},
         "stock": {"isConfigured": st.isConfigured, "shape": st.shape, "material": st.material,
                   "width": st.width, "depth": st.depth, "height": st.height,
-                  "origin": _d3(st.origin), "referencePoint": st.referencePoint,
+                  # 2DCam cannot decode the four edge midpoints; it gets a
+                  # corner, and the origin (what the moves use) is explicit.
+                  "origin": _d3(st.origin),
+                  "referencePoint": (st.referencePoint
+                                     if st.referencePoint in TWODCAM_REFERENCE_POINTS
+                                     else "bottomLeft"),
                   "jobSidedness": "singleSided", "zeroPosition": st.zeroPosition},
         "setup": {"workOffset": job.setup.workOffset, "safeHeight": job.setup.safeHeight,
                   "clearanceHeight": job.setup.clearanceHeight},
