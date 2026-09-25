@@ -39,7 +39,7 @@ jobs:
         run: |
           python -m venv venv
           ./venv/bin/python -m pip install --quiet --upgrade pip
-          ./venv/bin/python -m pip install --quiet PySide6 numpy pytest pyinstaller 'ezdxf>=1.4.4' 'manifold3d>=3.5.3'
+          ./venv/bin/python -m pip install --quiet PySide6 numpy pytest pyinstaller 'ezdxf>=1.4.4' 'manifold3d>=3.5.3' 'pyclipper>=1.4'
           # openskp: UPSTREAM main — every IngeTrazo patch is merged there
           # (legacy corpus 186/186 PRs #194/#199, annotations write+read
           # PR #203). Pinned by SHA like build-windows.yml so both
@@ -135,7 +135,7 @@ jobs:
         run: |
           python -m venv venv
           ./venv/bin/python -m pip install --quiet --upgrade pip
-          ./venv/bin/python -m pip install --quiet PySide6 numpy pyinstaller 'ezdxf>=1.4.4' 'manifold3d>=3.5.3'
+          ./venv/bin/python -m pip install --quiet PySide6 numpy pyinstaller 'ezdxf>=1.4.4' 'manifold3d>=3.5.3' 'pyclipper>=1.4'
           ./venv/bin/python -m pip install --quiet "openskp @ git+https://github.com/iamahsanmehmood/openskp@291700bc213655a00461838de71e5f206311e619#subdirectory=packages/python"
 
       - name: Build the PyInstaller bundle
