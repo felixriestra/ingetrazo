@@ -45,6 +45,10 @@ COMMENT_TEMPLATES = (
     "Pocket finishing tool",
     "Drilling",
     "Engraving",
+    "Bore",
+    "Slot",
+    "Chamfer",
+    "Open pocket",
 )
 
 

@@ -19,9 +19,12 @@ UI shows them through ``tr`` and the user may rename them.
 from __future__ import annotations
 
 from .engine.issues import CamError
-from .engine.models import (DrillingParameters, EngravingParameters, FacingParameters,
-                            Operation, PocketParameters, ProfileParameters, Region, Strategy,
-                            Tab)
+import math
+
+from .engine.models import (BoreParameters, ChamferParameters, DrillingParameters,
+                            EngravingParameters, FacingParameters, OpenPocketParameters,
+                            Operation, PocketParameters, ProfileParameters, Region,
+                            SlotParameters, Strategy, Tab)
 
 KIND_NAMES = {
     "outsideProfile": "Outside profile",
@@ -30,19 +33,27 @@ KIND_NAMES = {
     "drilling": "Drilling",
     "engraving": "Engraving",
     "facing": "Facing",
+    "bore": "Bore",
+    "slot": "Slot",
+    "chamfer": "Chamfer",
+    "openPocket": "Open pocket",
 }
 
 #: A drill matches a round hole within this much (mm) of its diameter.
 DRILL_MATCH_MM = 0.1
 
 
-def end_mill(job, max_diameter: float | None = None):
-    """The largest flat/bull-nose end mill (at most ``max_diameter``),
-    lowest tool number first among equals."""
+def end_mill(job, max_diameter: float | None = None, depth: float | None = None):
+    """The largest flat/bull-nose end mill (thinner than ``max_diameter``),
+    lowest tool number first among equals — preferring, when ``depth`` is
+    given, one whose flute reaches that deep."""
     mills = [t for t in job.tools if t.kind in ("flatEndMill", "bullNoseEndMill")]
     if max_diameter is not None:
         fitting = [t for t in mills if t.diameter < max_diameter]
         mills = fitting or mills
+    if depth is not None:
+        long_enough = [t for t in mills if t.fluteLength >= depth - 1e-9]
+        mills = long_enough or mills
     if not mills:
         return job.tools[0] if job.tools else None
     return max(mills, key=lambda t: (t.diameter, -t.number))
@@ -116,6 +127,7 @@ def add_operations(state, kind: str, ex=None) -> list:
         return ops
     if ex is None:
         raise CamError("empty_selection")
+    outline_before = state.bounds
     adopt(state, ex)
     tool = end_mill(job)
     if tool is None:
@@ -171,6 +183,74 @@ def add_operations(state, kind: str, ex=None) -> list:
                                                           isClosed=is_closed))
             ops.append(op)
             job.operations.append(op)
+    elif kind == "bore":
+        circles = [lp for lp in _all_loops(ex) if lp.circle]
+        if not circles:
+            raise CamError("no_points")
+        for lp in circles:
+            cu, cv, dia = lp.circle
+            mill = end_mill(job, max_diameter=dia, depth=lp.depth if lp.depth else through)
+            if mill is None or mill.diameter >= dia:
+                raise CamError("bore_smaller_than_tool", bore=dia,
+                               diameter=mill.diameter if mill else 0.0)
+            depth = lp.depth if lp.depth else through
+            op = Operation(_name(state, kind), kind, mill.id,
+                           parameters=BoreParameters(center=(cu, cv, 0.0), diameter=round(dia, 4),
+                                                     depth=depth, stepDown=step_down_for(mill)))
+            ops.append(op)
+            job.operations.append(op)
+    elif kind == "slot":
+        made = False
+        for outer, _h in ex.regions:
+            made |= _slot_from_loop(state, job, outer, through, ops)
+        for lp in ex.loops:
+            made |= _slot_from_loop(state, job, lp, through, ops)
+        for path in ex.paths:
+            if len(path) == 2:
+                mill = end_mill(job)
+                op = Operation(_name(state, kind), kind, mill.id, parameters=SlotParameters(
+                    start=(path[0][0], path[0][1], 0.0), end=(path[1][0], path[1][1], 0.0),
+                    width=mill.diameter, depth=min(5.0, through), stepDown=step_down_for(mill)))
+                ops.append(op)
+                job.operations.append(op)
+                made = True
+        if not made:
+            raise CamError("insufficient_points")
+    elif kind == "chamfer":
+        vbit = next((t for t in sorted(job.tools, key=lambda t: t.number)
+                     if t.kind == "chamferMill"), None)
+        if vbit is None:
+            raise CamError("chamfer_needs_chamfer_mill", number=0)
+        half = math.radians((vbit.includedAngle or 90.0) / 2)
+        width = 1.0
+        depth = round(width / math.tan(half), 4)
+        pieces = [(outer.points, True, False) for outer, _h in ex.regions]
+        pieces += [(h.points, True, True) for _o, hs in ex.regions for h in hs]
+        pieces += [(lp.points, True, False) for lp in ex.loops]
+        pieces += [(p, False, False) for p in ex.paths]
+        if not pieces:
+            raise CamError("insufficient_points")
+        for pts, closed, inside in pieces:
+            op = Operation(_name(state, kind), kind, vbit.id, parameters=ChamferParameters(
+                points=[(p[0], p[1]) for p in pts], width=width, depth=depth,
+                isClosed=closed, inside=inside))
+            ops.append(op)
+            job.operations.append(op)
+    elif kind == "openPocket":
+        outline = outline_before
+        for outer, holes in ex.regions:
+            depth = round(-outer.w, 4) if outer.w < -0.01 else min(5.0, through)
+            open_edges = _edges_on(outer.points, outline)
+            op = Operation(_name(state, kind), kind, tool.id,
+                           parameters=OpenPocketParameters(depth=depth,
+                                                           stepDown=step_down_for(tool)),
+                           strategy=Strategy(geometry=Region(list(outer.points),
+                                                             [list(h.points) for h in holes],
+                                                             open_edges)))
+            ops.append(op)
+            job.operations.append(op)
+        if not ops:
+            raise CamError("empty_selection")
     else:
         raise CamError("unsupported_operation", kind=kind)
     for op in ops:
@@ -178,22 +258,78 @@ def add_operations(state, kind: str, ex=None) -> list:
     return ops
 
 
+def _slot_from_loop(state, job, loop, through, ops) -> bool:
+    """A slot for a rectangular loop: along its long axis, as wide as its
+    short side, the rows' ends moved in by the tool radius so the cut is
+    the rectangle (with the tool's radius in its corners)."""
+    pts = loop.points
+    if len(pts) != 4:
+        return False
+    sides = [math.dist(pts[i], pts[(i + 1) % 4]) for i in range(4)]
+    if abs(sides[0] - sides[2]) > 1e-3 or abs(sides[1] - sides[3]) > 1e-3:
+        return False
+    k = 0 if sides[0] >= sides[1] else 1           # a long side starts at pts[k]
+    length, width = sides[k], sides[(k + 1) % 4]
+    mill = end_mill(job, max_diameter=width + 1e-6)
+    if mill is None or mill.diameter > width + 1e-9:
+        raise CamError("slot_narrower_than_tool", width=width,
+                       diameter=mill.diameter if mill else 0.0)
+    r = mill.diameter * 0.5
+    a, b = pts[k], pts[(k + 1) % 4]
+    c = pts[(k + 2) % 4]
+    ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+    mid0 = ((a[0] + pts[(k + 3) % 4][0]) * 0.5, (a[1] + pts[(k + 3) % 4][1]) * 0.5)
+    mid1 = ((b[0] + c[0]) * 0.5, (b[1] + c[1]) * 0.5)
+    start = (mid0[0] + ux * r, mid0[1] + uy * r, 0.0)
+    end = (mid1[0] - ux * r, mid1[1] - uy * r, 0.0)
+    depth = round(-loop.w, 4) if loop.w < -0.01 else min(5.0, through)
+    op = Operation(_name(state, "slot"), "slot", mill.id, parameters=SlotParameters(
+        start=start, end=end, width=round(width, 4), depth=depth,
+        stepDown=step_down_for(mill)))
+    ops.append(op)
+    job.operations.append(op)
+    return True
+
+
+def _edges_on(points, bounds, tol: float = 0.05) -> list:
+    """Indices of the edges of ``points`` that lie on the ``bounds``
+    rectangle: an open pocket reaching the board's edge is open there."""
+    if not bounds:
+        return []
+    u0, v0, u1, v1 = bounds
+    out = []
+    n = len(points)
+    for i in range(n):
+        a, b = points[i], points[(i + 1) % n]
+        for fixed, axis in ((u0, 0), (u1, 0), (v0, 1), (v1, 1)):
+            if abs(a[axis] - fixed) <= tol and abs(b[axis] - fixed) <= tol:
+                out.append(i)
+                break
+    return out
+
+
 def suggest_operations(state, ex) -> list:
     """Everything a board plainly needs, in machining order: pockets, then
-    drills, then inside profiles, then the outline cut out with tabs."""
+    drills (round holes a drill in the table fits), then bores (other round
+    holes, blind or through, milled round), then inside profiles, then the
+    outline cut out with tabs."""
     if ex.kind != "part":
         raise CamError("empty_selection")
     adopt(state, ex)
     job = state.job
     through = _through_depth(state, ex)
-    pockets, drills, insides, outlines = [], [], [], []
+    pockets, drills, bores, insides, outlines = [], [], [], [], []
     for outer, holes in ex.regions:
         outlines.append(outer)
         for h in holes:
+            round_ok = bool(h.circle) and (end_mill(job, max_diameter=h.circle[2]) or
+                                           job.tools[0]).diameter < h.circle[2]
             if h.through is False and h.depth:
-                pockets.append(h)
+                (bores if round_ok else pockets).append(h)
             elif h.circle and matching_drill(job, h.circle[2]):
                 drills.append(h)
+            elif round_ok:
+                bores.append(h)
             else:
                 insides.append(h)
     ops = []
@@ -214,6 +350,16 @@ def suggest_operations(state, ex) -> list:
                        parameters=DrillingParameters(
                            depth=through, points=[(h.circle[0], h.circle[1], 0.0) for h in hs]),
                        strategy=Strategy(ordering="nearestNeighbor"))
+        job.operations.append(op)
+        ops.append(op)
+    for h in bores:
+        cu, cv, dia = h.circle
+        mill = end_mill(job, max_diameter=dia,
+                        depth=h.depth if (h.through is False and h.depth) else through)
+        op = Operation(_name(state, "bore"), "bore", mill.id, parameters=BoreParameters(
+            center=(cu, cv, 0.0), diameter=round(dia, 4),
+            depth=round(h.depth, 4) if (h.through is False and h.depth) else through,
+            stepDown=step_down_for(mill)))
         job.operations.append(op)
         ops.append(op)
     for h in insides:

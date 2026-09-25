@@ -363,7 +363,8 @@ people work on it.
 1. ~~Stock-removal simulation~~ — **done**: numpy height field with
    vectorised sweeps, machine-time playback, a 3D window and a playhead
    in the viewport (`engine/simulate.py`, `ui/simview.py`).
-2. Bore, slot, chamfer and open pocket.
+2. ~~Bore, slot, chamfer and open pocket~~ — **done** (see the deviations
+   document for where they differ from 2DCam's).
 3. A persistent tool library with SQLite + CSV vendor import, and feeds
    and speeds presets.
 4. A setup sheet PDF (QtPdf / `QPdfWriter`), translated like the UI.

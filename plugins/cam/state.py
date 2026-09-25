@@ -71,7 +71,7 @@ def _dot(a, b) -> float:
 
 
 #: English names of the starter tools (translated by the UI).
-STARTER_TOOL_NAMES = ("{d} mm flat end mill", "{d} mm drill")
+STARTER_TOOL_NAMES = ("{d} mm flat end mill", "{d} mm drill", "{a}° V-bit, {d} mm")
 
 
 def default_tools(translate=None) -> list:
@@ -87,6 +87,10 @@ def default_tools(translate=None) -> list:
         Tool(number=2, name=mill(3), kind="flatEndMill", diameter=3.0,
              fluteLength=12.0, overallLength=38.0, fluteCount=2, spindleRPM=20_000,
              cuttingFeed=900.0, plungeFeed=300.0),
+        Tool(number=4, name=tx(STARTER_TOOL_NAMES[2]).format(a=90, d=12), kind="chamferMill",
+             diameter=12.0, fluteLength=8.0, overallLength=50.0, fluteCount=2,
+             spindleRPM=16_000, cuttingFeed=1_000.0, plungeFeed=300.0, includedAngle=90.0,
+             tipDiameter=0.0),
         Tool(number=3, name=drill(5), kind="drill", diameter=5.0, fluteLength=40.0,
              overallLength=80.0, fluteCount=2, spindleRPM=8_000, cuttingFeed=300.0,
              plungeFeed=300.0),
@@ -218,4 +222,8 @@ class CamState:
             pts = getattr(op.parameters, "points", None)
             if pts:
                 op.parameters.points = [mv(p) for p in pts]
+            for key in ("center", "start", "end"):
+                v = getattr(op.parameters, key, None)
+                if v is not None:
+                    setattr(op.parameters, key, mv(v))
         return job

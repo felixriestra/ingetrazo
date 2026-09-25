@@ -252,7 +252,8 @@ class CamDock(QDockWidget):
         self.t_number.setRange(1, 999)
         self.t_name = QLineEdit()
         self.t_kind = QComboBox()
-        for k in ("flatEndMill", "ballEndMill", "bullNoseEndMill", "drill", "spotDrill"):
+        for k in ("flatEndMill", "ballEndMill", "bullNoseEndMill", "chamferMill", "drill",
+                  "spotDrill"):
             self.t_kind.addItem(tool_kind_label(k), k)
         self.t_diameter = LengthSpin(200.0)
         self.t_flute = LengthSpin(300.0)
@@ -264,8 +265,13 @@ class CamDock(QDockWidget):
         self.t_rpm.setSingleStep(500)
         self.t_rpm.setSuffix(" rpm")
         self.t_feed, self.t_plunge = FeedSpin(), FeedSpin()
+        self.t_angle = QSpinBox()
+        self.t_angle.setRange(10, 170)
+        self.t_angle.setSuffix("°")
+        self.t_tip = LengthSpin(50.0)
         rows = ((tr("Number"), self.t_number), (tr("Name"), self.t_name),
-                (tr("Type"), self.t_kind), (tr("Diameter"), self.t_diameter),
+                (tr("Type"), self.t_kind), (tr("Included angle"), self.t_angle),
+                (tr("Tip diameter"), self.t_tip), (tr("Diameter"), self.t_diameter),
                 (tr("Flute length"), self.t_flute), (tr("Overall length"), self.t_length),
                 (tr("Flutes"), self.t_flutes), (tr("Spindle speed"), self.t_rpm),
                 (tr("Feed"), self.t_feed), (tr("Plunge feed"), self.t_plunge))
@@ -274,9 +280,10 @@ class CamDock(QDockWidget):
         self.t_name.editingFinished.connect(self._on_tool_edited)
         self.t_kind.currentIndexChanged.connect(self._on_tool_edited)
         for s in (self.t_number, self.t_flutes, self.t_rpm, self.t_diameter, self.t_flute,
-                  self.t_length, self.t_feed, self.t_plunge):
+                  self.t_length, self.t_feed, self.t_plunge, self.t_angle, self.t_tip):
             s.valueChanged.connect(self._on_tool_edited)
         self.tool_form = form_w
+        self.tool_form_layout = f
         lay.addWidget(_scroll(form_w), 2)
         return w
 
@@ -289,7 +296,8 @@ class CamDock(QDockWidget):
         self.btn_add.setText(tr("Add from selection"))
         self.btn_add.setPopupMode(QToolButton.InstantPopup)
         menu = QMenu(self.btn_add)
-        for kind in ("outsideProfile", "insideProfile", "pocket", "drilling", "engraving"):
+        for kind in ("outsideProfile", "insideProfile", "pocket", "openPocket", "drilling",
+                     "bore", "slot", "chamfer", "engraving"):
             menu.addAction(kind_label(kind), lambda k=kind: self._on_add(k))
         menu.addSeparator()
         menu.addAction(kind_label("facing"), lambda: self._on_add("facing"))
@@ -421,7 +429,7 @@ class CamDock(QDockWidget):
             self.controller.setCurrentIndex(max(0, self.controller.findData(job.post.controller)))
             self.units.setCurrentIndex(max(0, self.units.findData(job.units)))
             for s in (self.stock_w, self.stock_d, self.stock_h, self.margin, self.safe,
-                      self.clearance, self.t_diameter, self.t_flute, self.t_length):
+                      self.clearance, self.t_diameter, self.t_flute, self.t_length, self.t_tip):
                 s.set_inch(inch)
             for s in (self.max_feed, self.max_plunge, self.rapid, self.t_feed, self.t_plunge):
                 s.set_inch(inch)
@@ -665,6 +673,11 @@ class CamDock(QDockWidget):
             self.t_rpm.setValue(t.spindleRPM)
             self.t_feed.set_mm(t.cuttingFeed)
             self.t_plunge.set_mm(t.plungeFeed)
+            self.t_angle.setValue(int(round(t.includedAngle or 90)))
+            self.t_tip.set_mm(t.tipDiameter or 0.0)
+            v = t.kind == "chamferMill"
+            self.tool_form_layout.setRowVisible(self.t_angle, v)
+            self.tool_form_layout.setRowVisible(self.t_tip, v)
         finally:
             self._loading = was
 
@@ -684,6 +697,9 @@ class CamDock(QDockWidget):
         t.spindleRPM = self.t_rpm.value()
         t.cuttingFeed = self.t_feed.mm()
         t.plungeFeed = self.t_plunge.mm()
+        if t.kind == "chamferMill":
+            t.includedAngle = float(self.t_angle.value())
+            t.tipDiameter = self.t_tip.mm()
         self._refresh_tools(select=self._sorted_tools().index(t))
         self.op_form.set_operation(self.op_form.op, self.state.job)
         self._changed()
@@ -731,6 +747,7 @@ class CamDock(QDockWidget):
         op = self._current_op()
         self.op_form.set_operation(op, self.state.job)
         self.overlay.selected_op = op.id if op else None
+        self.overlay.set_outline(self.state, op)
         self.viewport.update()
 
     def _on_op_checked(self, item) -> None:
@@ -747,6 +764,7 @@ class CamDock(QDockWidget):
 
     def _on_op_edited(self) -> None:
         op = self._current_op()
+        self.overlay.set_outline(self.state, op)
         r = self.op_list.currentRow()
         if op is not None and 0 <= r < self.op_list.count():
             self.op_list.blockSignals(True)

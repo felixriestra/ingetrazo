@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 
 from .issues import CamError, Issue, WARNING
 from .models import FINISHING_TOOL_KINDS, PARAMETER_TYPES
-from .ops import drill, engrave, facing, pocket, profile
+from .ops import bore, chamfer, drill, engrave, facing, pocket, profile, slot
 from .toolpath import (Arc, Comment, Coolant, DrillCycle, Dwell, Linear, Rapid, RetractZ, Section,
                        Toolpath)
 
@@ -111,6 +111,18 @@ def compile_operation(job, op):
                               replace(p, points=ordered), st, tol)
     elif k == "engraving":
         path = engrave.generate(job.stock, st.resolved_setup(setup), tool, p, st, tol)
+    elif k == "bore":
+        path = bore.generate(job.stock, st.resolved_setup(setup), tool, p, st, tol)
+    elif k == "slot":
+        path = slot.generate(job.stock, st.resolved_setup(setup), tool, p, st, tol)
+    elif k == "chamfer":
+        path = chamfer.generate(job.stock, setup, tool, p, st, tol)
+    elif k == "openPocket":
+        from .models import PocketParameters
+        as_pocket = PocketParameters(depth=p.depth, stepDown=p.stepDown,
+                                     stepoverFraction=p.stepoverFraction, inset=p.inset)
+        path = pocket.generate(job.stock, setup, tool, as_pocket, st, tol,
+                               finishing_tool=finishing, is_open=True)
     else:                                     # pragma: no cover — guarded above
         raise CamError("unsupported_operation", kind=k)
     _validate_finite(path)
@@ -158,9 +170,10 @@ def machining_load(op):
     p = op.parameters
     if op.kind == "facing":
         return p.depth, p.depth
-    if op.kind in ("outsideProfile", "insideProfile", "pocket", "engraving"):
+    if op.kind in ("outsideProfile", "insideProfile", "pocket", "engraving", "bore", "slot",
+                   "openPocket"):
         return p.depth, p.stepDown
-    if op.kind == "drilling":
+    if op.kind in ("drilling", "chamfer"):
         return p.depth, p.depth
     return None, None
 

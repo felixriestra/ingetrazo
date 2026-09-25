@@ -16,7 +16,7 @@ from ..i18n import tr
 #: Parameters that are lengths (mm) or feeds (mm/min) in the engine.
 LENGTH_KEYS = {"diameter", "depth", "height", "step_down", "allowance", "inset", "x", "y", "z",
                "peck", "flute", "bottom", "start_radius", "end_radius", "spread", "safe",
-               "delta"}
+               "delta", "bore", "width", "reach"}
 FEED_KEYS = {"feed", "limit_feed"}
 
 
@@ -43,6 +43,20 @@ def _templates() -> dict:
         "invalid_peck": tr("The peck depth ({peck}) cannot be negative."),
         "invalid_dwell": tr("The dwell ({dwell} s) cannot be negative."),
         "invalid_tolerance": tr("The machining tolerances must be greater than zero."),
+        "invalid_width": tr("The width ({width}) must be greater than zero."),
+        "bore_smaller_than_tool": tr(
+            "The {bore} hole is not larger than the {diameter} tool. Choose a smaller tool "
+            "or drill it."),
+        "bore_outside_stock": tr("The {bore} hole at ({x}, {y}) does not fit inside the stock."),
+        "slot_narrower_than_tool": tr(
+            "The slot ({width}) is narrower than the {diameter} tool."),
+        "slot_endpoints_coincide": tr("The slot's start and end are the same point."),
+        "slot_outside_stock": tr("The slot does not fit inside the stock near ({x}, {y})."),
+        "chamfer_needs_chamfer_mill": tr(
+            "A chamfer needs a chamfer mill (V-bit). Add one to the tool table and choose it."),
+        "chamfer_too_wide": tr(
+            "A {width} chamfer needs the cutter deeper: at this depth it is only {reach} wide."),
+        "chamfer_too_deep": tr("At this depth the chamfer would be wider than the {diameter} tool."),
         "no_operations": tr("There are no enabled operations to calculate."),
         "cancelled": tr("Calculation cancelled."),
         "missing_tool": tr("The operation has no tool from the tool table."),

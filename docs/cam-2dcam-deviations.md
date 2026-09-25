@@ -47,9 +47,42 @@ They are worth fixing in 2DCam too. The case names refer to
    verifier reports `Lateral rapid motion intersects the stock volume`
    (`facing_conventional_ramp`). The port retracts straight up.
 
+## Bore, slot, chamfer and open pocket
+
+6. **Bores wider than twice the tool.** 2DCam mills one ring at radius
+   `(D − d)/2`. That only reaches the centre when `D ≤ 2d`. A 20 mm bore
+   with a 6 mm cutter kept an 8 mm post standing, and a 30 mm bore an
+   18 mm one (`bore_basic`, `bore_large_core`). The port clears the core
+   at every depth level with concentric circles stepping inward, 0.75 of
+   the tool diameter apart, down to a circle that covers the centre.
+7. **Open pockets.** 2DCam uses the region as the area the cutter centre
+   may cover, on every edge, whatever `openEdgeIndices` says. A closed
+   wall of an open pocket was cut into by a full tool radius. The port
+   honours the open edges. Before the usual inward offset, the region is
+   grown outward by exactly the cutter radius past each open edge (and
+   past corners between two open edges). The cutter centre then runs
+   along each open edge, clearing up to it and one radius beyond, and
+   keeps its radius from every closed wall and island. With every edge
+   open, that is 2DCam's area exactly (`open_pocket_region_all_open`).
+   2DCam also leaves each open pocket's outer contour pass open; the port
+   closes it. An automatic open pocket (no region) is the whole stock top,
+   so it is the closed pocket of the stock, as in 2DCam.
+8. **Chamfer on a hole's edge** (`inside`, the port's). 2DCam offsets a
+   closed chamfer path outward only, so it can chamfer a part's outline
+   but not a hole. With `inside` the port offsets into the hole. An open
+   polyline is offset to its left with mitred corners, where 2DCam rounds
+   them; this matters only at the corners of open paths.
+9. **Slots**, documented rather than changed. 2DCam's rows run from
+   `start` to `end`, so a slot cuts a rounded rectangle that reaches one
+   tool radius past both ends, with tool-radius corners. It does not cut
+   a stadium with `width/2` ends. The port keeps that, and says so. When
+   a slot is made from a rectangle in the model, `start` and `end` are
+   the rectangle's ends moved in by the tool radius, so the cut is that
+   rectangle.
+
 ## Behaviour
 
-6. **Climb and conventional.** 2DCam's offsets always come back clockwise,
+10. **Climb and conventional.** 2DCam's offsets always come back clockwise,
    whatever the input orientation. So its "climb" is true climb (material
    on the cutter's right with an M3 spindle) only on outside profiles.
    Inside profiles and pocket walls come out conventional. The port uses
@@ -57,19 +90,19 @@ They are worth fixing in 2DCam too. The case names refer to
    counter-clockwise around a hole or a pocket wall, and the reverse for
    conventional. Cutter compensation follows: climb is `G41`, conventional
    is `G42`.
-7. **An inside profile that splits.** If the inward offset of a dumbbell
+11. **An inside profile that splits.** If the inward offset of a dumbbell
    splits into two loops, 2DCam cuts only the largest. The port cuts
    every loop.
-8. **Entries start from the previous floor.** 2DCam's ramp and helix
+12. **Entries start from the previous floor.** 2DCam's ramp and helix
    begin at the stock top on every depth pass. On pass 2 of a small helix
    that is a 32° dive. The port starts them at the previous pass's floor,
    which is already cleared. A helix takes as many turns as it needs to
    stay at or below 10°.
-9. **A lift before the first move.** Every operation starts with a Z-only
+13. **A lift before the first move.** Every operation starts with a Z-only
    rapid to its safe height (`RetractZ`). 2DCam's first move is a
    straight-line rapid from wherever the spindle stands to a point above
    the part.
-10. **Depth passes.** `ceil(depth / step)` gets a 1e-9 epsilon, so 1.0 /
+14. **Depth passes.** `ceil(depth / step)` gets a 1e-9 epsilon, so 1.0 /
     0.1 makes 10 passes, not an 11th pass at the same depth.
 
 ## Additions that keep parity when unused
@@ -84,6 +117,5 @@ They are worth fixing in 2DCam too. The case names refer to
 
 ## Not ported (v1 scope)
 
-Bore, slot, chamfer, open pocket, relief (image and STL), fixtures and
-clamps in the verifier, and the Mach3, Mach4 and Fanuc posts. See
-`docs/cam-plan.md`.
+Relief (image and STL), fixtures and clamps in the verifier, and the
+Mach3, Mach4 and Fanuc posts. See `docs/cam-plan.md`.

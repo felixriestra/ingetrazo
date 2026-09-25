@@ -23,7 +23,8 @@ from plugins.cam.engine.post import post_job
 
 ROOT = Path(__file__).parent / "data"
 CASES = ["pocket_island", "profile_outside_tabs_leads_ramp", "drill_nearest_neighbor",
-         "job_multi_operation", "inch_profile_outside", "profile_outside_controller_comp"]
+         "job_multi_operation", "inch_profile_outside", "profile_outside_controller_comp",
+         "bore_large_core", "slot_wide", "chamfer_outside_region", "open_pocket_region_all_open"]
 
 
 def _programs(case, controller):

@@ -42,6 +42,10 @@ Select faces, edges or a part, then **Operations ▸ Add from selection**.
 | Drilling | round holes (circles) | one hole per centre, optionally with pecks |
 | Engraving | open or closed edges | follows the line itself |
 | Facing | nothing (the whole stock) | flattens the stock top |
+| Open pocket | a face touching the board's edge | like a pocket, but out through its open edges: a rebate, a notch |
+| Bore | round holes | a round hole milled with circular moves, no drill needed |
+| Slot | a long rectangle, or a straight edge | a straight slot the width of the rectangle (or of the tool) |
+| Chamfer | a face (its outline and holes), edges | a 45° (or the bit's angle) chamfer on the top edge, with a V-bit |
 
 Each operation has a tool, a depth and a **step-down** (depth per pass). The
 remaining settings depend on the operation:
@@ -64,6 +68,23 @@ remaining settings depend on the operation:
   machine's tool table. It works on LinuxCNC only.
 - **Drilling.** *Peck depth* drills in steps and clears chips between
   them. *Dwell* pauses at the bottom.
+- **Bore.** Any round hole larger than the cutter: it spirals down one
+  step-down per turn and finishes the wall with a flat circle. Wide
+  bores are cleared to the centre. **Part → operations** uses a bore for
+  round holes no drill in the table matches.
+- **Slot.** From a rectangle, the slot is that rectangle, with the
+  cutter's radius in its inside corners. From a straight edge, it is a
+  groove as wide as the tool, one tool radius longer at each end.
+- **Chamfer.** Needs a **V-bit** (chamfer mill) in the tool table (new
+  jobs have a 90° one). *Width* is how much of the edge is taken off. The
+  depth for it depends on the bit's angle: with 90°, depth equals width.
+  A face gives a chamfer around its outline and one inside each hole;
+  *On a hole's edge* switches the side.
+- **Open pocket.** Edges on the board's outline are found and marked
+  **open** automatically. The cutter runs right through them, and keeps
+  its radius from every other edge. *Open edges* lists them by number;
+  select the operation to see the numbers (and the open edges, dashed
+  green) in the model.
 
 ## Controllers
 

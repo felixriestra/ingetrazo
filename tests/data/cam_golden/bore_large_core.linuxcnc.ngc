@@ -1,0 +1,40 @@
+%
+(IngeTrazo CAM - LinuxCNC)
+(Job: Bore large)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+G21
+G17 G90 G91.1 G94 G40 G49 G80
+G64 P0.01
+G54
+(Operation: Bore)
+(Bore)
+(Tool T1: 6.0 mm Flat End Mill)
+T1 M6
+G43 H1
+S12000 M3
+G4 P3
+G0 Z30
+G0 X62 Y37.5
+G1 Z20 F250
+G3 X62 Y37.5 Z18 I-12 J0
+G1 X56.75 F800
+G3 X56.75 Y37.5 I-6.75 J0
+G1 X51.5
+G3 X51.5 Y37.5 I-1.5 J0
+G1 X62
+G3 X62 Y37.5 Z16 I-12 J0 F250
+G1 X56.75 F800
+G3 X56.75 Y37.5 I-6.75 J0
+G1 X51.5
+G3 X51.5 Y37.5 I-1.5 J0
+G1 X62
+G3 X62 Y37.5 I-12 J0
+G0 Z30
+M5
+M9
+M2
+%

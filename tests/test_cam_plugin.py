@@ -260,3 +260,37 @@ def test_refresh_follows_the_part_and_keeps_parameters(settings_file):
     dock._on_refresh()
     assert "no longer in the model" in dock.status.text()
     dock.dispose()
+
+
+def test_bore_and_chamfer_from_the_top_face_through_the_dock(settings_file):
+    from plugins.cam.ui.dock import show_dock
+    win, g = _window_with_board(settings_file)
+    dock = show_dock(win.viewport)
+    top = max(g.mesh.faces, key=lambda f: (round(f.normal().z(), 3), f.area()))
+    sc = win.viewport.scene
+    sc.selection.clear()
+    sc.selection.add(top)
+    dock._on_add("bore")
+    dock._on_add("chamfer")
+    kinds = [o.kind for o in dock.state.job.operations]
+    assert kinds.count("bore") == 1 and kinds.count("chamfer") == 4   # outline + 3 holes
+    bore = next(o for o in dock.state.job.operations if o.kind == "bore")
+    assert bore.parameters.diameter == pytest.approx(5.0, abs=0.01)
+    assert dock.state.job.tool(bore.toolID).diameter < 5.0
+    # The only default mill under 5 mm is the 3 mm one, whose 12 mm flute
+    # cannot reach 18 mm down: that must be refused, and said plainly.
+    dock.calculate()
+    _wait(dock)
+    assert not dock._result.ok
+    assert dock._result.error.code == "axial_depth_exceeds_flute"
+    assert "flute length" in dock.status.text()
+    assert not dock.btn_export.isEnabled()
+    # A blind 6 mm bore is within reach: then the job calculates clean.
+    bore.parameters.depth = 6.0
+    dock._changed()
+    dock.calculate()
+    _wait(dock)
+    assert dock._result.ok, dock._result.error
+    assert not [i for i in dock._result.issues if i.is_error], \
+        [(i.code, i.params) for i in dock._result.issues]
+    dock.dispose()

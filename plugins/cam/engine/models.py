@@ -331,7 +331,52 @@ class EngravingParameters:
     isClosed: bool = False
 
 
-#: v1 operation kinds and their parameter classes. The keys are 2DCam's
+@dataclass
+class BoreParameters:
+    """A round hole milled by circular interpolation (helix per pass)."""
+    center: Point3D = (50.0, 37.5, 0.0)
+    diameter: float = 16.0
+    depth: float = 8.0
+    stepDown: float = 2.0
+
+
+@dataclass
+class SlotParameters:
+    """A straight slot ``width`` wide whose rows run from ``start`` to
+    ``end``: the cut reaches one tool radius past both (see ops/slot.py)."""
+    start: Point3D = (25.0, 37.5, 0.0)
+    end: Point3D = (75.0, 37.5, 0.0)
+    width: float = 10.0
+    depth: float = 5.0
+    stepDown: float = 2.0
+    stepoverFraction: float = 0.6
+
+
+@dataclass
+class ChamferParameters:
+    """A chamfer ``width`` wide on the top edge of ``points`` (or of the
+    region's boundary, or of the stock), cut ``depth`` deep with a chamfer
+    mill. ``inside`` (the port's) puts it on a hole's edge instead of a
+    part's outer edge."""
+    points: list = field(default_factory=list)      # [(x, y)]
+    width: float = 1.0
+    depth: float = 1.0
+    isClosed: bool = True
+    inside: bool = False
+
+
+@dataclass
+class OpenPocketParameters:
+    """A pocket some of whose edges are open (``strategy.geometry.
+    openEdgeIndices``): the cutter may pass beyond those, and keeps its
+    radius from the closed ones."""
+    depth: float = 5.0
+    stepDown: float = 2.0
+    stepoverFraction: float = 0.6
+    inset: float = 0.0
+
+
+#: Operation kinds and their parameter classes. The keys are 2DCam's
 #: ``CAMOperationKind`` raw values.
 PARAMETER_TYPES = {
     "facing": FacingParameters,
@@ -340,11 +385,15 @@ PARAMETER_TYPES = {
     "pocket": PocketParameters,
     "drilling": DrillingParameters,
     "engraving": EngravingParameters,
+    "bore": BoreParameters,
+    "slot": SlotParameters,
+    "chamfer": ChamferParameters,
+    "openPocket": OpenPocketParameters,
 }
 
 #: Kinds that may name a separate finishing tool (2DCam's
-#: ``supportsSeparateFinishingTool``, less the v1.x open pocket).
-FINISHING_TOOL_KINDS = ("outsideProfile", "insideProfile", "pocket")
+#: ``supportsSeparateFinishingTool``).
+FINISHING_TOOL_KINDS = ("outsideProfile", "insideProfile", "pocket", "openPocket")
 
 
 def default_parameters(kind: str):
