@@ -234,6 +234,26 @@ class MainWindow(QMainWindow):
             self._connect_ndof()
 
     # ---- 3D mouse (issue #108) ----------------------------------------------
+    def _route_window_toggle(self, name: str, own):
+        """A slot for a Window-menu toggle (clean screen, sidebar) that acts
+        on the window being worked in. On macOS the menu bar is global: its
+        Cmd+0 answered for the MODEL window even with the sheet composer in
+        front — «al pulsarlo me lleva a la ventana del Modelador y le oculta
+        todo» (#114). When the composer is the active window, the press goes
+        to its own action and this one keeps its state."""
+        def slot(on: bool) -> None:
+            from PySide6.QtWidgets import QApplication
+            comp = getattr(self, "_composer", None)
+            if comp is not None and QApplication.activeWindow() is comp:
+                mine = getattr(self, name)
+                mine.blockSignals(True)
+                mine.setChecked(not on)
+                mine.blockSignals(False)
+                getattr(comp, name).toggle()
+                return
+            own(on)
+        return slot
+
     def _connect_ndof(self) -> None:
         """Listen to the 3D mouse, if the machine has one (spacenavd on
         Linux, Raw Input on Windows). Silent when there is none."""
@@ -1034,7 +1054,8 @@ class MainWindow(QMainWindow):
         clean_action = QAction(tr("Clean screen"), self)
         clean_action.setShortcut(QKeySequence("Ctrl+0"))
         clean_action.setCheckable(True)
-        clean_action.toggled.connect(self._toggle_clean_screen)
+        clean_action.toggled.connect(self._route_window_toggle(
+            "_act_clean_screen", self._toggle_clean_screen))
         self.addAction(clean_action)
         window_menu.addAction(clean_action)
         self._act_clean_screen = clean_action
@@ -1135,7 +1156,8 @@ class MainWindow(QMainWindow):
         act.setChecked(True)
         act.setShortcut(QKeySequence("Ctrl+F5"))
         act.setToolTip(tr("Show or hide the sidebar (Ctrl+F5)"))
-        act.toggled.connect(self._set_sidebar_visible)
+        act.toggled.connect(self._route_window_toggle(
+            "_act_sidebar", self._set_sidebar_visible))
         self.addAction(act)
         self._act_sidebar = act
 
