@@ -70,16 +70,24 @@ def _dot(a, b) -> float:
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
 
-def default_tools() -> list:
-    """A starter tool table: what a small router shop reaches for first."""
+#: English names of the starter tools (translated by the UI).
+STARTER_TOOL_NAMES = ("{d} mm flat end mill", "{d} mm drill")
+
+
+def default_tools(translate=None) -> list:
+    """A starter tool table: what a small router shop reaches for first.
+    ``translate`` names them in the user's language."""
+    tx = translate or (lambda s: s)
+    mill = lambda d: tx(STARTER_TOOL_NAMES[0]).format(d=d)  # noqa: E731
+    drill = lambda d: tx(STARTER_TOOL_NAMES[1]).format(d=d)  # noqa: E731
     return [
-        Tool(number=1, name="6 mm flat end mill", kind="flatEndMill", diameter=6.0,
+        Tool(number=1, name=mill(6), kind="flatEndMill", diameter=6.0,
              fluteLength=22.0, overallLength=60.0, fluteCount=2, spindleRPM=18_000,
              cuttingFeed=1_500.0, plungeFeed=500.0),
-        Tool(number=2, name="3 mm flat end mill", kind="flatEndMill", diameter=3.0,
+        Tool(number=2, name=mill(3), kind="flatEndMill", diameter=3.0,
              fluteLength=12.0, overallLength=38.0, fluteCount=2, spindleRPM=20_000,
              cuttingFeed=900.0, plungeFeed=300.0),
-        Tool(number=3, name="5 mm drill", kind="drill", diameter=5.0, fluteLength=40.0,
+        Tool(number=3, name=drill(5), kind="drill", diameter=5.0, fluteLength=40.0,
              overallLength=80.0, fluteCount=2, spindleRPM=8_000, cuttingFeed=300.0,
              plungeFeed=300.0),
     ]
@@ -102,9 +110,9 @@ class CamState:
     sources: dict = field(default_factory=dict)
 
     @classmethod
-    def new(cls) -> "CamState":
+    def new(cls, translate=None) -> "CamState":
         s = cls()
-        s.job.tools = default_tools()
+        s.job.tools = default_tools(translate)
         s.job.setup.safeHeight = 10.0
         s.job.setup.clearanceHeight = 3.0
         s.job.stock.zeroPosition = "materialSurface"

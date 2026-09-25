@@ -130,6 +130,8 @@ class OperationForm(QWidget):
         self._loading = False
         f = self.form = QFormLayout(self)
         f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        # A narrow dock puts the field under its label instead of clipping it.
+        f.setRowWrapPolicy(QFormLayout.WrapLongRows)
         self.name = QLineEdit()
         self.tool = QComboBox()
         self.finishing_tool = QComboBox()

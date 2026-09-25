@@ -68,6 +68,7 @@ def _scroll(widget: QWidget) -> QScrollArea:
     sa = QScrollArea()
     sa.setWidgetResizable(True)
     sa.setFrameShape(QScrollArea.NoFrame)
+    sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     sa.setWidget(widget)
     return sa
 
@@ -79,7 +80,7 @@ class CamDock(QDockWidget):
         super().__init__(tr("CAM"), parent)
         self.setObjectName(DOCK_NAME)
         self.viewport = viewport
-        self.state = CamState.new()
+        self.state = CamState.new(translate=tr)
         self._last_doc = None                # the plugin_data dict last read or written
         self._loading = False
         self._generation = 0
@@ -361,9 +362,9 @@ class CamDock(QDockWidget):
             return
         self._last_doc = copy.deepcopy(doc)
         try:
-            self.state = CamState.from_dict(doc) if doc else CamState.new()
+            self.state = CamState.from_dict(doc) if doc else CamState.new(translate=tr)
         except Exception:  # noqa: BLE001 — a damaged block must not break the dock
-            self.state = CamState.new()
+            self.state = CamState.new(translate=tr)
             self._set_status(tr("The CAM data in this document could not be read; "
                                 "a new job was started."), error=True)
         self._result = None
@@ -460,10 +461,11 @@ class CamDock(QDockWidget):
         self.op_list.blockSignals(True)
         self.op_list.clear()
         for op in self.state.job.operations:
-            it = QListWidgetItem(f"{op.name}  ({kind_label(op.kind)})")
+            it = QListWidgetItem(_op_label(op))
             it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
             it.setCheckState(Qt.Checked if op.isEnabled else Qt.Unchecked)
             self.op_list.addItem(it)
+            _style_enabled(it, op.isEnabled)
         self.op_list.blockSignals(False)
         if self.op_list.count():
             self.op_list.setCurrentRow(min(max(row, 0), self.op_list.count() - 1))
@@ -694,6 +696,9 @@ class CamDock(QDockWidget):
         ops = self.state.job.operations
         if 0 <= r < len(ops):
             ops[r].isEnabled = item.checkState() == Qt.Checked
+            self.op_list.blockSignals(True)
+            _style_enabled(item, ops[r].isEnabled)
+            self.op_list.blockSignals(False)
             self._changed()
 
     def _on_op_edited(self) -> None:
@@ -701,7 +706,7 @@ class CamDock(QDockWidget):
         r = self.op_list.currentRow()
         if op is not None and 0 <= r < self.op_list.count():
             self.op_list.blockSignals(True)
-            self.op_list.item(r).setText(f"{op.name}  ({kind_label(op.kind)})")
+            self.op_list.item(r).setText(_op_label(op))
             self.op_list.blockSignals(False)
         self._changed()
 
@@ -786,8 +791,8 @@ class CamDock(QDockWidget):
         unit = "in" if inch else "mm"
         k = 1 / 25.4 if inch else 1.0
         self.stats.setText("\n".join((
-            tr("Cutting: {length} {unit}", length=f"{st.cuttingLength * k:,.0f}", unit=unit),
-            tr("Rapid: {length} {unit}", length=f"{st.rapidLength * k:,.0f}", unit=unit),
+            tr("Cutting: {length} {unit}", length=f"{st.cuttingLength * k:.0f}", unit=unit),
+            tr("Rapid: {length} {unit}", length=f"{st.rapidLength * k:.0f}", unit=unit),
             tr("Estimated time: {time}", time=_duration(secs)),
             tr("Tool changes: {count}", count=st.toolChangeCount),
         )))
@@ -810,8 +815,10 @@ class CamDock(QDockWidget):
         self.overlay.show_stock = self.show_stock.isChecked()
         self.viewport.update()
 
-    def _on_visibility(self, visible: bool) -> None:
-        self.overlay.visible = visible
+    def _on_visibility(self, _visible: bool) -> None:
+        # Closed, not merely tabbed behind another tray: the toolpaths stay
+        # in the model while the user looks at Properties.
+        self.overlay.visible = not self.isHidden()
         self.viewport.update()
 
     # ==== export ===============================================================
@@ -898,6 +905,21 @@ class _EmptyResult:
         from ..engine.toolpath import Toolpath
         self.toolpath = Toolpath([])
         self.operation_ranges = {}
+
+
+def _style_enabled(item, enabled: bool) -> None:
+    """A skipped operation reads as skipped even where the platform style
+    draws no check box: greyed and struck through."""
+    font = item.font()
+    font.setStrikeOut(not enabled)
+    item.setFont(font)
+    item.setForeground(item.listWidget().palette().text() if enabled else Qt.gray)
+
+
+def _op_label(op) -> str:
+    """The operation's name, and its kind when the name does not say it."""
+    kind = kind_label(op.kind)
+    return op.name if op.name.startswith(kind) else f"{op.name}  ({kind})"
 
 
 def _duration(seconds: float) -> str:

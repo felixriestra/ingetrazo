@@ -37,6 +37,8 @@ def source_strings() -> set:
     from plugins.cam.engine.post.base import HEADER_TEMPLATES, POINT_NAMES, ZERO_NAMES
     keys |= set(COMMENT_TEMPLATES) | set(HEADER_TEMPLATES)
     keys |= set(POINT_NAMES.values()) | set(ZERO_NAMES.values()) | set(KIND_NAMES.values())
+    from plugins.cam.state import STARTER_TOOL_NAMES
+    keys |= set(STARTER_TOOL_NAMES)
     return keys
 
 

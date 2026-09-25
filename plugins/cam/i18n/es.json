@@ -212,5 +212,7 @@
   "back edge centre": "centro del borde trasero",
   "back-right corner": "esquina trasera derecha",
   "stock top": "cara superior del material",
-  "stock bottom": "base del material"
+  "stock bottom": "base del material",
+  "{d} mm flat end mill": "Fresa plana de {d} mm",
+  "{d} mm drill": "Broca de {d} mm"
 }
