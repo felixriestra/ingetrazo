@@ -39,18 +39,16 @@ HEADER_TEMPLATES = (
     "Check the toolpath with an air cut before the first real cut",
 )
 
-ORIGIN_NAMES = {
-    ("bottomLeft", "machineBed"): "bottom-left corner, machine bed",
-    ("bottomLeft", "materialSurface"): "bottom-left corner, stock top",
-    ("bottomRight", "machineBed"): "bottom-right corner, machine bed",
-    ("bottomRight", "materialSurface"): "bottom-right corner, stock top",
-    ("topLeft", "machineBed"): "top-left corner, machine bed",
-    ("topLeft", "materialSurface"): "top-left corner, stock top",
-    ("topRight", "machineBed"): "top-right corner, machine bed",
-    ("topRight", "materialSurface"): "top-right corner, stock top",
-    ("center", "machineBed"): "centre, machine bed",
-    ("center", "materialSurface"): "centre, stock top",
+#: Header wording of the work zero (translated like the comments).
+POINT_NAMES = {
+    "bottomLeft": "front-left corner", "bottomCenter": "front edge centre",
+    "bottomRight": "front-right corner", "centerLeft": "left edge centre",
+    "center": "centre", "centerRight": "right edge centre",
+    "topLeft": "back-left corner", "topCenter": "back edge centre",
+    "topRight": "back-right corner",
 }
+ZERO_NAMES = {"materialSurface": "stock top", "machineBed": "stock bottom"}
+
 
 #: Arcs whose radius is below this post as a straight move: some
 #: controllers reject them (GRBL's radius check), and at this size the
@@ -151,10 +149,9 @@ def header_lines(job, translate, controller_title: str, limit=None) -> list:
     n = Numbers(job.is_inch)
     unit = "in" if job.is_inch else "mm"
     st = job.stock
-    origin = ORIGIN_NAMES.get((st.referencePoint, st.zeroPosition),
-                              f"{st.referencePoint}, {st.zeroPosition}")
-    if translate:
-        origin = translate(origin)
+    tx = translate or (lambda s: s)
+    origin = (f"{tx(POINT_NAMES.get(st.referencePoint, st.referencePoint))}, "
+              f"{tx(ZERO_NAMES.get(st.zeroPosition, st.zeroPosition))}")
     return [
         T("IngeTrazo CAM - {controller}", controller=controller_title),
         T("Job: {name}", name=job.name),
