@@ -82,7 +82,12 @@ como movimientos simples.
 **LinuxCNC** (2.9 o posterior). Un solo archivo `.ngc`. Los cambios de
 herramienta usan `T# M6` con `G43 H#`, así que las longitudes salen de la
 tabla de herramientas de tu máquina. El taladrado usa ciclos fijos
-(`G81`/`G82`/`G83`).
+(`G81`/`G82`/`G83`). La exportación también escribe una **tabla de herramientas** (`.tbl`)
+junto al programa, con los números y diámetros de las herramientas del
+trabajo: un `T# M6` de una herramienta que falta en la tabla de la
+máquina detiene el programa. Las longitudes quedan en 0, para medirlas
+en la máquina. La tabla va en las unidades del trabajo, que deben ser
+las de la máquina.
 
 Los dos admiten milímetros (`G21`) o pulgadas (`G20`), según las
 **Unidades** del trabajo. Los comentarios van en tu idioma, reducidos a

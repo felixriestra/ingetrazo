@@ -150,7 +150,8 @@ def test_part_to_gcode_end_to_end(settings_file, tmp_path, monkeypatch):
     dock.calculate()
     _wait(dock)
     written = dock.export(str(tmp_path / "board.ngc"))
-    assert len(written) == 1
+    assert [p.rsplit(".", 1)[1] for p in written] == ["ngc", "tbl"]   # + tool table
+    assert open(written[1]).read().splitlines()[1].startswith("T1 P1 D6.0000")
     text = open(written[0]).read()
     assert "G99 G81" in text and "T1 M6" in text and "T3 M6" in text
 

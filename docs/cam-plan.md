@@ -4,9 +4,15 @@
 > Host hooks H1–H4, the engine (parity with the 2DCam corpus, deliberate
 > differences in `docs/cam-2dcam-deviations.md`), GRBL and LinuxCNC posts
 > with frozen goldens, the plugin UI, es/pt-BR catalogues and the user
-> guide (`docs/cam/`) are done. Still open from M4: the native-speaker
-> review of the glossary, simulator runs (LinuxCNC `sim`, `grbl-sim`),
-> Flatpak/AppImage/Windows smoke runs, and test cuts on real machines. Lives in the
+> guide (`docs/cam/`) are done. Controller checks (2026-09-25, in a
+> Linux container on the Mac): every corpus program in mm, inch, pecked
+> and flattened-arc variants is accepted by LinuxCNC 2.9.4's own
+> interpreter (`rs274`, 90 programs) and by GRBL 1.1's own parser
+> (`gvalidate`, 101 programs); LinuxCNC's moves equal the plugin's within
+> 0.001 mm, G83 pecks and G41 compensation included; the suite passes on
+> Linux (Python 3.13). Still open from M4: the native-speaker review of
+> the glossary, Flatpak/AppImage/Windows smoke runs, and test cuts on real
+> machines. Lives in the
 > `felixriestra/ingetrazo` fork, on branch `cam-plugin`, until the code is
 > stable; nothing goes upstream before then.
 > Workspace: `~/Documents/MacApps/IGTCam/` (the fork clone is in
