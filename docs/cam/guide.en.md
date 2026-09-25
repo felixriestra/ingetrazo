@@ -82,6 +82,22 @@ Both take millimetres (`G21`) or inches (`G20`). The **Units** setting
 of the job decides which. Comments are in your language, reduced to
 plain ASCII.
 
+## Simulation
+
+**Output ▸ Simulate…** opens the job on a 3D block of stock and plays it
+back in machine time. The clock follows the time estimate, including
+tool changes and spindle ramps. Play, pause, drag the slider to any
+moment, or jump to the end. The speed goes up to 500×.
+
+Material comes off as the cutter passes. Through cuts become holes,
+tabs stay standing, and the removed volume is counted. In the model
+window, the toolpaths already cut stay bright, the rest fade, and the
+cutter is marked where it is. **Resolution** trades detail for speed.
+On a large sheet the grid is coarsened automatically.
+
+The simulation shows what the toolpath does. It is not a replacement for
+an air cut on the machine.
+
 ## Keeping the job with the model
 
 The job is saved in the `.igz` and every change is undoable. If you change

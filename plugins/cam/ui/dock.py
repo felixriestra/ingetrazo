@@ -87,6 +87,7 @@ class CamDock(QDockWidget):
         self._calc = None
         self._result = None                  # the latest worker.Outcome
         self._result_stale = True
+        self._sim = None
         build.translate = tr
         self.overlay = ToolpathOverlay()
         self._calculated.connect(self._on_calculated, Qt.QueuedConnection)
@@ -345,6 +346,11 @@ class CamDock(QDockWidget):
             c.toggled.connect(self._on_overlay_toggles)
             h.addWidget(c)
         lay.addWidget(box)
+        self.btn_sim = QPushButton(tr("Simulate…"))
+        self.btn_sim.setToolTip(tr("Play the job back and watch the stock being cut in 3D."))
+        self.btn_sim.clicked.connect(self.simulate)
+        self.btn_sim.setEnabled(False)
+        lay.addWidget(self.btn_sim)
         self.btn_export = QPushButton(tr("Export G-code…"))
         self.btn_export.clicked.connect(self.export)
         self.btn_export.setEnabled(False)
@@ -384,6 +390,7 @@ class CamDock(QDockWidget):
         self._persist_timer.start(PERSIST_MS)
         self._result_stale = True
         self.btn_export.setEnabled(False)
+        self.btn_sim.setEnabled(False)
         self.overlay.set_stock(self.state)
         self.viewport.update()
         if recalc:
@@ -816,11 +823,13 @@ class CamDock(QDockWidget):
         if out is None:
             self.stats.setText("")
             self.btn_export.setEnabled(False)
+            self.btn_sim.setEnabled(False)
             return
         if not out.ok:
             self._set_status(messages.describe(out.error, inch), error=True)
             self.stats.setText("")
             self.btn_export.setEnabled(False)
+            self.btn_sim.setEnabled(False)
             return
         tp = out.compiled.toolpath
         st = tp.statistics()
@@ -845,6 +854,9 @@ class CamDock(QDockWidget):
             self.issue_list.addItem("✓ " + tr("No problems found."))
             self._set_status(tr("Ready to export."))
         self.btn_export.setEnabled(not errors)
+        self.btn_sim.setEnabled(True)
+        if self._sim is not None and self._sim.isVisible():
+            self._sim.load(self.state.work_job(), out.compiled)
 
     def _on_overlay_toggles(self, *_args) -> None:
         self.overlay.show_cuts = self.show_cuts.isChecked()
@@ -856,6 +868,28 @@ class CamDock(QDockWidget):
         # Closed, not merely tabbed behind another tray: the toolpaths stay
         # in the model while the user looks at Properties.
         self.overlay.visible = not self.isHidden()
+        self.viewport.update()
+
+    # ==== simulation ===========================================================
+    def simulate(self):
+        """Open (or bring forward) the stock simulation of the current
+        result; returns the window."""
+        from .simview import SimulationWindow
+        if self._result is None or not self._result.ok:
+            return None
+        if self._sim is None:
+            self._sim = SimulationWindow(self)
+            self._sim.playhead.connect(self._on_playhead)
+        self._sim.load(self.state.work_job(), self._result.compiled)
+        self._sim.show()
+        self._sim.raise_()
+        self._sim.activateWindow()
+        return self._sim
+
+    def _on_playhead(self, info) -> None:
+        index, tip, tool = info
+        self.overlay.set_playhead(self.state, index, tip,
+                                  tool.diameter * 0.5 if tool is not None else 0.0)
         self.viewport.update()
 
     # ==== export ===============================================================
@@ -927,6 +961,8 @@ class CamDock(QDockWidget):
         """Detach from the viewport (tests; the dock lives as long as the
         window otherwise)."""
         self.flush()
+        if self._sim is not None:
+            self._sim.close()
         if self.overlay in self.viewport.overlay_painters:
             self.viewport.overlay_painters.remove(self.overlay)
         try:

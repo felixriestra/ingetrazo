@@ -354,8 +354,9 @@ people work on it.
 
 ### v1.x order (driven by value)
 
-1. Stock-removal simulation (numpy heightfield, shown as a textured quad
-   or mesh in the viewport).
+1. ~~Stock-removal simulation~~ — **done**: numpy height field with
+   vectorised sweeps, machine-time playback, a 3D window and a playhead
+   in the viewport (`engine/simulate.py`, `ui/simview.py`).
 2. Bore, slot, chamfer and open pocket.
 3. A persistent tool library with SQLite + CSV vendor import, and feeds
    and speeds presets.

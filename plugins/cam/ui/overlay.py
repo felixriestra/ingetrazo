@@ -17,7 +17,7 @@ as a wireframe box. Each can be switched off.
 from __future__ import annotations
 
 import numpy as np
-from PySide6.QtCore import QLineF, Qt
+from PySide6.QtCore import QLineF, QPointF, Qt
 from PySide6.QtGui import QColor, QPen
 
 from ..engine.toolpath import motion_points
@@ -47,6 +47,11 @@ class ToolpathOverlay:
         self.show_rapids = True
         self.show_stock = True
         self.visible = True
+        self.cmd = np.empty(0, dtype=np.int64)
+        #: Playback: command index reached, and the tool marker
+        #: ``(world_point, radius_m)``; ``None`` when not playing back.
+        self.play_index: int | None = None
+        self.play_tool = None
 
     def clear(self) -> None:
         self.__init__()
@@ -76,8 +81,9 @@ class ToolpathOverlay:
         op_of = np.full(len(tp.commands), -1, dtype=np.int32)
         for n, (start, stop) in enumerate(compiled.operation_ranges.values()):
             op_of[start:stop] = n
-        rows_a, rows_b, kinds, ops = [], [], [], []
+        rows_a, rows_b, kinds, ops, cmds = [], [], [], [], []
         for kind, a, b, i in motion_points(tp.commands):
+            cmds.append(i)
             rows_a.append(a)
             rows_b.append(b)
             if kind == "rapid":
@@ -96,6 +102,17 @@ class ToolpathOverlay:
         self.b = self._to_world(state, np.asarray(rows_b, dtype=float))
         self.kind = np.asarray(kinds, dtype=np.int8)
         self.op = np.asarray(ops, dtype=np.int32)
+        self.cmd = np.asarray(cmds, dtype=np.int64)
+
+    def set_playhead(self, state, index, work_point, radius_mm) -> None:
+        """Show playback at command ``index`` with the tool at
+        ``work_point`` (work mm); ``index=None`` ends playback display."""
+        self.play_index = index
+        if index is None or work_point is None:
+            self.play_tool = None
+            return
+        centre = self._to_world(state, np.asarray([work_point], dtype=float))[0]
+        self.play_tool = (centre, radius_mm * 0.001, state)
 
     @staticmethod
     def _to_world(state, work) -> np.ndarray:
@@ -131,16 +148,43 @@ class ToolpathOverlay:
             self._lines(painter, viewport, self.a, self.b, self.kind == RAPID_KIND)
         if self.show_cuts:
             sel = self.op_ids.index(self.selected_op) if self.selected_op in self.op_ids else -1
+            done = (self.cmd <= self.play_index) if self.play_index is not None \
+                else np.ones(len(self.a), dtype=bool)
             for n in range(len(self.op_ids)):
                 color = QColor(OP_COLORS[n % len(OP_COLORS)])
                 width = 2.4 if n == sel else 1.4
                 if sel >= 0 and n != sel:
                     color.setAlpha(110)
+                mask = (self.kind == CUT) & (self.op == n)
                 painter.setPen(QPen(color, width))
-                self._lines(painter, viewport, self.a, self.b,
-                            (self.kind == CUT) & (self.op == n))
+                self._lines(painter, viewport, self.a, self.b, mask & done)
+                if self.play_index is not None:
+                    color.setAlpha(45)
+                    painter.setPen(QPen(color, 1.0))
+                    self._lines(painter, viewport, self.a, self.b, mask & ~done)
             painter.setPen(QPen(PLUNGE, 1.6))
-            self._lines(painter, viewport, self.a, self.b, self.kind == PLUNGE_KIND)
+            self._lines(painter, viewport, self.a, self.b, (self.kind == PLUNGE_KIND) & done)
+        if self.play_tool is not None:
+            self._draw_tool(painter, viewport)
+
+    def _draw_tool(self, painter, viewport) -> None:
+        """The cutter at the playhead: its footprint circle on the machining
+        plane at the tip, and its axis."""
+        centre, radius, state = self.play_tool
+        from ..state import Frame
+        frame = state.frame or Frame()
+        U, V, N = (np.asarray(v, dtype=float) for v in (frame.u, frame.v, frame.n))
+        ang = np.linspace(0, 2 * np.pi, 33)
+        ring = centre[None, :] + radius * (np.cos(ang)[:, None] * U + np.sin(ang)[:, None] * V)
+        axis = np.asarray([centre, centre + N * max(radius * 8, 0.02)])
+        painter.setPen(QPen(QColor(20, 20, 20, 230), 2.0))
+        px, py, ok = viewport.world_to_pixels(ring)
+        if ok.all():
+            painter.drawPolyline([QPointF(x, y) for x, y in zip(px, py)])
+        ax, ay, aok = viewport.world_to_pixels(axis)
+        if aok.all():
+            painter.setPen(QPen(QColor(20, 20, 20, 200), 3.0))
+            painter.drawLine(QLineF(ax[0], ay[0], ax[1], ay[1]))
 
     @staticmethod
     def _lines(painter, viewport, a, b, mask) -> None:

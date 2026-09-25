@@ -219,5 +219,18 @@
   "Read the part's outline and holes again after changing the model. Parameters are kept.": "Lê de novo o contorno e os furos da peça depois de alterar o modelo. Os parâmetros são mantidos.",
   "The part this job was made from is no longer in the model. The job keeps its geometry.": "A peça que originou este trabalho não está mais no modelo. O trabalho mantém sua geometria.",
   "Refreshed {count} operation(s). These no longer match the part and kept their old geometry: {names}": "{count} operação(ões) atualizada(s). Estas não correspondem mais à peça e mantiveram a geometria anterior: {names}",
-  "Refreshed {count} operation(s) from the part.": "{count} operação(ões) atualizada(s) a partir da peça."
+  "Refreshed {count} operation(s) from the part.": "{count} operação(ões) atualizada(s) a partir da peça.",
+  "Simulate…": "Simular…",
+  "Play the job back and watch the stock being cut in 3D.": "Reproduz o trabalho e mostra o material sendo cortado em 3D.",
+  "Stock simulation": "Simulação do material",
+  "Back to the start": "Voltar ao início",
+  "Play / pause": "Reproduzir / pausar",
+  "Jump to the end": "Ir para o fim",
+  "Draft": "Rascunho",
+  "Standard": "Normal",
+  "Fine": "Fina",
+  "Speed": "Velocidade",
+  "Resolution": "Resolução",
+  "Drag to orbit, right-drag to pan, wheel to zoom.": "Arraste para orbitar, arraste com o botão direito para deslocar, roda para aproximar.",
+  "{operation} · removed {volume} · tool {tool}": "{operation} · removido {volume} · ferramenta {tool}"
 }
