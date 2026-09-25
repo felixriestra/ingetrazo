@@ -184,6 +184,43 @@ class PreferencesDialog(QDialog):
         form.addRow(tr("Graphics server:"), self._platform)
         tabs.addTab(general, tr("General"))
 
+        # ---- 3D mouse (issue #108) -------------------------------------------
+        from views.ndof_input import load_settings, shared_input
+        nd = load_settings()
+        mouse3d = QWidget()
+        form = QFormLayout(mouse3d)
+        self._ndof_on = QCheckBox(tr("Navigate with a 3D mouse (SpaceMouse)"))
+        self._ndof_on.setChecked(nd.enabled)
+        form.addRow("", self._ndof_on)
+        self._ndof_speed = QSpinBox()
+        self._ndof_speed.setRange(25, 400)
+        self._ndof_speed.setSingleStep(25)
+        self._ndof_speed.setSuffix(" %")
+        self._ndof_speed.setValue(int(round(nd.sensitivity * 100)))
+        form.addRow(tr("Speed:"), self._ndof_speed)
+        self._ndof_inv_pan = QCheckBox(tr("Invert pan"))
+        self._ndof_inv_pan.setChecked(nd.invert_pan)
+        form.addRow("", self._ndof_inv_pan)
+        self._ndof_inv_zoom = QCheckBox(tr("Invert zoom"))
+        self._ndof_inv_zoom.setChecked(nd.invert_zoom)
+        form.addRow("", self._ndof_inv_zoom)
+        self._ndof_inv_rot = QCheckBox(tr("Invert rotation"))
+        self._ndof_inv_rot.setChecked(nd.invert_rotate)
+        form.addRow("", self._ndof_inv_rot)
+        self._ndof_lock = QCheckBox(tr(
+            "Pan and zoom only (no rotation — for drawing in plan)"))
+        self._ndof_lock.setChecked(nd.lock_rotation)
+        form.addRow("", self._ndof_lock)
+        name = shared_input().backend_name
+        status = QLabel(
+            tr("Device driver found: {name}", name=name) if name else tr(
+                "No 3D mouse driver found. On Linux install and start "
+                "«spacenavd»; on Windows the 3Dconnexion driver is enough. "
+                "macOS is not supported yet."))
+        status.setWordWrap(True)
+        form.addRow("", status)
+        tabs.addTab(mouse3d, tr("3D Mouse"))
+
         # ---- Import ---------------------------------------------------------
         imp = QWidget()
         form = QFormLayout(imp)
@@ -342,6 +379,16 @@ class PreferencesDialog(QDialog):
         setup = getattr(self._window, "_setup_autosave", None)
         if callable(setup):
             setup()                     # re-arm the timer with the new pace
+
+        from core.ndof import NdofSettings
+        from views.ndof_input import save_settings
+        nd = NdofSettings(enabled=self._ndof_on.isChecked(),
+                          sensitivity=self._ndof_speed.value() / 100.0,
+                          invert_pan=self._ndof_inv_pan.isChecked(),
+                          invert_zoom=self._ndof_inv_zoom.isChecked(),
+                          invert_rotate=self._ndof_inv_rot.isChecked(),
+                          lock_rotation=self._ndof_lock.isChecked())
+        save_settings(nd)                # every window reads it live
 
         st.setValue("nav/invert_wheel",
                     "1" if self._invert.isChecked() else "0")

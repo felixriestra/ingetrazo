@@ -25,6 +25,9 @@ finish-args:
   # Unlike IngeCAD, IngeTrazo DOES use the network: base-map tiles, the
   # AWS terrarium DEM for 3D terrain, and location geocoding (Track G).
   - --share=network
+  # The 3D mouse (issue #108): spacenavd serves it on this socket; without
+  # the hole the sandbox never sees the device. Read-only, like Blender's.
+  - --filesystem=/run/spnav.sock:ro
 
 modules:
   # PySide6's Qt links QtNetwork against GSSAPI; the Freedesktop runtime

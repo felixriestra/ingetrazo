@@ -31,6 +31,18 @@ follow [SemVer](https://semver.org).
   del cursor; justo después de una copia, recoloca las copias con esa
   separación. `3x` y `/3` siguen como en SketchUp.
 
+- **Clic derecho ▸ Seleccionar** (#106), como en SketchUp: todo lo
+  conectado, aristas delimitantes, todo con el mismo material y todo en la
+  misma capa. Actúa dentro del grupo que se está editando, como Seleccionar
+  todo.
+- **Ratón 3D (SpaceMouse de 3Dconnexion)** (#108): se sostiene el modelo
+  como en SketchUp y FreeCAD (mover, subir, acercar, inclinar y girar la
+  tapa). En Linux lo lee `spacenavd`; en Windows, Raw Input junto al
+  controlador de 3Dconnexion. Los dos botones ajustan el modelo a la vista.
+  Preferencias ▸ Ratón 3D: velocidad, invertir cada grupo y «solo desplazar
+  y zoom» para dibujar en planta. Sin probar aún con un dispositivo real;
+  macOS todavía no.
+
 ### Cambiado
 - **Icono de Zoom a extensión** (#112): ahora es la lupa con tres flechas
   hacia las esquinas, como en SketchUp, para que quien viene de allí lo

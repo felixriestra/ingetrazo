@@ -230,6 +230,39 @@ class MainWindow(QMainWindow):
             from PySide6.QtCore import QTimer
             self._toolbars_packed = True
             QTimer.singleShot(0, self._pack_toolbars)
+        if not getattr(self, "_ndof_connected", False):
+            self._connect_ndof()
+
+    # ---- 3D mouse (issue #108) ----------------------------------------------
+    def _connect_ndof(self) -> None:
+        """Listen to the 3D mouse, if the machine has one (spacenavd on
+        Linux, Raw Input on Windows). Silent when there is none."""
+        self._ndof_connected = True
+        try:
+            from views.ndof_input import shared_input
+            dev = shared_input()
+            dev.motion.connect(self._on_ndof_motion)
+            dev.button.connect(self._on_ndof_button)
+        except Exception as exc:  # noqa: BLE001 — never block the window
+            import sys as _sys
+            print(f"IngeTrazo: 3D mouse unavailable ({exc!r})",
+                  file=_sys.stderr)
+
+    def _on_ndof_motion(self, sample, dt: float) -> None:
+        # Only the window being worked in moves (New Window makes several).
+        if not self.isActiveWindow():
+            return
+        from core.ndof import apply_ndof
+        from views.ndof_input import current_settings
+        vp = self.viewport
+        if apply_ndof(vp.camera, sample, dt, vp.height(), current_settings()):
+            vp.update()
+
+    def _on_ndof_button(self, number: int, down: bool) -> None:
+        # The two buttons every model has: both fit the model, SketchUp's
+        # default for the right one and the most useful single command.
+        if down and number in (0, 1) and self.isActiveWindow():
+            self._on_zoom_extents()
 
     def _pack_toolbars(self) -> None:
         """Re-seat every docked toolbar so each takes exactly the length of
@@ -2281,6 +2314,7 @@ class MainWindow(QMainWindow):
                for e in sel):
             menu.addAction(tr("Unhide"), self._on_unhide_selected)
         self._add_layer_submenu(menu, sel)
+        self._add_select_submenu(menu, sel)
         if has_group:
             groups = [e for e in sel if isinstance(e, Group)]
             if len(groups) == 1:
@@ -2418,6 +2452,45 @@ class MainWindow(QMainWindow):
         self.viewport.history.execute(
             TexturePositionTool.side_command(face, side, flat))
         self.viewport.update()
+
+    def _add_select_submenu(self, menu, sel) -> None:
+        """Right-click ▸ Select, SketchUp's: grow the selection by what it
+        touches or what it shares (issue #106, @pacaeiro). Each entry acts
+        in the current editing context only, like Select All."""
+        from core.select_ops import (all_connected, bounding_edges,
+                                     same_layer, same_material)
+        has_mesh = any(isinstance(e, (Edge, Face)) for e in sel)
+        has_face = any(isinstance(e, Face) for e in sel)
+        has_group = any(isinstance(e, Group) for e in sel)
+        if not (has_mesh or has_group):
+            return
+        scene = self.viewport.scene
+        from PySide6.QtWidgets import QMenu
+        sub = QMenu(tr("Select"), menu)
+        menu.addMenu(sub)
+
+        def grow(fn):
+            def run(_checked=False):
+                found = fn(list(scene.selection))
+                scene.select(found)
+                self.viewport.notify_scene_changed()
+                self.viewport.update()
+                self.statusBar().showMessage(
+                    tr("{n} entities selected", n=len(scene.selection)), 2500)
+            return run
+
+        if has_mesh:
+            sub.addAction(tr("All Connected")).triggered.connect(
+                grow(all_connected))
+        if has_face:
+            sub.addAction(tr("Bounding Edges")).triggered.connect(
+                grow(bounding_edges))
+        if has_face or any(getattr(e, "material", None) for e in sel
+                           if isinstance(e, Group)):
+            sub.addAction(tr("All with Same Material")).triggered.connect(
+                grow(lambda s: same_material(scene, s)))
+        sub.addAction(tr("All on Same Layer")).triggered.connect(
+            grow(lambda s: same_layer(scene, s)))
 
     def _add_layer_submenu(self, menu, sel) -> None:
         """Right-click ▸ Layer ▸ the document's layers, the selection's own

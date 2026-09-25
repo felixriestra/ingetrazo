@@ -397,35 +397,8 @@ class SelectTool(Tool):
         if not isinstance(entity, (Face, Edge)):
             self.on_click(ctx)
             return
-        if isinstance(entity, Face):
-            seeds = list(entity.loop) + [v for h in entity.hole_loops
-                                         for v in h]
-        else:
-            seeds = [entity.v0, entity.v1]
-        seen_v = set(seeds)
-        edges: set = set()
-        faces: set = set()
-        stack = list(seeds)
-        while stack:
-            v = stack.pop()
-            for e in v.edges:
-                if e in edges:
-                    continue
-                edges.add(e)
-                for f in e.faces:
-                    if f in faces:
-                        continue
-                    faces.add(f)
-                    for lp in (f.loop, *f.hole_loops):
-                        for w in lp:
-                            if w not in seen_v:
-                                seen_v.add(w)
-                                stack.append(w)
-                w = e.other(v)
-                if w not in seen_v:
-                    seen_v.add(w)
-                    stack.append(w)
-        viewport.scene.select(list(edges) + list(faces),
+        from core.select_ops import all_connected
+        viewport.scene.select(all_connected([entity]),
                               mode=selection_mode(ctx.modifiers))
         viewport.update()
 
