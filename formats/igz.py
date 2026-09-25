@@ -457,6 +457,12 @@ def save_scene(scene, path: Path) -> dict:
         meta, survey_blobs = pack_mesh(survey)
         payload["photo_mesh"] = meta
         blobs.update(survey_blobs)
+    # Plugin data goes in AFTER the texture packing on purpose: that walk
+    # rewrites every "texture" key it finds, and a plugin's own JSON is
+    # none of its business.
+    plugin_data = _plugin_data_json(scene)
+    if plugin_data:
+        payload["plugin_data"] = plugin_data
     data = {
         "igz_format": CURRENT_FORMAT if blobs else PLAIN_FORMAT,
         "app_version": __version__,
@@ -468,6 +474,34 @@ def save_scene(scene, path: Path) -> dict:
     else:
         _write_atomic(path, doc.encode("utf-8"))
     return {"embedded": len(blobs), "missing": missing}
+
+
+def _plugin_data_json(scene) -> dict:
+    """``scene.plugin_data`` checked entry by entry for the document.
+
+    Each plugin's entry must be a JSON object under a string key. One that
+    is not (a set, a QVector3D, a NaN — ``allow_nan`` is off so the file
+    stays strict JSON) is left out and logged: a plugin bug may cost that
+    plugin its data, never the user their document."""
+    raw = getattr(scene, "plugin_data", None)
+    if not isinstance(raw, dict) or not raw:
+        return {}
+    out = {}
+    for key, value in raw.items():
+        if not isinstance(key, str) or not isinstance(value, dict):
+            _log_plugin_data_skip(key, "not a str key with a dict value")
+            continue
+        try:
+            out[key] = json.loads(json.dumps(value, allow_nan=False))
+        except (TypeError, ValueError) as exc:
+            _log_plugin_data_skip(key, exc)
+    return out
+
+
+def _log_plugin_data_skip(key, why) -> None:
+    import logging
+    logging.getLogger("ingetrazo.plugins").warning(
+        "plugin data %r not saved: %s", key, why)
 
 
 def _write_atomic(path: Path, data: bytes) -> None:
@@ -777,6 +811,14 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
     scene.image_planes.clear()
     for raw in payload.get("image_planes", []):
         scene.image_planes.append(ImagePlane.from_dict(raw))
+
+    # Plugin data (H4) is kept even when the plugin that wrote it is not
+    # installed here, so opening and saving the document elsewhere does not
+    # destroy it. Absent = empty: the previous document's must not leak.
+    raw_pd = payload.get("plugin_data")
+    scene.plugin_data = ({k: v for k, v in raw_pd.items()
+                          if isinstance(k, str) and isinstance(v, dict)}
+                         if isinstance(raw_pd, dict) else {})
 
     scene.version += 1
 

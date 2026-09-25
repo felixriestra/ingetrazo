@@ -124,6 +124,26 @@ around each one. A painter that raises is logged once and removed. For
 many points, `viewport.world_to_pixels(array_n_by_3)` returns
 `(px, py, in_front)` NumPy arrays in one call.
 
+## Document data
+
+A plugin can keep its own data in the document: `scene.plugin_data` maps
+a plugin key to a JSON-able dict, saved in the `.igz` as
+`payload["plugin_data"]`. Change it through the undo stack:
+
+```python
+from core.history import SetPluginData
+
+viewport.history.execute(SetPluginData("myplugin", {"setting": 1}))
+viewport.notify_scene_changed()        # marks the document modified
+```
+
+`SetPluginData(key, None)` removes the entry. Values are deep-copied on
+the way in and out of history, so keep editing your own copy freely.
+Rules: pick a key unlikely to clash (your plugin's name); store only JSON
+types (an entry that fails to serialise is dropped from the file and
+logged, the rest of the document is saved); data of plugins that are not
+installed is carried along untouched when the document is re-saved.
+
 ## Developing interactively
 
 **Extensions → Python Console** (`Ctrl+Shift+P`) is a live REPL over the
