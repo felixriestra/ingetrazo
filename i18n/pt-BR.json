@@ -640,6 +640,8 @@
  "Device driver found: {name}": "Driver do dispositivo encontrado: {name}",
  "No 3D mouse driver found. On Linux install and start «spacenavd»; on Windows the 3Dconnexion driver is enough. macOS is not supported yet.": "Nenhum driver de mouse 3D encontrado. No Linux instale e inicie o «spacenavd»; no Windows basta o driver da 3Dconnexion. O macOS ainda não é compatível.",
  "3D Mouse": "Mouse 3D",
+ "Click what to move (or select it first). Red + on a group = rotate it.": "Clique no que quer mover (ou selecione antes). O + vermelho de um grupo o gira.",
+ "Rotate: move to turn, click or type the angle. Ctrl = copy": "Girar: mova para girar, clique ou digite o ângulo. Ctrl = cópia",
  "Imported {name}": "Importado {name}",
  "{name} has no geometry — nothing to import.": "{name} não tem geometria: não há nada para importar.",
  "Imported {name}: {edges} edges in {groups} tagged groups": "Importado {name}: {edges} arestas em {groups} grupos etiquetados",

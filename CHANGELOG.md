@@ -43,6 +43,11 @@ follow [SemVer](https://semver.org).
   y zoom» para dibujar en planta. Sin probar aún con un dispositivo real;
   macOS todavía no.
 
+- **Pinzas de rotación en Mover** (#115), como en SketchUp: al pasar Mover
+  sobre un grupo o componente aparecen cruces rojas en las caras de su caja;
+  al tomar una, el objeto gira en ese plano alrededor de su centro, con el
+  transportador, los pasos de 15°, el ángulo tecleado y Ctrl = copia.
+
 ### Cambiado
 - **Icono de Zoom a extensión** (#112): ahora es la lupa con tres flechas
   hacia las esquinas, como en SketchUp, para que quien viene de allí lo

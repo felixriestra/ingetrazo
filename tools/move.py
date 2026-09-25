@@ -150,6 +150,44 @@ def gather_images(ctx: ToolContext):
     return images
 
 
+#: How near (px) the cursor must come to a rotation grip to take it.
+GRIP_PX = 9.0
+#: Where the four grips of a face sit: this fraction of the face's size
+#: from its centre, along each of its two directions.
+GRIP_SPREAD = 0.3
+_FLAT = 1e-6
+
+
+def rotation_grips(obb, eye: QVector3D) -> list:
+    """SketchUp's rotation grips on a group's box (issue #115): four on
+    each face turned toward *eye*, as ``(position, face_centre, normal)``.
+    Taking one rotates the object in that face's plane, about the axis
+    through the box centre along the normal. ``obb`` is the viewport's
+    ``(frame, lo, hi)``."""
+    frame, lo, hi = obb
+    axes = [QVector3D(a) for a in frame]
+    ext = [hi[i] - lo[i] for i in range(3)]
+    mid = [(lo[i] + hi[i]) * 0.5 for i in range(3)]
+    centre = axes[0] * mid[0] + axes[1] * mid[1] + axes[2] * mid[2]
+    out = []
+    for i in range(3):
+        j, k = [a for a in range(3) if a != i]
+        if ext[j] <= _FLAT and ext[k] <= _FLAT:
+            continue                         # a face with no area
+        for side in (1.0, -1.0):
+            normal = axes[i] * side
+            face_c = centre + normal * (ext[i] * 0.5)
+            if QVector3D.dotProduct(normal, eye - face_c) <= 0.0:
+                continue                     # turned away from the eye
+            for a in (j, k):
+                if ext[a] <= _FLAT:
+                    continue
+                for sgn in (1.0, -1.0):
+                    pos = face_c + axes[a] * (sgn * GRIP_SPREAD * ext[a])
+                    out.append((pos, face_c, normal))
+    return out
+
+
 class MoveTool(Tool):
     name = "Move"
     shortcut = "M"
@@ -195,6 +233,14 @@ class MoveTool(Tool):
         self._sel_edges: list = []
         self._base_segments: list = []         # wireframe for the copy preview
         self._last: dict | None = None         # the copy just made, for "3x" / "/3"
+        # Rotation grips (issue #115): the group they sit on, the grips,
+        # the one under the cursor, and — once one is taken — the Rotate
+        # tool that runs the turn (its protractor, snaps, VCB and commit).
+        self._grip_group = None
+        self._grips: list = []
+        self._hot_grip: int | None = None
+        self._grip_rot = None
+        self._grip_rot_done = None             # its hot retype after the commit
 
     # ---- Lifecycle ----------------------------------------------------------
     def on_activate(self, viewport) -> None:
@@ -203,6 +249,9 @@ class MoveTool(Tool):
         self._last = None
 
     def on_deactivate(self, viewport) -> None:
+        if self._grip_rot is not None:
+            self._grip_rot.on_cancel(viewport)
+        self._clear_grips()
         self._end_freeze(viewport)
         self._revert_preview(viewport)
         self._reset()
@@ -211,6 +260,8 @@ class MoveTool(Tool):
 
     # ---- Keyboard -----------------------------------------------------------
     def on_key(self, viewport, key: int, modifiers) -> bool:
+        if self._grip_rot is not None:
+            return self._grip_rot.on_key(viewport, key, modifiers)
         # Ctrl toggles copy mode (SketchUp: move a copy, the original stays).
         if key == Qt.Key_Control:
             self._copy = not self._copy
@@ -233,6 +284,17 @@ class MoveTool(Tool):
     # ---- Spatial input ------------------------------------------------------
     def on_click(self, ctx: ToolContext) -> None:
         viewport = ctx.viewport
+        self._grip_rot_done = None           # a click ends the angle retype
+        if self._grip_rot is not None:
+            rot = self._grip_rot
+            rot.on_click(ctx)                # the second click commits
+            if rot.start_point is None:
+                self._grip_rot, self._grip_rot_done = None, rot
+                self._clear_grips()
+            return
+        if self.start_point is None and self._hot_grip is not None:
+            self._start_grip_rotation(ctx)
+            return
         if self.start_point is None:
             groups, positions = self._gather(ctx)
             labels = gather_labels(ctx)
@@ -292,12 +354,26 @@ class MoveTool(Tool):
         self._commit(viewport, ctx.world - self.grab)
 
     def on_hover(self, ctx: ToolContext) -> None:
+        if self._grip_rot is not None:
+            self._grip_rot.on_hover(ctx)
+            return
+        if self.start_point is None:
+            self._track_grips(ctx)
         self.hover_point = ctx.world
         if self.grab is not None and not self._copy:
             self._apply_preview(ctx.viewport, ctx.world - self.grab)
         ctx.viewport.update()
 
     def on_value(self, viewport, value) -> bool:
+        rot = self._grip_rot or self._grip_rot_done
+        if rot is not None and self.start_point is None:
+            # A typed angle: exact turn while a grip is held, or the hot
+            # retype of the one just made (SketchUp).
+            done = rot.on_value(viewport, value)
+            if self._grip_rot is not None and rot.start_point is None:
+                self._grip_rot, self._grip_rot_done = None, rot
+                self._clear_grips()
+            return done
         if self.start_point is None or self.grab is None:
             return False
         if isinstance(value, tuple):
@@ -364,6 +440,12 @@ class MoveTool(Tool):
         return True
 
     def on_cancel(self, viewport) -> None:
+        if self._grip_rot is not None:
+            self._grip_rot.on_cancel(viewport)
+            self._grip_rot = None
+            self._clear_grips()
+            viewport.update()
+            return
         self._end_freeze(viewport)
         self._revert_preview(viewport)
         self._reset()
@@ -372,6 +454,8 @@ class MoveTool(Tool):
 
     # ---- Visual preview -----------------------------------------------------
     def rubber_band_lines(self):
+        if self._grip_rot is not None:
+            return self._grip_rot.rubber_band_lines()
         # The geometry deforms live, so the only extra cue is the move vector
         # from the grab point to the cursor (also carries the axis-lock colour).
         if self.grab is None or self.hover_point is None:
@@ -385,6 +469,8 @@ class MoveTool(Tool):
         return segments
 
     def value_label(self):
+        if self._grip_rot is not None:
+            return self._grip_rot.value_label()
         if self.grab is None or self.hover_point is None:
             return None
         delta = self.hover_point - self.grab
@@ -399,6 +485,8 @@ class MoveTool(Tool):
         to the very geometry it is dragging (issue #19, @pacaeiro). In copy
         mode nothing moves (the ghost is a wireframe), so nothing is left
         out."""
+        if self._grip_rot is not None:
+            return self._grip_rot.snap_excluded()
         if self.grab is None or self._copy:
             return None
         edges: set[int] = set()
@@ -409,6 +497,121 @@ class MoveTool(Tool):
         if not edges and not groups:
             return None
         return edges, groups
+
+    # ---- Rotation grips (issue #115) ----------------------------------------
+    @property
+    def _drag(self):
+        """Busy while a grip is held — the viewport's Esc asks this."""
+        return self._grip_rot
+
+    @property
+    def wireframe_color(self):  # type: ignore[override]
+        # While a grip turns the object, the protractor's axis colour.
+        return (self._grip_rot.wireframe_color
+                if self._grip_rot is not None else None)
+
+    def drag_plane(self, viewport):
+        """While a grip turns the object the cursor is read on the plane of
+        the turn — the face the grip sits on."""
+        if self._grip_rot is not None:
+            return (QVector3D(self._grip_rot.start_point),
+                    QVector3D(self._grip_rot._axis()))
+        return None
+
+    def _clear_grips(self) -> None:
+        self._grip_group = None
+        self._grips = []
+        self._hot_grip = None
+
+    def _grip_candidate(self, viewport, x: float, y: float):
+        """The group that should show grips: the one under the cursor, when
+        nothing else is selected (Move would act on the selection)."""
+        pick = getattr(viewport, "pick_group", None)
+        g = pick(x, y) if pick is not None else None
+        if g is None or getattr(g, "billboard", False):
+            return None
+        sel = viewport.scene.selection
+        if sel and set(sel) != {g}:
+            return None
+        return g
+
+    def _track_grips(self, ctx: ToolContext) -> None:
+        viewport = ctx.viewport
+        obb_of = getattr(viewport, "_group_obb", None)
+        w2p = getattr(viewport, "_world_to_pixel", None)
+        cam = getattr(viewport, "camera", None)
+        if obb_of is None or w2p is None or cam is None:
+            return
+        x, y = ctx.screen.x(), ctx.screen.y()
+        g = self._grip_candidate(viewport, x, y)
+        # A grip can sit off the geometry (the box of an L is bigger than
+        # the L): while the cursor is on one, the grips stay.
+        hot = self._grip_under(w2p, x, y)
+        if g is None and hot is not None:
+            self._hot_grip = hot
+            return
+        if g is not self._grip_group:
+            self._grip_group = g
+            self._grips = (rotation_grips(obb_of(g), cam.eye())
+                           if g is not None else [])
+        elif g is not None:
+            # The camera may have moved: re-face the grips.
+            self._grips = rotation_grips(obb_of(g), cam.eye())
+        self._hot_grip = self._grip_under(w2p, x, y)
+
+    def _grip_under(self, w2p, x: float, y: float):
+        best, best_d = None, GRIP_PX
+        for i, (pos, _c, _n) in enumerate(self._grips):
+            p = w2p(pos)
+            if p is None:
+                continue
+            d = ((p[0] - x) ** 2 + (p[1] - y) ** 2) ** 0.5
+            if d <= best_d:
+                best, best_d = i, d
+        return best
+
+    def _start_grip_rotation(self, ctx: ToolContext) -> None:
+        """Hand the turn to a Rotate tool set up as SketchUp does: the
+        protractor on the grip's face, its centre where the axis through
+        the box centre pierces that face, the grip as the zero arm."""
+        from tools.rotate import RotateTool
+        viewport = ctx.viewport
+        pos, face_c, normal = self._grips[self._hot_grip]
+        group = self._grip_group
+        rot = RotateTool()
+        rot.on_activate(viewport)
+        rot._groups = [group]
+        rot._vp_preview = False
+        begin = getattr(viewport, "begin_groups_preview", None)
+        if begin is not None:
+            begin([group])
+            rot._vp_preview = True
+        rot._gather_copy_entities(ctx)
+        rot._custom_axis = QVector3D(normal).normalized()
+        rot.start_point = QVector3D(face_c)
+        rot.ref_point = QVector3D(pos)
+        rot.hover_point = QVector3D(pos)
+        self._grip_rot = rot
+        viewport.flash_status(tr(
+            "Rotate: move to turn, click or type the angle. Ctrl = copy"))
+        viewport.update()
+
+    def draw_overlay(self, viewport, painter) -> None:
+        """The red rotation grips — SketchUp's «+» marks on the box."""
+        if self._grip_rot is not None or not self._grips:
+            return
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QColor, QPen
+        red = QColor(220, 40, 40)
+        for i, (pos, _c, _n) in enumerate(self._grips):
+            p = viewport._world_to_pixel(pos)
+            if p is None:
+                continue
+            hot = i == self._hot_grip
+            r = 6.0 if hot else 4.0
+            painter.setPen(QPen(red, 3.0 if hot else 2.0))
+            painter.drawLine(QPointF(p[0] - r, p[1]), QPointF(p[0] + r, p[1]))
+            painter.drawLine(QPointF(p[0], p[1] - r), QPointF(p[0], p[1] + r))
 
     # ---- Internals ----------------------------------------------------------
     def _gather(self, ctx: ToolContext):

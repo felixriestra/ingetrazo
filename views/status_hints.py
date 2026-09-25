@@ -53,7 +53,7 @@ HINTS: dict = {
     "pie": ("Click the centre.", "Click the start of the wedge, then its end; or type the angle."),
     "pushpull": ("Click a face and move. Ctrl keeps the starting face.",
                  "Move, or type the distance and Enter. Double-click repeats the last."),
-    "move": ("Click what to move (or select it first). Arrows lock an axis.",
+    "move": ("Click what to move (or select it first). Red + on a group = rotate it.",
              "Click the destination, or type the distance and Enter."),
     "rotate": ("Click the centre of rotation — on a face, the protractor takes its plane.",
                "Click the start of the angle, then the end; or type the degrees."),
