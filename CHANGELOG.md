@@ -32,6 +32,10 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Láminas: la cota con Mayús pasa de horizontal a vertical** (#104): con
+  los dos puntos ya puestos, el cursor elige la dirección como en AutoCAD
+  (arriba o abajo = horizontal, a un lado = vertical). Antes la decidían los
+  dos puntos y una cota horizontal nunca podía volverse vertical.
 - **Un `.skp` vacío abre vacío** (#103): una plantilla de SketchUp sin nada
   dibujado se mandaba al convertidor externo, así que en Windows pedía
   instalar `skp2dae` para abrir una hoja en blanco. Ahora abre y la barra de

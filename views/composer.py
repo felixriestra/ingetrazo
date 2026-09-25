@@ -3918,6 +3918,25 @@ class ComposerCanvasView(QGraphicsView):
             return "h" if dx >= dy else "v"
         return ""
 
+    def _straighten_at(self, a, b, pos, mods) -> str:
+        """Shift once both points are down: the CURSOR picks the direction,
+        as AutoCAD's DIMLINEAR does (#104). Pulled out above or below the
+        two points the cota measures horizontally, out to the left or the
+        right it measures vertically — so a cota can go from one to the
+        other, which judging by the points alone never allowed. Diagonally
+        out (as far out one way as the other) keeps what it had."""
+        if not (mods & Qt.ShiftModifier) or a is None or b is None:
+            return ""
+        x0, x1 = sorted((a.x(), b.x()))
+        y0, y1 = sorted((a.y(), b.y()))
+        out_x = max(x0 - pos.x(), pos.x() - x1, 0.0)
+        out_y = max(y0 - pos.y(), pos.y() - y1, 0.0)
+        if out_y > out_x:
+            return "h"
+        if out_x > out_y:
+            return "v"
+        return self._cota_axis or self._straighten(a, b, mods)
+
     @staticmethod
     def _line_ends(a, b, sep: float, axis: str):
         """The dimension LINE's two ends in PAGE mm — the view's mirror of
@@ -4170,8 +4189,8 @@ class ComposerCanvasView(QGraphicsView):
             if self._second_pt is not None:
                 # Third click of a dimension: fixes the line separation.
                 if mode in self._STRAIGHT_TOOLS:
-                    self._cota_axis = self._straighten(
-                        self._drag_start, self._second_pt,
+                    self._cota_axis = self._straighten_at(
+                        self._drag_start, self._second_pt, pos,
                         event.modifiers()) or self._cota_axis
                 self._finish_cota(pos)
                 self._ignore_release = True
@@ -4406,10 +4425,13 @@ class ComposerCanvasView(QGraphicsView):
             if mode in self._RUN_TOOLS and self._chain_pts:
                 self._chain_axis = self._straighten(
                     self._chain_pts[-1][0], pos, mods) or self._chain_axis
+            elif self._second_pt is not None:
+                self._cota_axis = self._straighten_at(
+                    self._drag_start, self._second_pt, pos,
+                    mods) or self._cota_axis
             elif self._drag_start is not None:
                 self._cota_axis = self._straighten(
-                    self._drag_start, self._second_pt or pos,
-                    mods) or self._cota_axis
+                    self._drag_start, pos, mods) or self._cota_axis
         if self._chain_pts:
             self._update_chain_preview(pos)
             return True
