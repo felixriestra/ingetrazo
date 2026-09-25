@@ -207,6 +207,73 @@ def test_openskp_adapter_returns_none_without_geometry():
     assert skp_openskp._adapt(NS(definitions={0: root}), "empty") is None
 
 
+def _vff_skp(tmp_path, thumb_pixels) -> Path:
+    """A 2021+ style .skp: the UTF-16 marker, then the ZIP that carries
+    SketchUp's own render of the model in ``meta/model_thumbnail.png``."""
+    import io
+    import zipfile
+    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+    from PySide6.QtGui import QColor, QImage
+    img = QImage(8, 8, QImage.Format_RGBA8888)
+    img.fill(QColor(255, 255, 255))
+    for x, y in thumb_pixels:
+        img.setPixelColor(x, y, QColor(0, 0, 0))
+    raw = QByteArray()
+    buf = QBuffer(raw)
+    buf.open(QIODevice.WriteOnly)
+    img.save(buf, "PNG")
+    zbuf = io.BytesIO()
+    with zipfile.ZipFile(zbuf, "w") as zf:
+        zf.writestr("meta/model_thumbnail.png", bytes(raw))
+    p = tmp_path / "m.skp"
+    p.write_bytes(_sketchup_bytes() + b"VFF" + zbuf.getvalue())
+    return p
+
+
+def _empty_vff_model():
+    root = _fake_definition(id=0, name="ROOT_MODEL", verts={}, edges={}, faces={})
+    return NS(definitions={}, root=root, version="{22.0.354}")
+
+
+def test_an_empty_sketchup_file_opens_empty_instead_of_asking_for_the_converter(tmp_path):
+    # #103: a SketchUp template with nothing drawn went to skp2dae, so on
+    # Windows opening a blank page meant installing a program first.
+    skp = _vff_skp(tmp_path, thumb_pixels=[])
+    payload = skp_openskp._adapt(_empty_vff_model(), "plantilla", skp_path=skp)
+    assert payload is not None and payload["empty"] is True
+    assert payload["groups"] == [] and payload["protos"] == []
+
+
+def test_a_file_whose_thumbnail_shows_geometry_still_falls_back(tmp_path):
+    # The parse found nothing but SketchUp drew something: the parser missed
+    # it, and the converter must still get its chance.
+    skp = _vff_skp(tmp_path, thumb_pixels=[(3, 3)])
+    assert skp_openskp._adapt(_empty_vff_model(), "m", skp_path=skp) is None
+
+
+def test_an_empty_legacy_file_still_falls_back(tmp_path):
+    # Before 2021 there is no thumbnail to ask, so no way to be sure.
+    skp = _vff_skp(tmp_path, thumb_pixels=[])
+    model = _empty_vff_model()
+    model.version = "{17.2.2555}"
+    assert skp_openskp._adapt(model, "m", skp_path=skp) is None
+
+
+def test_parse_skp_accepts_an_empty_payload(tmp_path, monkeypatch):
+    p = tmp_path / "m.skp"
+    p.write_bytes(_sketchup_bytes() + b"\x00" * 40)
+    monkeypatch.setattr(skp_format._OpenSkpBackend, "parse",
+                        lambda self, path, progress=None: {
+                            "backend": "openskp", "groups": [], "protos": [],
+                            "empty": True})
+    monkeypatch.setattr(skp_format._OpenSkpBackend, "available",
+                        lambda self: True)
+    payload = skp_format.parse_skp(p)
+    scene = Scene()
+    assert skp_format.apply_payload(scene, payload) == "openskp"
+    assert scene.groups == []
+
+
 def test_openskp_adapter_resolves_face_colours_via_materials_by_id():
     # Face.material_id → SkpModel.materials_by_id (our upstream PR openskp#3)
     # → IngeTrazo attrs["color"] in 0..1. A model without the join (PyPI

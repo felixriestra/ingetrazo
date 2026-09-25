@@ -879,6 +879,43 @@ def file_layer_records(model):
     return out
 
 
+def _is_empty_model(model, skp_path, legacy_era: bool) -> bool:
+    """True when the file is a SketchUp model with nothing in it, as opposed
+    to one whose geometry the parser failed to find. The parse alone cannot
+    tell the two apart, so ask the file: a 2021+ ``.skp`` carries SketchUp's
+    own render of the model (``meta/model_thumbnail.png``), which is one flat
+    colour when there is no geometry. Legacy files, and any doubt, answer
+    False — the converter stays the fallback."""
+    if legacy_era or skp_path is None:
+        return False
+    root = getattr(model, "root", None)
+    if getattr(model, "definitions", None) or root is None:
+        return False
+    if any(getattr(root, a, None) for a in (
+            "faces", "edges", "instances", "texts", "dimensions",
+            "construction_lines", "construction_points")):
+        return False
+    import io
+    import zipfile
+    from PySide6.QtGui import QImage
+    try:
+        data = Path(skp_path).read_bytes()
+        start = data.find(b"PK\x03\x04")
+        if start < 0:
+            return False
+        with zipfile.ZipFile(io.BytesIO(data[start:])) as zf:
+            png = zf.read("meta/model_thumbnail.png")
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+    img = QImage.fromData(png)
+    if img.isNull():
+        return False
+    import numpy as np
+    img = img.convertToFormat(QImage.Format_RGBA8888)
+    px = np.frombuffer(img.constBits(), np.uint32, count=img.sizeInBytes() // 4)
+    return bool((px == px[0]).all())
+
+
 def _adapt(model, name: str, skp_path=None):
     """An ``SkpModel`` → a payload ``{"backend", "groups", "protos"}`` or
     ``None`` when it yields no geometry (so the seam can fall back to skp2dae).
@@ -1180,9 +1217,15 @@ def _adapt(model, name: str, skp_path=None):
     # places nothing.
     protos = _merge_equal_protos(protos)
 
-    if not groups and not any(e["faces"] or e["children"] for e in protos):
-        return None
     payload = {"backend": "openskp", "groups": groups, "protos": protos}
+    if not groups and not any(e["faces"] or e["children"] for e in protos):
+        # Nothing to draw. Either the parser missed the geometry (→ None,
+        # the caller falls back to skp2dae) or the file really is empty — a
+        # template, #103: sending THAT to the converter asked Windows users
+        # to install a program to open a blank page.
+        if not _is_empty_model(model, skp_path, legacy_era):
+            return None
+        payload["empty"] = True
     # The file's named materials → the scene registry (core.materials).
     if materials:
         payload["materials"] = materials

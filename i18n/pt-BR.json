@@ -626,6 +626,7 @@
  "Import image failed": "Não foi possível importar a imagem",
  "Import survey points CSV": "Importar CSV de pontos topográficos",
  "Imported {name}": "Importado {name}",
+ "{name} has no geometry — nothing to import.": "{name} não tem geometria: não há nada para importar.",
  "Imported {name}: {edges} edges in {groups} tagged groups": "Importado {name}: {edges} arestas em {groups} grupos etiquetados",
  "Imported {n} feature(s) from {name}": "Importada(s) {n} entidade(s) de {name}",
  "Importing {name}…": "Importando {name}…",

@@ -32,6 +32,10 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Un `.skp` vacío abre vacío** (#103): una plantilla de SketchUp sin nada
+  dibujado se mandaba al convertidor externo, así que en Windows pedía
+  instalar `skp2dae` para abrir una hoja en blanco. Ahora abre y la barra de
+  estado dice que el archivo no tiene geometría.
 - **Mac:** el diálogo de cambios sin guardar ya se lee en el tema oscuro, y
   los deslizadores destacan sobre el fondo oscuro (PR #96).
 

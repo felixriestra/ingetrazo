@@ -3974,8 +3974,15 @@ class MainWindow(QMainWindow):
                 self.viewport.update()
                 self._import_name = skp.name
                 self._update_title()
-                self.statusBar().showMessage(
-                    tr("Imported {name}", name=skp.name), 3000)
+                if payload.get("empty"):
+                    # A template or blank file (#103): say so, or an empty
+                    # viewport reads as a failed import.
+                    self.statusBar().showMessage(tr(
+                        "{name} has no geometry — nothing to import.",
+                        name=skp.name), 8000)
+                else:
+                    self.statusBar().showMessage(
+                        tr("Imported {name}", name=skp.name), 3000)
                 return True
             dlg.close()   # no pure backend could read it → converter below
 

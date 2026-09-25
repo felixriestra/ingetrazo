@@ -127,7 +127,8 @@ def parse_skp(path, progress=None) -> dict:
         # Protos count as geometry: a file whose whole content is
         # components placed once yields no plain groups at all, and
         # reading that as "empty parse" sent it to skp2dae.
-        if payload and (payload.get("groups") or payload.get("protos")):
+        if payload and (payload.get("groups") or payload.get("protos")
+                        or payload.get("empty")):
             return payload
     raise NeedsConverter(path, fmt)
 
