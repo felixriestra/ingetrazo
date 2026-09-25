@@ -99,6 +99,38 @@ def _candidates(p_dir: Path):
             yield entry.name, entry / "__init__.py"
 
 
+def bundled_package_files(p_dir: Path, dest: str = "plugins"):
+    """``(source, dest_dir)`` pairs for every file of every package plugin
+    under ``p_dir`` — the PyInstaller ``datas`` entries ``ingetrazo.spec``
+    adds so package plugins travel with the installers.
+
+    The spec used to copy ``plugins/*.py`` only, so a package plugin (a
+    directory with ``__init__.py``, its submodules and its own
+    ``i18n/*.json``) worked from the repo and the Flatpak — which copies the
+    whole tree — and vanished from every PyInstaller build without a word.
+    Everything in the package is taken (JSON catalogues, glossaries, icons),
+    because a plugin reads its own data by path relative to ``__file__``;
+    only bytecode caches and dotfiles are left behind. The selection of
+    packages is :func:`_candidates`'s, so what the bundle carries is
+    exactly what the loader would load.
+    """
+    pairs: list[tuple[str, str]] = []
+    if not p_dir.is_dir():
+        return pairs
+    for stem, init in _candidates(p_dir):
+        if init.name != "__init__.py":
+            continue                    # loose .py: the spec's own glob
+        pkg = init.parent
+        for f in sorted(pkg.rglob("*")):
+            rel = f.relative_to(pkg)
+            if (not f.is_file() or f.suffix in (".pyc", ".pyo")
+                    or any(part == "__pycache__" or part.startswith(".")
+                           for part in rel.parts)):
+                continue
+            pairs.append((str(f), str(Path(dest, stem, *rel.parent.parts))))
+    return pairs
+
+
 def _import_by_path(stem: str, file: Path):
     """Import ``file`` under a private module name, off ``sys.path``."""
     mod_name = f"ingetrazo_plugin_{stem}"

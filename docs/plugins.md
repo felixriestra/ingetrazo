@@ -7,7 +7,9 @@ A plugin is a Python file (or a package directory) that defines one or more
 tools. Drop it in either of the two places IngeTrazo scans at startup:
 
 - `<app>/plugins/` — plugins bundled with the application (read-only in an
-  installed build);
+  installed build). A package plugin ships whole: every file under its
+  directory (submodules, `i18n/*.json`, icons) except bytecode caches, so
+  read your own data relative to `__file__`;
 - your per-user directory — `~/.local/share/ingetrazo/plugins/` on Linux
   (honouring `$XDG_DATA_HOME`), `%APPDATA%\ingetrazo\plugins\` on Windows.
   **Extensions ▸ Open plugins folder** creates and opens it for you.

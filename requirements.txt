@@ -22,6 +22,10 @@ ezdxf>=1.4.4
 # Apache-2.0, the kernel of OpenSCAD and Blender's booleans; native wheels
 # for Linux x86_64/aarch64, Windows and macOS, cp310–cp314.
 manifold3d>=3.5.3
+# Polygon offsets and booleans for the CAM plugin (plugins/cam/): Clipper's
+# C++ core behind a small extension, MIT. Native wheels for Linux
+# x86_64/aarch64, Windows and macOS, cp314 included (checked 2026-09-25).
+pyclipper>=1.4
 
 # --- Development ---
 pytest>=8.0

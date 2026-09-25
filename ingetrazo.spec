@@ -63,6 +63,19 @@ datas = [
     # the console build below makes it a program of its own on Windows.
     ('scripts/ingetrazo_mcp.py',   'scripts'),
 ]
+# Package plugins (``plugins/<name>/__init__.py`` plus submodules and their
+# own ``i18n/*.json``): the glob above only matches loose files, so a
+# package plugin ran from the repo and the Flatpak (which copies the whole
+# tree) and was silently absent from every PyInstaller build. The list
+# comes from core.extensions so the bundle carries exactly what the loader
+# loads. (The spec runs with the repo root importable only by accident of
+# the working directory — make it explicit.)
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from core.extensions import bundled_package_files
+_plugin_pkg_files = bundled_package_files(ROOT / 'plugins')
+datas += _plugin_pkg_files
+print('spec: package-plugin files: %d' % len(_plugin_pkg_files))
 
 # Optional trees (present today, tolerated if pruned later).
 for opt_src, opt_dst in [
@@ -102,6 +115,12 @@ hiddenimports += ['manifold3d', 'core.solids', 'tools.solid_tools']
 # Copy/Paste between windows (#76): imported lazily by the viewport and
 # the main window.
 hiddenimports += ['formats.clip']
+# Polygon offsets and booleans for the CAM plugin (plugins/cam/, a package
+# plugin loaded BY PATH at run time, so analysis never follows its
+# imports). A native extension (pyclipper._pyclipper) behind a pure-Python
+# __init__ — the mapbox_earcut shape of failure if it goes missing, so it
+# is named here and ``main.py --check`` asserts it imports.
+hiddenimports += collect_submodules('pyclipper')
 hiddenimports += [
     # The bundled plugins import these at RUN time, so static analysis never
     # sees them and they were left out: the AI assistant died on load with
