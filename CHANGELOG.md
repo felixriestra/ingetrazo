@@ -54,6 +54,10 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Compositor sin barras de herramientas** (#114, macOS): si al abrir no
+  queda ninguna barra visible (y entonces no hay dónde hacer clic derecho
+  para recuperarlas), vuelven a su sitio de fábrica. Una barra ocultada a
+  propósito sigue oculta.
 - **Láminas: la cota con Mayús pasa de horizontal a vertical** (#104): con
   los dos puntos ya puestos, el cursor elige la dirección como en AutoCAD
   (arriba o abajo = horizontal, a un lado = vertical). Antes la decidían los

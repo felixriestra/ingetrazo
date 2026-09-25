@@ -12025,7 +12025,29 @@ class ComposerWindow(QMainWindow):
                 self._place_sidebar_handle()
         return super().eventFilter(obj, event)
 
+    def _ensure_toolbars(self) -> None:
+        """Never open with no toolbar at all (#114, macOS: the composer came
+        up with none, not even the tools). Hiding one is a choice — made by
+        right-clicking a toolbar, and remembered; hiding EVERY one leaves
+        nothing to right-click to bring them back, so it is never a choice
+        but a broken saved arrangement. Then the factory layout comes back:
+        tools on the left, sheet and draw on top."""
+        if self._act_clean_screen.isChecked() or not self.isVisible():
+            return
+        main = (self._tools_tb, self._draw_tb, self._sheet_tb)
+        if any(tb.isVisible() for tb in main):
+            return
+        self.addToolBar(Qt.TopToolBarArea, self._sheet_tb)
+        self.addToolBar(Qt.TopToolBarArea, self._draw_tb)
+        self.addToolBar(Qt.LeftToolBarArea, self._tools_tb)
+        for tb in main:
+            tb.show()
+        self.statusBar().showMessage(
+            tr("The toolbars were hidden — they are back in their places."),
+            6000)
+
     def showEvent(self, event) -> None:
+        QTimer.singleShot(0, self._ensure_toolbars)
         QTimer.singleShot(0, self._auto_render_stale)
         QTimer.singleShot(0, self._reload_scale_options)
         # The document may have been swapped under us (New / Open) while
