@@ -7549,7 +7549,13 @@ class Viewport(QOpenGLWidget):
         if msig is not None:
             fp = fp + (("paint",) + msig,)   # past [:3]/[4:]: the disk key too
         if entry is not None:
-            same = entry["fp"] == fp
+            # The fingerprint's checksum is a SUM of coordinates, and a turn
+            # about the centroid keeps the sum: Move's rotation grips turn a
+            # group about its box centre every time, and the viewport went
+            # on drawing the group where it was while its box showed where
+            # it is (Marco, 25-09, «imagen fantasma»). The sampled vertices
+            # settle it — up to 32 lookups.
+            same = entry["fp"] == fp and self._samples_match(entry, mesh)
             if not same and entry.get("fp_approx"):
                 # Post-shift: the checksum is approximate (float32 drift).
                 # Counts/attrs/soft equal + every sampled vertex in place is
@@ -7573,6 +7579,8 @@ class Viewport(QOpenGLWidget):
         # fingerprint uses process-salted hash()).
         _loader = getattr(self, "_chunk_cache_load", None)   # stub VPs in tests
         disk = _loader(group, fp, vkey) if callable(_loader) else None
+        if disk is not None and not self._samples_match(disk, mesh):
+            disk = None      # same digest, turned geometry (see above)
         if disk is not None:
             cache[id(group)] = disk
             disk["msig"] = msig

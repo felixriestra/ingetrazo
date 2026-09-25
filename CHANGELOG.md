@@ -54,6 +54,11 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Un grupo girado sobre su centro seguía dibujado donde estaba**: el visor
+  reconoce «sin cambios» por una suma de coordenadas, y girar sobre el
+  centro no la cambia. Con las pinzas de rotación (que giran siempre sobre
+  el centro) quedaba siempre el cubo fantasma; con Rotar, al girar sobre el
+  centro exacto.
 - **Compositor sin barras de herramientas** (#114, macOS): si al abrir no
   queda ninguna barra visible (y entonces no hay dónde hacer clic derecho
   para recuperarlas), vuelven a su sitio de fábrica. Una barra ocultada a
