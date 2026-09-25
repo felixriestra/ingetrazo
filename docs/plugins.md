@@ -78,6 +78,30 @@ Useful, honest data points (what the app itself uses — see the bundled
 - lengths for display: `scene.dimension_style` + the viewport's
   `_format_dim_value`.
 
+## Side panels
+
+A plugin can own a dock next to the trays. Build it the first time your
+tool runs and hand it to the main window:
+
+```python
+from PySide6.QtWidgets import QDockWidget
+
+def on_activate(self, viewport):
+    win = viewport.window()
+    dock = win.plugin_docks().get("myplugin_panel")
+    if dock is None:
+        dock = QDockWidget("My panel", win)
+        dock.setObjectName("myplugin_panel")    # REQUIRED, keep it stable
+        dock.setWidget(MyPanel(viewport))
+    win.add_plugin_dock(dock)                   # tabbed with the trays
+```
+
+`add_plugin_dock(dock, area=Qt.RightDockWidgetArea, *, show=True)` gives
+the dock a Window-menu entry, puts it back where the user left it last
+session (the window layout remembers it by `objectName`), and returns the
+dock in charge — calling it again with the same name returns the first
+one, so it is safe to call on every activation.
+
 ## Developing interactively
 
 **Extensions → Python Console** (`Ctrl+Shift+P`) is a live REPL over the
@@ -182,6 +206,7 @@ belong in extensions like this one, not in the core.
 - Importer / exporter registration.
 - Side-panel registration, document data, viewport overlays and snap
   providers — **done** (`setup(app)`, above).
+- Free-standing plugin docks — **done** (`add_plugin_dock`, above).
 - Plugin manifest (`plugin.toml`) for metadata and dependencies.
 - Plugin manager UI (install, enable, disable, update) — after the API
   stabilises; a package format would freeze the API too early (see the
