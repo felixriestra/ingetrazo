@@ -2545,6 +2545,40 @@ class SnapshotMutation(Command):
             scene.version += 1
 
 
+class SetPluginData(Command):
+    """Replace one plugin's entry in ``scene.plugin_data`` — undoable.
+
+    ``value`` is a JSON-able dict, or ``None`` to remove the entry. Both
+    the new value and the one it replaces are deep-copied, so a plugin that
+    keeps mutating its live dict cannot rewrite history behind the stack's
+    back (undo must bring back what was there, not what it became)."""
+
+    def __init__(self, key: str, value) -> None:
+        import copy
+        self.key = key
+        self.value = copy.deepcopy(value)
+        self.captured = False
+        self.before = None          # None: the key was absent
+
+    def do(self, scene) -> None:
+        import copy
+        data = scene.plugin_data
+        if not self.captured:       # first run only; redo keeps the original
+            self.before = copy.deepcopy(data.get(self.key))
+            self.captured = True
+        if self.value is None:
+            data.pop(self.key, None)
+        else:
+            data[self.key] = copy.deepcopy(self.value)
+
+    def undo(self, scene) -> None:
+        import copy
+        if self.before is None:
+            scene.plugin_data.pop(self.key, None)
+        else:
+            scene.plugin_data[self.key] = copy.deepcopy(self.before)
+
+
 class SnapshotImport(Command):
     """Wrap a file import that may add loose geometry AND/OR reference groups
     (big DAE/OBJ models land as a Group). SnapshotMutation only snapshots the

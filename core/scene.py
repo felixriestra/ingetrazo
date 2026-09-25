@@ -48,6 +48,11 @@ class Scene:
     # Imported survey points (GPS / total station, UTM CSV) — reference markers
     # the trace snaps to; never part of the mesh (Track G, municipal flow).
     geo_points: list = field(default_factory=list)
+    # Per-plugin document data (host hook H4): ``{plugin_key: dict}``, JSON
+    # values only. Travels in the .igz as ``payload["plugin_data"]``; older
+    # readers ignore the key. Plugins own their entry and change it through
+    # ``core.history.SetPluginData`` so the edit is undoable.
+    plugin_data: dict = field(default_factory=dict)
     # Construction guides (Tape Measure): infinite dashed lines / points used to
     # align real drawing. Scaffolding, never part of the mesh.
     guides: list = field(default_factory=list)
@@ -534,7 +539,7 @@ class Scene:
                 or self.tile_layer or self.geo_paths or self.terrain
                 or self.guides or self.geo_points or self.text_labels
                 or self.saved_views or self.compositions
-                or self.image_planes):
+                or self.image_planes or self.plugin_data):
             self.mesh.clear()
             self.groups.clear()
             self.dimensions.clear()
@@ -546,6 +551,7 @@ class Scene:
             self.saved_views.clear()
             self.compositions.clear()
             self.custom_scales.clear()
+            self.plugin_data = {}
             self.selection.clear()
             from core.layers import DEFAULT_LAYER, Layer
             self.layers = [Layer(DEFAULT_LAYER)]
