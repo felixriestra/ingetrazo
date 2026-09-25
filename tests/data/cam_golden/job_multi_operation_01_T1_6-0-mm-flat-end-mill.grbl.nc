@@ -1,0 +1,146 @@
+(IngeTrazo CAM - GRBL)
+(Job: Multi)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+(Load T1 [6.0 mm Flat End Mill], set Z zero, then run this file)
+G90 G94 G17
+G21
+G54
+(Operation: Face)
+(Facing)
+(Tool T1: 6.0 mm Flat End Mill)
+S12000 M3
+G4 P3
+G0 Z30
+G0 X-3 Y-3
+G1 Z19.5 F250
+G1 X103 F800
+G1 Y1.05
+G1 X-3
+G1 Y5.1
+G1 X103
+G1 Y9.15
+G1 X-3
+G1 Y13.2
+G1 X103
+G1 Y17.25
+G1 X-3
+G1 Y21.3
+G1 X103
+G1 Y25.35
+G1 X-3
+G1 Y29.4
+G1 X103
+G1 Y33.45
+G1 X-3
+G1 Y37.5
+G1 X103
+G1 Y41.55
+G1 X-3
+G1 Y45.6
+G1 X103
+G1 Y49.65
+G1 X-3
+G1 Y53.7
+G1 X103
+G1 Y57.75
+G1 X-3
+G1 Y61.8
+G1 X103
+G1 Y65.85
+G1 X-3
+G1 Y69.9
+G1 X103
+G1 Y73.95
+G1 X-3
+G1 Y78
+G1 X103
+G0 Z30
+M5
+(Operation: Pocket)
+(Pocket)
+(Tool T1: 6.0 mm Flat End Mill)
+S12000 M3
+G4 P3
+(Pocket roughing pass 1 of 2)
+G0 X33.01 Y28.01
+G1 Z18 F250
+G1 X66.99 F800
+G1 Y46.99
+G1 X33.01
+G1 Y28.01
+G0 Z30
+G1 Z18 F250
+G1 X66.99 F800
+G0 Z30
+G0 Y31.173
+G1 Z18 F250
+G1 X33.01 F800
+G0 Z30
+G0 Y34.337
+G1 Z18 F250
+G1 X66.99 F800
+G0 Z30
+G0 Y37.5
+G1 Z18 F250
+G1 X33.01 F800
+G0 Z30
+G0 Y40.663
+G1 Z18 F250
+G1 X66.99 F800
+G0 Z30
+G0 Y43.827
+G1 Z18 F250
+G1 X33.01 F800
+G0 Z30
+(Pocket finishing pass 1 of 1 at depth pass 1 of 2)
+G0 Y28.01
+G1 Z18 F250
+G1 X66.99 F800
+G1 Y46.99
+G1 X33.01
+G1 Y28.01
+G0 Z30
+(Pocket roughing pass 2 of 2)
+G1 Z16 F250
+G1 X66.99 F800
+G1 Y46.99
+G1 X33.01
+G1 Y28.01
+G0 Z30
+G1 Z16 F250
+G1 X66.99 F800
+G0 Z30
+G0 Y31.173
+G1 Z16 F250
+G1 X33.01 F800
+G0 Z30
+G0 Y34.337
+G1 Z16 F250
+G1 X66.99 F800
+G0 Z30
+G0 Y37.5
+G1 Z16 F250
+G1 X33.01 F800
+G0 Z30
+G0 Y40.663
+G1 Z16 F250
+G1 X66.99 F800
+G0 Z30
+G0 Y43.827
+G1 Z16 F250
+G1 X33.01 F800
+G0 Z30
+(Pocket finishing pass 1 of 1 at depth pass 2 of 2)
+G0 Y28.01
+G1 Z16 F250
+G1 X66.99 F800
+G1 Y46.99
+G1 X33.01
+G1 Y28.01
+G0 Z30
+M5
+M30

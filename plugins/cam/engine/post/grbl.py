@@ -6,7 +6,8 @@
 What GRBL cannot do shapes this post:
 
 - **No tool changer, no M6, no G43.** A job with several tools becomes
-  ONE FILE PER TOOL (``job_T1_6mm-flat-end-mill.nc``, …), each complete —
+  ONE FILE PER TOOL CHANGE (``job_01_T1_6-mm-flat-end-mill.nc``, …), numbered
+  in running order, each complete —
   units, work offset, spindle, end — and each opening with the comment to
   load that tool and set Z zero, since a new tool has a new length.
   Consecutive operations with the same tool stay in one file.
@@ -31,7 +32,8 @@ TITLE = "GRBL"
 class GrblWriter(Writer):
     title = TITLE
     extension = ".nc"
-    comment_limit = 70
+    # Two parentheses short of GRBL 1.1's 80-character line buffer.
+    comment_limit = 76
 
 
 def _chunks(commands) -> list:
@@ -59,11 +61,14 @@ def post(job, toolpath, translate=None) -> PostResult:
     result = PostResult()
     chunks = _chunks(toolpath.commands)
     multi = len({t for t, _ in chunks}) > 1 or len(chunks) > 1
-    for tool_number, cmds in chunks:
+    for seq, (tool_number, cmds) in enumerate(chunks, 1):
         w = GrblWriter(job, translate)
         _program(w, job, tool_number, cmds, translate)
         tool = job.tool_by_number(tool_number)
-        suffix = f"_T{tool_number}_{slug(tool.name if tool else 'tool')}" if multi else ""
+        # The run order leads the name: the same tool may come back later
+        # (T1, T3, T1), and each file must be its own — and sort in order.
+        suffix = (f"_{seq:02d}_T{tool_number}_{slug(tool.name if tool else 'tool')}"
+                  if multi else "")
         result.files.append(ProgramFile(suffix, w.extension, w.text(),
                                         [tool_number] if tool_number is not None else []))
         result.files[-1].expected = w.expected
@@ -75,7 +80,7 @@ def _program(w: GrblWriter, job, tool_number, cmds, translate) -> None:
     w.lines.extend(lines)
     tool = job.tool_by_number(tool_number) if tool_number is not None else None
     if tool is not None:
-        tpl = "Load tool T{number} ({name}) and set Z zero before running this file"
+        tpl = "Load T{number} ({name}), set Z zero, then run this file"
         s = (translate(tpl) if translate else tpl)
         try:
             s = s.format(number=tool.number, name=tool.name)

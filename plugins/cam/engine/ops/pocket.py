@@ -49,9 +49,14 @@ def generate(stock, setup, tool, params, strategy, tolerance, finishing_tool=Non
     if boundary is None or any(i is None for i in cleaned_islands):
         raise CamError("invalid_boundary")
 
-    arc_tol = tolerance.chordal
-    rough = geo.offset(boundary, cleaned_islands, -rough_r, "round", arc_tol)
-    finish = geo.offset(boundary, cleaned_islands, -finish_r, "round", arc_tol)
+    # Round joins are flattened into chords, and a chord lies INSIDE its arc
+    # by up to the arc tolerance: the cutter would clip every corner it
+    # rounds by that much. Flattening at half the chordal tolerance and
+    # offsetting half of it further keeps every chord outside the true
+    # radius, at a cost of at most one chordal tolerance of stock.
+    arc_tol = tolerance.chordal * 0.5
+    rough = geo.offset(boundary, cleaned_islands, -(rough_r + arc_tol), "round", arc_tol)
+    finish = geo.offset(boundary, cleaned_islands, -(finish_r + arc_tol), "round", arc_tol)
     finish_count = max(0, strategy.finishingPasses)
     if not rough or (finish_count > 0 and not finish):
         raise CamError("region_too_small_for_tool", diameter=tool.diameter)

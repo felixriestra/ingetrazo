@@ -243,7 +243,8 @@ def check_gouges(job, compiled) -> list:
         if not pts:
             continue
         P = np.asarray(pts, dtype=float)
-        dist = _distance_to_loops(P[:, :2], loops)
+        r_max = max(radius_by_tool.values(), default=0.0)
+        dist = _distance_to_loops(P[:, :2], loops, cutoff=r_max + 1.0)
         inside = _inside_even_odd(P[:, :2], loops)
         radius = np.array([radius_by_tool.get(tool_at.get(i), 0.0) for i in idx])
         wrong_side = inside if keep_out_inside else ~inside
@@ -274,20 +275,53 @@ def _protected(job, op):
     return [boundary], op.kind == "outsideProfile"
 
 
-def _distance_to_loops(P, loops) -> np.ndarray:
+def _distance_to_loops(P, loops, cutoff: float | None = None) -> np.ndarray:
+    """Distance from each point of ``P`` (N, 2) to the nearest edge of
+    ``loops``. With ``cutoff``, anything farther is reported as
+    ``cutoff``: points and edges are binned on a grid of that size, and a
+    point is only measured against the edges in its own and the eight
+    neighbouring cells — a pocket of thousands of moves beside a
+    thousand-edge outline costs a fraction of the all-pairs work."""
+    A = np.concatenate([np.asarray(lp, dtype=float) for lp in loops])
+    B = np.concatenate([np.roll(np.asarray(lp, dtype=float), -1, axis=0) for lp in loops])
+    if cutoff is None or cutoff <= 0:
+        return _pairs_min(P, A, B)
+    best = np.full(len(P), float(cutoff))
+    cell = float(cutoff)
+    lo = np.minimum(A, B).min(axis=0) - cell
+    pc = np.floor((P - lo) / cell).astype(np.int64)
+    seg_lo = np.floor((np.minimum(A, B) - lo) / cell).astype(np.int64)
+    seg_hi = np.floor((np.maximum(A, B) - lo) / cell).astype(np.int64)
+    grid: dict = {}
+    for s in range(len(A)):
+        for i in range(seg_lo[s, 0], seg_hi[s, 0] + 1):
+            for j in range(seg_lo[s, 1], seg_hi[s, 1] + 1):
+                grid.setdefault((i, j), []).append(s)
+    keys, inverse = np.unique(pc, axis=0, return_inverse=True)
+    inverse = inverse.reshape(-1)
+    for k, (ci, cj) in enumerate(keys):
+        segs = set()
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                segs.update(grid.get((ci + di, cj + dj), ()))
+        if not segs:
+            continue
+        idx = np.nonzero(inverse == k)[0]
+        sel = np.fromiter(segs, dtype=np.int64)
+        best[idx] = np.minimum(best[idx], _pairs_min(P[idx], A[sel], B[sel]))
+    return best
+
+
+def _pairs_min(P, A, B) -> np.ndarray:
     best = np.full(len(P), np.inf)
-    for lp in loops:
-        A = np.asarray(lp, dtype=float)
-        B = np.roll(A, -1, axis=0)
-        for s in range(0, len(A), 256):
-            a, b = A[s:s + 256], B[s:s + 256]
-            ab = b - a
-            sq = np.maximum((ab * ab).sum(1), 1e-18)
-            ap = P[:, None, :] - a[None, :, :]
-            t = np.clip((ap * ab[None]).sum(2) / sq[None], 0.0, 1.0)
-            proj = a[None] + t[..., None] * ab[None]
-            d = np.sqrt(((P[:, None, :] - proj) ** 2).sum(2)).min(1)
-            best = np.minimum(best, d)
+    for s in range(0, len(A), 256):
+        a, b = A[s:s + 256], B[s:s + 256]
+        ab = b - a
+        sq = np.maximum((ab * ab).sum(1), 1e-18)
+        ap = P[:, None, :] - a[None, :, :]
+        t = np.clip((ap * ab[None]).sum(2) / sq[None], 0.0, 1.0)
+        proj = a[None] + t[..., None] * ab[None]
+        best = np.minimum(best, np.sqrt(((P[:, None, :] - proj) ** 2).sum(2)).min(1))
     return best
 
 

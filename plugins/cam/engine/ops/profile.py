@@ -20,7 +20,7 @@ import math
 
 from .. import geometry as geo
 from ..issues import CamError
-from ..toolpath import Comment, CutterCompensation, Linear, Rapid, Section, Toolpath
+from ..toolpath import Arc, Comment, CutterCompensation, Linear, Rapid, Section, Toolpath
 from . import common
 
 
@@ -170,7 +170,9 @@ def _append_contour(cmds, path, z, top_z, safe_z, tool, strategy, outside, all_p
     cmds.extend(common.entry(strategy.entry, lead_start, second if lead_in <= 0 else first,
                              z, top_z, tool, waste_normal=waste if lead_in <= 0 else None,
                              loops=all_paths, inside_region=inside_region))
-    cmds.append(Linear((first[0], first[1], z), tool.cuttingFeed))
+    last = cmds[-1].to if isinstance(cmds[-1], (Linear, Arc)) else None
+    if last is None or math.dist(last[:2], first) > 1e-9 or abs(last[2] - z) > 1e-9:
+        cmds.append(Linear((first[0], first[1], z), tool.cuttingFeed))
     _cut_with_tabs(cmds, list(path) + [first], z, top_z if tab_top is None else tab_top, tool,
                    strategy.tabs)
     last = cmds[-1]

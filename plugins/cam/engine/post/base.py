@@ -35,7 +35,7 @@ HEADER_TEMPLATES = (
     "Stock: {width} x {depth} x {height} {unit}",
     "Work zero: {origin}",
     "Safe height: {safe} {unit}",
-    "Load tool T{number} ({name}) and set Z zero before running this file",
+    "Load T{number} ({name}), set Z zero, then run this file",
     "Check the toolpath with an air cut before the first real cut",
 )
 
@@ -220,8 +220,18 @@ class Writer:
         self.feed_out = s
         return f" F{s}"
 
+    def _nowhere(self, to) -> bool:
+        """A move to where the tool already is, as written: skipped. It
+        does nothing on the machine and upsets LinuxCNC's cutter
+        compensation, which needs a direction for every move."""
+        return (None not in self.out
+                and [self.num.coord(v) for v in to] == self.out)
+
     def rapid(self, to) -> None:
         from ..verify import ParsedMotion
+        if self._nowhere(to):
+            self.pos = list(to)
+            return
         self.emit(f"G0 {self._axes(to)}")
         self.expected.append(ParsedMotion("rapid", tuple(to)))
         self.pos = list(to)
@@ -229,6 +239,9 @@ class Writer:
     def retract(self, z: float) -> None:
         from ..verify import ParsedMotion
         s = self.num.coord(z)
+        if s == self.out[2]:
+            self.pos[2] = z
+            return
         self.emit(f"G0 Z{s}")
         self.out[2] = s
         self.expected.append(ParsedMotion("rapid", (self.pos[0], self.pos[1], z)))
@@ -236,6 +249,9 @@ class Writer:
 
     def linear(self, to, feed: float) -> None:
         from ..verify import ParsedMotion
+        if self._nowhere(to):
+            self.pos = list(to)
+            return
         self.emit(f"G1 {self._axes(to)}{self._feed(feed)}")
         self.expected.append(ParsedMotion("linear", tuple(to), feed=feed))
         self.pos = list(to)

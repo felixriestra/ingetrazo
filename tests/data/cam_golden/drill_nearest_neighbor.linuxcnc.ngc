@@ -1,0 +1,43 @@
+%
+(IngeTrazo CAM - LinuxCNC)
+(Job: Drill nearest)
+(Units: mm)
+(Stock: 100 x 75 x 20 mm)
+(Work zero: front-left corner, stock bottom)
+(Safe height: 10 mm)
+(Check the toolpath with an air cut before the first real cut)
+G21
+G17 G90 G91.1 G94 G40 G49 G80
+G64 P0.01
+G54
+(Operation: Drill)
+(Drilling)
+(Tool T3: 5 mm Drill)
+T3 M6
+G43 H3
+S6000 M3
+G4 P3
+G0 Z30
+G0 X20 Y20
+G99 G83 X20 Y20 Z8 R25 Q4 F150
+G80
+G0 X30 Y30 Z30
+G99 G83 X30 Y30 Z8 R25 Q4 F150
+G80
+G0 X50 Y37.5 Z30
+G99 G83 X50 Y37.5 Z8 R25 Q4 F150
+G80
+G0 X80 Y55 Z30
+G99 G83 X80 Y55 Z8 R25 Q4 F150
+G80
+G0 Y20 Z30
+G99 G83 X80 Y20 Z8 R25 Q4 F150
+G80
+G0 X20 Y55 Z30
+G99 G83 X20 Y55 Z8 R25 Q4 F150
+G80
+G0 Z30
+M5
+M9
+M2
+%

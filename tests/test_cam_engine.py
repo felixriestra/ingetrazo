@@ -308,3 +308,31 @@ def test_the_engine_imports_no_qt_and_no_translations():
         text = path.read_text()
         for banned in ("PySide6", "core.i18n", "from core", "import core", "QtCore"):
             assert banned not in text, (path.name, banned)
+
+
+# ---- performance ------------------------------------------------------------
+
+def test_a_thousand_segment_pocket_compiles_verifies_and_posts_quickly():
+    """The plan's target: under 2 s for a 1,000-segment pocket, end to end
+    (compile, verify, gouge check, post and read back). Also a regression
+    for round joins: their chords must never clip an island's corner."""
+    import time
+    from plugins.cam.engine.post import post_job
+    n = 1000
+    wavy = [(150 + 120 * math.cos(2 * math.pi * k / n) * (1 + 0.1 * math.sin(12 * math.pi * k / n)),
+             100 + 80 * math.sin(2 * math.pi * k / n)) for k in range(n)]
+    island = [(150 + 10 * math.cos(2 * math.pi * a / 20), 100 + 10 * math.sin(2 * math.pi * a / 20))
+              for a in range(20)]
+    t = Tool(diameter=6.0, fluteLength=30)
+    job = Job(stock=Stock(width=300, depth=200, height=20), tools=[t], operations=[
+        Operation("P", "pocket", t.id,
+                  parameters=PocketParameters(depth=6, stepDown=2, stepoverFraction=0.5),
+                  strategy=Strategy(geometry=Region(wavy, [island])))])
+    t0 = time.perf_counter()
+    res = compiler.compile_job(job)
+    report = verify.verify(job, res.toolpath)
+    gouges = verify.check_gouges(job, res)
+    posted = post_job(job, res.toolpath)
+    elapsed = time.perf_counter() - t0
+    assert report.can_export and not gouges and not posted.issues
+    assert elapsed < 2.0, f"{elapsed:.2f} s"
