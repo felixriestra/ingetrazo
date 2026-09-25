@@ -88,6 +88,24 @@ Los dos admiten milímetros (`G21`) o pulgadas (`G20`), según las
 **Unidades** del trabajo. Los comentarios van en tu idioma, reducidos a
 ASCII.
 
+## Simulación
+
+**Salida ▸ Simular…** abre el trabajo sobre un bloque de material en 3D
+y lo reproduce en tiempo de máquina. El reloj sigue la estimación de
+tiempo, con los cambios de herramienta y el arranque del husillo.
+Reproduce, pausa, arrastra la barra a cualquier momento o salta al final.
+La velocidad llega a 500×.
+
+El material se va retirando al paso de la fresa. Los cortes pasantes se
+convierten en agujeros, los puentes quedan en pie y se cuenta el volumen
+retirado. En la ventana del modelo, las trayectorias ya cortadas se ven
+intensas, las demás se atenúan y la fresa se marca donde está.
+**Resolución** equilibra detalle y velocidad. En un tablero grande, la
+malla se hace más gruesa sola.
+
+La simulación muestra lo que hace la trayectoria. No sustituye al corte
+en vacío en la máquina.
+
 ## El trabajo viaja con el modelo
 
 El trabajo se guarda en el `.igz` y cada cambio se puede deshacer. Si
