@@ -73,7 +73,7 @@ def chunks_cold():
 res["root"] = {}
 res["root"]["paint"] = timed(paint, 30)
 res["root"]["orbit_frame"] = timed(orbit_frame, 40)
-res["root"]["resync_vbos"] = timed(resync, 5)
+res["root"]["resync_vbos"] = timed(resync, 20)   # 5 was too noisy (0.5.3 check)
 res["root"]["chunks_rebuild+paint"] = timed(chunks_cold, 2)
 res["root"]["pick_index_cold"] = timed(pick_index_cold, 3)
 win._activate_tool("select"); res["root"]["hover_select_x60"] = timed(hovers, 3)
@@ -86,7 +86,7 @@ if cont is not None:
     vp.begin_group_edit(cont); app.processEvents(); paint_now()
     res["container"]["paint"] = timed(paint, 30)
     res["container"]["orbit_frame"] = timed(orbit_frame, 40)
-    res["container"]["resync_vbos"] = timed(resync, 5)
+    res["container"]["resync_vbos"] = timed(resync, 20)
     res["container"]["pick_index_cold"] = timed(pick_index_cold, 3)
     win._activate_tool("select"); res["container"]["hover_select_x60"] = timed(hovers, 3)
     win._activate_tool("line");   res["container"]["hover_line_x60"] = timed(hovers, 3)

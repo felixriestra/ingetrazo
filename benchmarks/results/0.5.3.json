@@ -1,0 +1,390 @@
+{
+ "version": "0.5.3",
+ "compared_with": "v0.5.2",
+ "date": "2026-09-25",
+ "document": "plaza.igz",
+ "tests": {
+  "fast": "3053 passed, 2 skipped, 800 deselected, 1 xfailed, 211 warnings in 339.09s (0:05:39)",
+  "slow": "799 passed, 3056 deselected, 1 xfailed in 100.99s (0:01:40)"
+ },
+ "viewport": {
+  "head": [
+   {
+    "label": "0.5.3",
+    "commit": "45eb5fc",
+    "open_s": 4.21,
+    "first_paint_s": 0.05,
+    "root": {
+     "paint": {
+      "median_ms": 11.21,
+      "mean_ms": 12.82,
+      "max_ms": 25.87,
+      "n": 30
+     },
+     "orbit_frame": {
+      "median_ms": 10.64,
+      "mean_ms": 12.7,
+      "max_ms": 30.32,
+      "n": 40
+     },
+     "resync_vbos": {
+      "median_ms": 49.0,
+      "mean_ms": 45.82,
+      "max_ms": 53.18,
+      "n": 5
+     },
+     "chunks_rebuild+paint": {
+      "median_ms": 1196.57,
+      "mean_ms": 1196.57,
+      "max_ms": 1198.23,
+      "n": 2
+     },
+     "pick_index_cold": {
+      "median_ms": 60.99,
+      "mean_ms": 59.0,
+      "max_ms": 63.3,
+      "n": 3
+     },
+     "hover_select_x60": {
+      "median_ms": 409.7,
+      "mean_ms": 412.59,
+      "max_ms": 436.77,
+      "n": 3
+     },
+     "hover_line_x60": {
+      "median_ms": 1292.6,
+      "mean_ms": 1281.84,
+      "max_ms": 1302.56,
+      "n": 3
+     }
+    },
+    "container": {
+     "name": null,
+     "children": 0
+    },
+    "scene": {
+     "groups": 1035,
+     "faces_drawn": 48249,
+     "edges": 69586,
+     "dback": 173463
+    }
+   },
+   {
+    "label": "0.5.3",
+    "commit": "45eb5fc",
+    "open_s": 4.12,
+    "first_paint_s": 0.05,
+    "root": {
+     "paint": {
+      "median_ms": 10.02,
+      "mean_ms": 11.63,
+      "max_ms": 24.57,
+      "n": 30
+     },
+     "orbit_frame": {
+      "median_ms": 8.63,
+      "mean_ms": 11.0,
+      "max_ms": 26.07,
+      "n": 40
+     },
+     "resync_vbos": {
+      "median_ms": 43.82,
+      "mean_ms": 41.75,
+      "max_ms": 48.99,
+      "n": 5
+     },
+     "chunks_rebuild+paint": {
+      "median_ms": 1203.26,
+      "mean_ms": 1203.26,
+      "max_ms": 1253.72,
+      "n": 2
+     },
+     "pick_index_cold": {
+      "median_ms": 64.56,
+      "mean_ms": 61.27,
+      "max_ms": 67.89,
+      "n": 3
+     },
+     "hover_select_x60": {
+      "median_ms": 465.57,
+      "mean_ms": 470.61,
+      "max_ms": 483.49,
+      "n": 3
+     },
+     "hover_line_x60": {
+      "median_ms": 1400.11,
+      "mean_ms": 1397.27,
+      "max_ms": 1427.25,
+      "n": 3
+     }
+    },
+    "container": {
+     "name": null,
+     "children": 0
+    },
+    "scene": {
+     "groups": 1035,
+     "faces_drawn": 48249,
+     "edges": 69586,
+     "dback": 173463
+    }
+   }
+  ],
+  "prev": [
+   {
+    "label": "v0.5.2",
+    "commit": "70f3cf8",
+    "open_s": 4.17,
+    "first_paint_s": 0.04,
+    "root": {
+     "paint": {
+      "median_ms": 11.07,
+      "mean_ms": 12.76,
+      "max_ms": 25.04,
+      "n": 30
+     },
+     "orbit_frame": {
+      "median_ms": 8.6,
+      "mean_ms": 10.81,
+      "max_ms": 25.09,
+      "n": 40
+     },
+     "resync_vbos": {
+      "median_ms": 32.2,
+      "mean_ms": 34.78,
+      "max_ms": 45.45,
+      "n": 5
+     },
+     "chunks_rebuild+paint": {
+      "median_ms": 1199.92,
+      "mean_ms": 1199.92,
+      "max_ms": 1206.44,
+      "n": 2
+     },
+     "pick_index_cold": {
+      "median_ms": 55.28,
+      "mean_ms": 53.64,
+      "max_ms": 56.57,
+      "n": 3
+     },
+     "hover_select_x60": {
+      "median_ms": 373.87,
+      "mean_ms": 373.72,
+      "max_ms": 378.33,
+      "n": 3
+     },
+     "hover_line_x60": {
+      "median_ms": 1254.75,
+      "mean_ms": 1236.16,
+      "max_ms": 1272.39,
+      "n": 3
+     }
+    },
+    "container": {
+     "name": null,
+     "children": 0
+    },
+    "scene": {
+     "groups": 1035,
+     "faces_drawn": 48249,
+     "edges": 69586,
+     "dback": 173463
+    }
+   },
+   {
+    "label": "v0.5.2",
+    "commit": "70f3cf8",
+    "open_s": 4.28,
+    "first_paint_s": 0.05,
+    "root": {
+     "paint": {
+      "median_ms": 8.66,
+      "mean_ms": 10.17,
+      "max_ms": 22.65,
+      "n": 30
+     },
+     "orbit_frame": {
+      "median_ms": 10.1,
+      "mean_ms": 11.85,
+      "max_ms": 24.3,
+      "n": 40
+     },
+     "resync_vbos": {
+      "median_ms": 40.46,
+      "mean_ms": 41.76,
+      "max_ms": 50.6,
+      "n": 5
+     },
+     "chunks_rebuild+paint": {
+      "median_ms": 1273.37,
+      "mean_ms": 1273.37,
+      "max_ms": 1289.17,
+      "n": 2
+     },
+     "pick_index_cold": {
+      "median_ms": 54.14,
+      "mean_ms": 56.49,
+      "max_ms": 62.02,
+      "n": 3
+     },
+     "hover_select_x60": {
+      "median_ms": 429.59,
+      "mean_ms": 422.15,
+      "max_ms": 444.72,
+      "n": 3
+     },
+     "hover_line_x60": {
+      "median_ms": 1322.71,
+      "mean_ms": 1324.59,
+      "max_ms": 1358.12,
+      "n": 3
+     }
+    },
+    "container": {
+     "name": null,
+     "children": 0
+    },
+    "scene": {
+     "groups": 1035,
+     "faces_drawn": 48249,
+     "edges": 69586,
+     "dback": 173463
+    }
+   }
+  ]
+ },
+ "startup_memory": {
+  "head": {
+   "commit": "45eb5fc",
+   "startup_s": 0.72,
+   "rss_empty_mb": 277.7,
+   "open_s": [
+    4.25,
+    4.73,
+    5.05,
+    5.16,
+    5.23,
+    5.34
+   ],
+   "rss_after_open_mb": [
+    611.4,
+    832.0,
+    842.6,
+    864.6,
+    867.6,
+    865.7
+   ],
+   "live_after_open": [
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 36,
+     "QProgressDialog": 1
+    },
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 36,
+     "QProgressDialog": 1
+    },
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 36,
+     "QProgressDialog": 1
+    },
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 36,
+     "QProgressDialog": 1
+    },
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 36,
+     "QProgressDialog": 1
+    },
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 36,
+     "QProgressDialog": 1
+    }
+   ],
+   "leaked_objects": {},
+   "rss_growth_last3_mb": 0.6
+  },
+  "prev": {
+   "commit": "70f3cf8",
+   "startup_s": 0.72,
+   "rss_empty_mb": 276.1,
+   "open_s": [
+    4.25,
+    4.41,
+    4.53,
+    4.82,
+    5.27,
+    5.39
+   ],
+   "rss_after_open_mb": [
+    610.4,
+    862.8,
+    977.5,
+    1085.6,
+    1182.5,
+    1271.7
+   ],
+   "live_after_open": [
+    {
+     "Face": 71402,
+     "Mesh": 892,
+     "QOpenGLVertexArrayObject": 32,
+     "QProgressDialog": 1
+    },
+    {
+     "Face": 90182,
+     "Mesh": 899,
+     "QOpenGLVertexArrayObject": 40,
+     "QProgressDialog": 2
+    },
+    {
+     "Face": 106811,
+     "Mesh": 906,
+     "QOpenGLVertexArrayObject": 48,
+     "QProgressDialog": 3
+    },
+    {
+     "Face": 121911,
+     "Mesh": 913,
+     "QOpenGLVertexArrayObject": 56,
+     "QProgressDialog": 4
+    },
+    {
+     "Face": 135322,
+     "Mesh": 920,
+     "QOpenGLVertexArrayObject": 64,
+     "QProgressDialog": 5
+    },
+    {
+     "Face": 157416,
+     "Mesh": 927,
+     "QOpenGLVertexArrayObject": 72,
+     "QProgressDialog": 6
+    }
+   ],
+   "leaked_objects": {
+    "Face": 67234,
+    "Mesh": 28,
+    "QOpenGLVertexArrayObject": 32,
+    "QProgressDialog": 4
+   },
+   "rss_growth_last3_mb": 93.1
+  }
+ },
+ "notes": [
+  "LEAK found and fixed by this check: the viewport kept every previous document's render chunks (and their faces) and every edited component's GPU buffers; 0.5.2 leaked 67234 faces, 28 meshes, 32 VAOs and 4 progress dialogs over six reopenings of the Plaza Yanque, 0.5.3 none (1272 -> 868 MB).",
+  "resync_vbos was flagged +36% (5 repetitions per run). Re-measured with 40 repetitions per build, two runs each: 0.5.2 median 33.4/33.4 ms (min 29.7/31.4), 0.5.3 median 34.2/35.9 ms (min 31.2/31.5) -- within noise. bench_session.py now uses 20 repetitions for it.",
+  "paint +15.7% is the same noise: the four runs gave 0.5.2 11.07/8.66 and 0.5.3 11.21/10.02 ms (earlier session: 9.17/9.41 vs 9.26/9.61)."
+ ]
+}

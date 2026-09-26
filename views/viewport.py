@@ -2444,6 +2444,11 @@ class Viewport(QOpenGLWidget):
         entry = cache.get(ckey)
         if entry is not None and entry["key"] == key:
             return entry
+        if entry is not None:
+            # The prototype changed: its GPU objects go back to the driver.
+            # Replacing the entry alone kept 4 VAOs and 5 buffers alive per
+            # edit of a component, for the whole session.
+            self._destroy_proto_draw_entry(entry)
         extra = self.context().extraFunctions()
 
         def static_vbo(raw):
@@ -2553,6 +2558,19 @@ class Viewport(QOpenGLWidget):
                  "tex_runs": tex_runs}
         cache[ckey] = entry
         return entry
+
+    @staticmethod
+    def _destroy_proto_draw_entry(entry) -> None:
+        """Free one prototype draw entry's VAOs and buffers (GL context
+        current)."""
+        for k, obj in entry.items():
+            if k.endswith("_vao") or k.endswith("_vbo"):
+                try:
+                    obj.destroy()
+                    if k.endswith("_vao"):
+                        obj.deleteLater()      # a QObject child of the viewport
+                except RuntimeError:           # already gone with the context
+                    pass
 
     def _update_inst_matrices(self, entry, groups) -> int:
         sig = tuple((id(g), tuple(g.xform.data())) for g in groups)
@@ -3061,6 +3079,40 @@ class Viewport(QOpenGLWidget):
             self.tilesChanged.emit()
             self.update()
 
+    #: Per-document caches keyed by ``id()`` of the document's groups,
+    #: meshes and placements — the render/pick chunks and what hangs off
+    #: them. Nothing but the document boundary makes them all stale at once.
+    _DOCUMENT_CACHES = ("_group_chunks", "_inst_chunks", "_fp_memo",
+                        "_proto_wrappers", "_proto_draw", "_faceme_cache",
+                        "_proto_pts_store", "_container_obb")
+
+    def reset_document_caches(self) -> None:
+        """Forget the previous document's chunks at the document boundary.
+
+        The chunk caches are keyed by ``id()`` of groups and meshes and were
+        never emptied: every New / Open kept the old document's chunks — and,
+        through their pick arrays, its Face objects and meshes — alive. The
+        release check measured it on the Plaza Yanque (25-09-2026): five
+        reopenings of the same document, 617 → 1277 MB, 887 → 3219 chunks,
+        71 000 → 135 000 live faces for a 71 000-face model. Opening a
+        document also slowed down reopen after reopen (the garbage collector
+        walking the dead ones). And a CPython id() reused by a new group
+        could meet an old entry — the composer's lesson with frames."""
+        draws = getattr(self, "_proto_draw", None)
+        if draws and self.context() is not None:
+            self.makeCurrent()                # GPU objects need the context
+            try:
+                for entry in draws.values():
+                    self._destroy_proto_draw_entry(entry)
+            finally:
+                self.doneCurrent()
+        for name in self._DOCUMENT_CACHES:
+            cache = getattr(self, name, None)
+            if isinstance(cache, dict):
+                cache.clear()
+        self._edges_version = -1          # rebuild the VBOs from nothing
+        self._frozen_cache_version = None
+
     def reset_texture_cache(self) -> None:
         """Return the document's cached GL textures to the driver.
 
@@ -3071,6 +3123,7 @@ class Viewport(QOpenGLWidget):
         File ▸ New / Open call this at the document boundary: the old
         document's pictures go back to the driver, and whatever the new one
         actually shows re-uploads on demand at first paint."""
+        self.reset_document_caches()
         cache = getattr(self, "_tex_cache", None)
         if not cache:
             return

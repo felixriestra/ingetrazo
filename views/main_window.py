@@ -3955,7 +3955,18 @@ class MainWindow(QMainWindow):
         """A modal progress dialog + the callback the loaders call at
         milestones (big imports take ~20 s; SketchUp shows a bar here too)."""
         from PySide6.QtWidgets import QApplication, QProgressDialog
+        # Closed is not deleted: each open or import left its dialog behind
+        # as a child of the window for the whole session (the release check,
+        # 25-09). The previous one is surely done by the time a new one is
+        # asked for, so it goes now — never more than one alive.
+        old = getattr(self, "_progress_dlg", None)
+        if old is not None:
+            try:
+                old.deleteLater()
+            except RuntimeError:
+                pass
         dlg = QProgressDialog(title, "", 0, 100, self)
+        self._progress_dlg = dlg
         dlg.setCancelButton(None)
         dlg.setWindowModality(Qt.WindowModal)
         dlg.setMinimumDuration(400)
