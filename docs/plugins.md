@@ -144,6 +144,21 @@ types (an entry that fails to serialise is dropped from the file and
 logged, the rest of the document is saved); data of plugins that are not
 installed is carried along untouched when the document is re-saved.
 
+## Startup hook
+
+A plugin module may define `install(window)`: the window calls it once at
+startup, after loading the plugin, before any of its tools is picked. Use it
+for what must already work then, and keep it light — import the rest when
+it is first used. The CAM plugin registers its file type there, so a
+double-clicked `.igcam` opens into CAM without the panel having been opened:
+
+```python
+def install(window):
+    window.file_openers[".igcam"] = lambda path: open_job(window, path)
+```
+
+A hook that raises is logged and skipped; it never stops the window.
+
 ## Workspaces: a document of your own
 
 A plugin whose work is not the 3D model — the CAM plugin's jobs, 2.5D

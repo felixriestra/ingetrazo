@@ -153,9 +153,6 @@ class CamDock(QDockWidget):
         viewport.overlay_painters.append(self.overlay)
         viewport.sceneVersionChanged.connect(self._on_scene_changed)
         self.visibilityChanged.connect(self._on_visibility)
-        win = viewport.window()
-        if hasattr(win, "file_openers"):
-            win.file_openers[SUFFIX] = self.open_job
         self._sel_timer.start()
         self.show_page()
 

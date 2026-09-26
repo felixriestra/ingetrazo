@@ -7,6 +7,8 @@
   existing opener — we only appear in "Open with".
 
     .igz → application/x-ingetrazo         (IngeTrazo's own document)
+    .igcam → application/x-ingetrazo-cam   (a CAM job, plugins/cam; the
+                                            .igz document icon for now)
     .dae → model/vnd.collada+xml           (COLLADA — standard type; we only
                                             attach an icon to it, keeping its
                                             existing semantics/openers)
@@ -23,6 +25,14 @@
     <comment xml:lang="es">Documento de IngeTrazo</comment>
     <icon name="application-x-ingetrazo"/>
     <glob pattern="*.igz"/>
+  </mime-type>
+
+  <mime-type type="application/x-ingetrazo-cam">
+    <comment>IngeTrazo CAM job</comment>
+    <comment xml:lang="es">Trabajo CAM de IngeTrazo</comment>
+    <comment xml:lang="pt_BR">Trabalho CAM do IngeTrazo</comment>
+    <icon name="application-x-ingetrazo"/>
+    <glob pattern="*.igcam"/>
   </mime-type>
 
   <mime-type type="model/vnd.collada+xml">

@@ -81,6 +81,7 @@ refresh_caches
 # not steal it from Blender & friends.
 if command -v xdg-mime >/dev/null; then
   xdg-mime default ingetrazo.desktop application/x-ingetrazo 2>/dev/null || true
+  xdg-mime default ingetrazo.desktop application/x-ingetrazo-cam 2>/dev/null || true
   xdg-mime default ingetrazo.desktop application/vnd.sketchup.skp 2>/dev/null || true
 fi
 

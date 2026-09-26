@@ -107,6 +107,16 @@ Root: HKA; Subkey: "Software\Classes\IngeTrazo.Document\DefaultIcon"; \
 Root: HKA; Subkey: "Software\Classes\IngeTrazo.Document\shell\open\command"; \
     ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
+; ── .igcam — the CAM plugin's jobs: full association, the .igz icon ─────────
+Root: HKA; Subkey: "Software\Classes\.igcam"; ValueType: string; \
+    ValueData: "IngeTrazo.CamJob"; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\IngeTrazo.CamJob"; ValueType: string; \
+    ValueData: "Trabajo CAM de IngeTrazo"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\IngeTrazo.CamJob\DefaultIcon"; \
+    ValueType: string; ValueData: "{app}\ingetrazo-igz.ico,0"
+Root: HKA; Subkey: "Software\Classes\IngeTrazo.CamJob\shell\open\command"; \
+    ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+
 ; ── .dae / .skp — standard interchange formats: "Open with" only ────────────
 ; We DO NOT take over the default program or the file icon (Windows ties the
 ; shown icon to the default handler, and stealing .dae/.skp from Blender/
