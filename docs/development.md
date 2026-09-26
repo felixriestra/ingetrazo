@@ -19,8 +19,9 @@ python -m pytest                   # everything (~3,900), including the slow fuz
 ```
 
 Every pull request runs the fast suite. A fix or a feature comes with its
-test — ideally one that fails without the change. Tests that paint need a
-real OpenGL context and skip themselves without one (see CONTRIBUTING.md).
+test — ideally one that fails without the change. A test that paints
+needs a real OpenGL context: guard it with a skip when there is none, or the
+CI runner (no GPU) fails it.
 
 ## Style
 
