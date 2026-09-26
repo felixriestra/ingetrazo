@@ -10,6 +10,7 @@ first, then in `es.json` and `pt-BR.json`.
 | en | es | pt-BR | Notes |
 |---|---|---|---|
 | CAM | CAM | CAM | Not translated |
+| Path (drawn geometry) | Trazado | Traçado | What the drawing gives the CAM tab: a closed outline or an open line. Never the toolpath |
 | Toolpath | Trayectoria de herramienta | Percurso da ferramenta | The UI uses the short form "Trayectorias" / "Percursos" |
 | Stock | Material en bruto | Material bruto | "Tablero" / "Chapa" appear only in examples |
 | Job | Trabajo | Trabalho | |

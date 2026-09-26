@@ -358,3 +358,51 @@ def test_cam_hands_the_keyboard_back_to_the_model(settings_file):
     QTest.keyClick(dock.safe.lineEdit(), Qt.Key_Enter)
     assert not dock.safe.hasFocus()
     dock.dispose()
+
+
+def test_the_cam_tab_reads_a_drawn_rectangle_as_one_path(settings_file):
+    """Reported 2026-09-26: «a rectangle in draw is not four lines in the
+    CAM tab, it is a single path». Opening CAM lists it as one closed path;
+    clicking one of its edges in the model chooses the whole path, and an
+    operation added then follows the whole rectangle."""
+    from core.mesh import Edge
+    from plugins.cam.engine import geometry as geo
+    from plugins.cam.ui.dock import show_dock
+    from views.main_window import MainWindow
+    win = MainWindow()
+    win.show()
+    scene = win.viewport.scene
+    _pulled_up_rectangle(scene)
+    dock = show_dock(win.viewport)
+    assert dock.path_list.count() == 1
+    edge = next(e for e in scene.loose_mesh.edges
+                if isinstance(e, Edge) and e.v0.position.z() > 0.01 and e.v1.position.z() > 0.01)
+    scene.selection.clear()
+    scene.selection.add(edge)
+    dock._sync_paths_from_model()
+    assert [p.closed for p in dock.chosen_paths()] == [True]
+    assert len(dock.overlay.chosen_a) == 4             # the whole rectangle is highlighted
+    dock._on_add("outsideProfile")
+    (op,) = dock.state.job.operations
+    assert abs(geo.signed_area(op.strategy.geometry.boundary)) == pytest.approx(6000.0)
+    assert dock.state.job.stock.height == pytest.approx(20.0, abs=1e-3)
+    scene.selection.clear()
+    dock._sync_paths_from_model()
+    assert dock.chosen_paths() == []
+    dock.dispose()
+
+
+def test_operation_form_check_boxes_wrap_their_text_and_still_toggle(settings_file):
+    """A check box's text is one line; in Spanish «Recorrido más corto entre
+    agujeros» made the operation form 260 px wide. The text is now a
+    wrapping row label, and clicking it toggles the box."""
+    from plugins.cam.ui.op_forms import OperationForm
+    form = OperationForm()
+    assert form.nearest.text() == ""
+    label = form.form.labelForField(form.nearest)
+    assert label.wordWrap()
+    form.setEnabled(True)                   # no operation loaded: enable by hand
+    form.nearest.setEnabled(True)
+    before = form.nearest.isChecked()
+    label.mousePressEvent(None)
+    assert form.nearest.isChecked() != before

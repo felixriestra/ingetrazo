@@ -35,8 +35,14 @@ partir do plano de usinagem.
 
 ## Operações
 
-Selecione faces, arestas ou uma peça e use
-**Operações ▸ Adicionar a partir da seleção**.
+A aba **Operações** mostra os **traçados** do desenho assim que o CAM
+abre: um retângulo, ou o contorno superior de um sólido, é um traçado
+fechado; linhas que se unem ponta com ponta são um só traçado; um furo
+redondo é um círculo. Escolha traçados na lista, ou clique em qualquer uma
+de suas arestas no modelo (o traçado inteiro é escolhido e desenhado em
+laranja), e use **Adicionar operação**. Sem nenhum traçado escolhido,
+**Adicionar operação** usa a seleção do modelo, por exemplo uma peça da
+lista de peças.
 
 | Operação | A partir de | Corta |
 |---|---|---|
