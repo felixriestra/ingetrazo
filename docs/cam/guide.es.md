@@ -128,17 +128,32 @@ ASCII.
 
 ## Simulación
 
-**Salida ▸ Simular…** abre el trabajo sobre un bloque de material en 3D
-y lo reproduce en tiempo de máquina. El reloj sigue la estimación de
-tiempo, con los cambios de herramienta y el arranque del husillo.
-Reproduce, pausa, arrastra la barra a cualquier momento o salta al final.
-La velocidad llega a 500×.
+**Simular…** (en la cabecera del trabajo, o en **Salida**) abre el trabajo
+sobre un bloque de material en 3D y lo reproduce en tiempo de máquina. El
+reloj sigue la estimación de tiempo, con los cambios de herramienta y el
+arranque del husillo.
+
+- **Reproducción:** volver al inicio, reproducir/pausar, **avanzar** una
+  orden, saltar al final o arrastrar la barra a cualquier momento.
+  Velocidades de 0,25× a 2000×.
+- **El código G** del trabajo corre junto a la vista, con la línea en
+  ejecución resaltada. Haz clic en una línea para llevar el trabajo hasta
+  ella.
+- Bajo la vista: la **fase** (desbaste, acabado, rápido, entrada…), las
+  coordenadas **X Y Z** de la punta de la herramienta, la operación, el
+  volumen retirado y la herramienta.
+- **Calidad:** *Vista previa* mantiene la reproducción fluida; *Alta
+  calidad* usa celdas más finas para examinar la superficie terminada. El
+  tamaño de celda se muestra al lado. **Simulación final** simula todo el
+  trabajo en alta calidad.
+- **Abrir código G…** reproduce cualquier programa (de otro CAM, o
+  editado a mano) sobre el material de este trabajo; **Programa del
+  trabajo** vuelve al suyo.
 
 El material se va retirando al paso de la fresa. Los cortes pasantes se
 convierten en agujeros, los puentes quedan en pie y se cuenta el volumen
-retirado. En la ventana del modelo, las trayectorias ya cortadas se ven
-intensas, las demás se atenúan y la fresa se marca donde está.
-**Resolución** equilibra detalle y velocidad. En un tablero grande, la
+retirado. En el dibujo, las trayectorias ya cortadas se ven intensas, las
+demás se atenúan y la fresa se marca donde está. En un tablero grande, la
 malla se hace más gruesa sola.
 
 La simulación muestra lo que hace la trayectoria. No sustituye al corte
@@ -147,7 +162,15 @@ en vacío en la máquina.
 ## Guardar y reutilizar un trabajo
 
 Un trabajo es su propio archivo `.igcam`: la preparación, las herramientas,
-el dibujo y las operaciones. **Guardar** (o Archivo ▸ Guardar) lo escribe;
+el dibujo y las operaciones.
+
+**Plantillas de material.** **Guardar la preparación como plantilla…** en
+la pestaña **Trabajo** guarda con un nombre el material en bruto, su tipo,
+la máquina, el controlador, las unidades y la tabla de herramientas.
+**Nuevo desde una plantilla de material…** en la página de inicio de CAM
+empieza un trabajo con una de ellas: junto a las tuyas vienen incluidos
+algunos tableros y placas comunes. Una plantilla no tiene dibujo ni
+operaciones. **Guardar** (o Archivo ▸ Guardar) lo escribe;
 **Trabajos recientes** en la página de inicio de CAM y Archivo ▸ Abrir lo
 vuelven a abrir. Todo cambio se puede deshacer.
 

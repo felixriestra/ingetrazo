@@ -181,7 +181,7 @@ def test_with_the_model_in_front_the_dock_is_a_start_page(settings_file):
     assert dock.pages.currentIndex() == 0
     assert not dock.in_job()
     assert len(dock.overlay.stock_edges) == 0          # no stock without a job
-    assert not dock.btn_template.isEnabled()            # stock templates: later
+    assert dock.btn_template.isEnabled()
     assert "cam" not in (win.viewport.scene.plugin_data or {})
     dock.dispose()
 
@@ -572,3 +572,42 @@ def test_paths_chosen_in_the_list_survive_an_edit(settings_file, tmp_path):
     dock._sync_paths_from_model()
     assert len(dock.chosen_paths()) == 1 and len(dock.overlay.chosen_a) == 4
     _close(win, dock)
+
+
+def test_stock_templates(settings_file, tmp_path):
+    """A setup saved as a template starts new jobs with its stock,
+    material, machine and tools, and nothing of the old job's drawing or
+    operations. The built-in ones are there from the start."""
+    from plugins.cam.templates import builtin_templates, user_templates
+    from plugins.cam.ui.dock import CamDock
+    CamDock.template_folder = tmp_path / "templates"
+    try:
+        win, dock, _model = _job(settings_file, tmp_path)
+        _set_stock(dock, 500.0, 300.0, 15.0)
+        dock.material.setCurrentIndex(dock.material.findData("mdf"))
+        dock.controller.setCurrentIndex(dock.controller.findData("linuxcnc"))
+        dock.state.job.tools[0].diameter = 8.0
+        _draw(win, _rect(10, 10, 60, 40))
+        dock.refresh_paths()
+        _choose(dock, lambda p: True)
+        dock._on_add("pocket")
+        path = dock.save_template("Mesa MDF 15")
+        assert path is not None and path.is_file()
+        (t,) = user_templates(tmp_path / "templates")
+        assert t.name == "Mesa MDF 15" and t.state.job.operations == []
+        assert dock.save_job()
+        assert dock.new_from_template(t, tmp_path / "next.igcam")
+        job = dock.state.job
+        assert job.name == "next"
+        assert (job.stock.width, job.stock.depth, job.stock.height) == (500.0, 300.0, 15.0)
+        assert job.stock.material == "mdf" and job.post.controller == "linuxcnc"
+        assert job.tools[0].diameter == 8.0
+        assert job.operations == [] and not dock.state.setupDone     # setup first, still
+        assert win.viewport.scene.mesh.edges == []
+        builtins = builtin_templates()
+        assert len(builtins) >= 4 and all(b.builtin for b in builtins)
+        assert dock.new_from_template(builtins[0], tmp_path / "sheet.igcam")
+        assert dock.state.job.stock.width == 2440.0
+        _close(win, dock)
+    finally:
+        CamDock.template_folder = None

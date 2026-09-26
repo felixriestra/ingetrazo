@@ -22,6 +22,7 @@ world here, so there is no model-space conversion to get wrong.
 """
 from __future__ import annotations
 
+import bisect
 import math
 import time
 
@@ -31,10 +32,11 @@ from PySide6.QtGui import QMatrix4x4, QOpenGLFunctions, QSurfaceFormat, QVector3
 from PySide6.QtOpenGL import QOpenGLBuffer, QOpenGLShader, QOpenGLShaderProgram, \
     QOpenGLVertexArrayObject
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton, QSlider,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QListWidget, QPushButton,
+                               QSlider, QVBoxLayout, QWidget)
 
-from ..engine.simulate import QUALITY_CELL_MM, Playback
+from ..engine.simulate import Playback
+from ..engine.toolpath import Comment, ToolChange
 from ..i18n import tr
 
 GL_FLOAT = 0x1406
@@ -49,9 +51,8 @@ GL_SRC_ALPHA = 0x0302
 GL_ONE_MINUS_SRC_ALPHA = 0x0303
 GL_CULL_FACE = 0x0B44
 
-#: Keep the simulation grid under this many cells whatever the quality:
-#: a 2.4 m sheet at 0.5 mm would be 11 million, far past interactive.
-MAX_CELLS = 250_000
+#: Commands that move nothing.
+_NO_MOTION = (Comment, ToolChange)
 
 VERT = """#version 330 core
 layout(location = 0) in vec3 pos;
@@ -367,99 +368,241 @@ class StockView(QOpenGLWidget):
 
 
 class SimulationWindow(QWidget):
-    """Playback controls around a :class:`StockView`."""
+    """2DCam's simulation around a :class:`StockView`.
+
+    Transport: back to the start, play/pause, step one command, to the
+    end, a slider in machine time, 2DCam's speeds. Two resolutions, as in
+    2DCam: *Preview* (live, responsive) and *High quality* (for looking at
+    the finished surface), with the cell size shown and explained; *Final
+    simulation* runs the whole job at high quality. Beside the view the
+    posted G-code, the running line highlighted; under it the phase
+    (roughing, finishing, rapid…), the tool tip's coordinates, the
+    operation, the removed volume and the tool. *Open G-code…* plays any
+    program on the job's stock instead.
+    """
 
     #: ``(command_index, work_point, tool)`` at every playback step; the
     #: dock relays it to the main viewport overlay (``None`` index: stop).
     playhead = Signal(object)
 
-    SPEEDS = (1, 5, 20, 100, 500)
+    #: 2DCam's speeds (RibbonCatalog.simulationSpeeds), × machine time.
+    SPEEDS = (0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 400, 600, 1000, 1500, 2000)
+    #: The most cells the view re-meshes per frame while playing, and once
+    #: for a final simulation. 2DCam's budgets are 1 M and 6 M; re-meshing
+    #: in Python takes about 60 ms per million cells, so the port stays
+    #: under these (see docs/cam-2dcam-deviations.md).
+    LIVE_CELLS = 250_000
+    FINAL_CELLS = 1_500_000
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent, Qt.Window)
         self.setWindowTitle(tr("Stock simulation"))
-        self.resize(900, 680)
+        self.resize(1100, 720)
         self.view = StockView(self)
         self.pb = None
         self.job = None
+        self.compiled = None
+        self.toolpath = None
         self.ranges = {}
         self.op_names = {}
+        self.lines: list = []
+        self.command_line: list = []
+        self.source_name = None          # an opened G-code file, else the job
+        self._job_program = None         # (toolpath, ranges, lines, command_line)
         self._playing = False
+        self._final = False
         self._last = None
         self._timer = QTimer(self)
         self._timer.setInterval(33)
         self._timer.timeout.connect(self._tick)
 
+        from PySide6.QtGui import QFontDatabase
+        from PySide6.QtWidgets import QSplitter
         self.btn_start = QPushButton("⏮")
         self.btn_play = QPushButton("▶")
-        self.btn_end = QPushButton("⏭")
+        self.btn_step = QPushButton("⏭")
+        self.btn_end = QPushButton("⏩")
         for b, tip in ((self.btn_start, tr("Back to the start")),
-                       (self.btn_play, tr("Play / pause")), (self.btn_end, tr("Jump to the end"))):
+                       (self.btn_play, tr("Play / pause")),
+                       (self.btn_step, tr("Step forward: one command")),
+                       (self.btn_end, tr("Jump to the end"))):
             b.setToolTip(tip)
             b.setFixedWidth(44)
         self.btn_start.clicked.connect(lambda: self.seek(0.0))
         self.btn_play.clicked.connect(self.toggle)
+        self.btn_step.clicked.connect(self.step)
         self.btn_end.clicked.connect(lambda: self.seek(self.pb.total if self.pb else 0.0))
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(0, 1000)
         self.slider.sliderMoved.connect(self._on_slider)
         self.speed = QComboBox()
-        for s in self.SPEEDS:
-            self.speed.addItem(f"{s}×", s)
-        self.speed.setCurrentIndex(2)
+        for sp in self.SPEEDS:
+            self.speed.addItem(f"{sp:g}×", sp)
+        self.speed.setCurrentIndex(self.SPEEDS.index(100))
         self.quality = QComboBox()
-        for key, label in (("preview", tr("Draft")), ("standard", tr("Standard")),
-                           ("fine", tr("Fine"))):
-            self.quality.addItem(label, key)
-        self.quality.setCurrentIndex(1)
+        self.quality.addItem(tr("Preview"), "live")
+        self.quality.addItem(tr("High quality"), "final")
         self.quality.currentIndexChanged.connect(self._rebuild)
+        self.cells = QLabel()
+        self.btn_final = QPushButton(tr("Final simulation"))
+        self.btn_final.setToolTip(tr("Run the whole job at high quality."))
+        self.btn_final.clicked.connect(self.run_final)
+        self.btn_open = QPushButton(tr("Open G-code…"))
+        self.btn_open.setToolTip(tr("Play a G-code program on this job's stock."))
+        self.btn_open.clicked.connect(lambda: self.open_gcode())
+        self.btn_job = QPushButton(tr("Job program"))
+        self.btn_job.setToolTip(tr("Back to the program of this job."))
+        self.btn_job.clicked.connect(self.show_job_program)
+        self.btn_job.setVisible(False)
         self.clock = QLabel()
+        self.phase = QLabel()
+        self.coords = QLabel()
+        mono = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+        self.coords.setFont(mono)
         self.info = QLabel()
         self.info.setWordWrap(True)
 
+        self.code_title = QLabel(tr("G-code"))
+        self.code = QListWidget()
+        self.code.setFont(mono)
+        self.code.setUniformItemSizes(True)
+        self.code.itemClicked.connect(self._on_code_clicked)
+        code_box = QWidget()
+        cl = QVBoxLayout(code_box)
+        cl.setContentsMargins(0, 0, 0, 0)
+        cl.addWidget(self.code_title)
+        cl.addWidget(self.code, 1)
+        split = QSplitter(Qt.Horizontal)
+        split.addWidget(self.view)
+        split.addWidget(code_box)
+        split.setStretchFactor(0, 3)
+        split.setStretchFactor(1, 1)
+
         row = QHBoxLayout()
-        for w in (self.btn_start, self.btn_play, self.btn_end):
+        for w in (self.btn_start, self.btn_play, self.btn_step, self.btn_end):
             row.addWidget(w)
         row.addWidget(self.slider, 1)
         row.addWidget(self.clock)
         row2 = QHBoxLayout()
         row2.addWidget(QLabel(tr("Speed")))
         row2.addWidget(self.speed)
-        row2.addSpacing(16)
-        row2.addWidget(QLabel(tr("Resolution")))
+        row2.addSpacing(12)
+        row2.addWidget(QLabel(tr("Quality")))
         row2.addWidget(self.quality)
+        row2.addWidget(self.cells)
+        row2.addWidget(self.btn_final)
+        row2.addSpacing(12)
+        row2.addWidget(self.btn_open)
+        row2.addWidget(self.btn_job)
         row2.addStretch(1)
-        row2.addWidget(QLabel(tr("Drag to orbit, right-drag to pan, wheel to zoom.")))
+        row2.addWidget(self.phase)
+        row2.addSpacing(12)
+        row2.addWidget(self.coords)
         lay = QVBoxLayout(self)
-        lay.addWidget(self.view, 1)
+        lay.addWidget(split, 1)
         lay.addLayout(row)
         lay.addLayout(row2)
         lay.addWidget(self.info)
+        hint = QLabel(tr("Drag to orbit, right-drag to pan, wheel to zoom."))
+        hint.setEnabled(False)
+        lay.addWidget(hint)
 
     # ---- loading -------------------------------------------------------------
-    def load(self, job, compiled) -> None:
-        """Simulate ``compiled`` (a CompileResult) of the work ``job``."""
+    def load(self, job, compiled, listing=None) -> None:
+        """Simulate ``compiled`` (a CompileResult) of the work ``job``;
+        ``listing`` is the posted program as ``(lines, command_line)``
+        (:func:`..engine.post.listing`)."""
         self.job, self.compiled = job, compiled
-        self.ranges = dict(compiled.operation_ranges)
         self.op_names = {o.id: o.name for o in job.operations}
+        lines, command_line = listing or ([], [])
+        self._job_program = (compiled.toolpath, dict(compiled.operation_ranges), lines,
+                             command_line)
+        self.show_job_program()
+
+    def show_job_program(self) -> None:
+        if self._job_program is None:
+            return
+        self.toolpath, self.ranges, lines, command_line = self._job_program
+        self.source_name = None
+        self.btn_job.setVisible(False)
+        self._set_program(lines, command_line)
+        self.pb = None
         self._rebuild()
 
+    def open_gcode(self, path=None) -> bool:
+        """Play a G-code file on the job's stock (``path`` given: no
+        dialog). The program's coordinates are taken as work coordinates,
+        its tool from ``M6`` or else the job's first tool."""
+        from pathlib import Path
+        from PySide6.QtWidgets import QFileDialog, QMessageBox
+        from ..engine.simulate import toolpath_from_gcode
+        if self.job is None:
+            return False
+        if path is None:
+            path_str, _ = QFileDialog.getOpenFileName(
+                self, tr("Open G-code"), "", tr("G-code (*.nc *.ngc *.gcode *.tap *.txt);;"
+                                               "All files (*)"))
+            if not path_str:
+                return False
+            path = path_str
+        path = Path(path)
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            toolpath, command_line = toolpath_from_gcode(text, self.job)
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, tr("Stock simulation"), str(exc))
+            return False
+        if not any(not isinstance(c, _NO_MOTION) for c in toolpath.commands):
+            QMessageBox.warning(self, tr("Stock simulation"),
+                                tr("The file has no G0, G1, G2 or G3 moves to simulate."))
+            return False
+        self.toolpath, self.ranges = toolpath, {}
+        self.source_name = path.name
+        self.btn_job.setVisible(self._job_program is not None)
+        self._set_program(text.splitlines(), command_line)
+        self.pb = None
+        self._rebuild()
+        return True
+
+    def _set_program(self, lines, command_line) -> None:
+        self.lines, self.command_line = list(lines), list(command_line)
+        self.code.clear()
+        width = len(str(len(self.lines)))
+        self.code.addItems([f"{i + 1:>{width}}  {ln}" for i, ln in enumerate(self.lines)])
+        self._shown_line = None
+
     def _cell(self) -> float:
-        st = self.job.stock
-        base = QUALITY_CELL_MM[self.quality.currentData()]
-        return max(base, math.sqrt(st.width * st.depth / MAX_CELLS))
+        from ..engine.simulate import cell_size
+        mode = self.quality.currentData()
+        return cell_size(self.job, mode,
+                         self.FINAL_CELLS if mode == "final" else self.LIVE_CELLS)
 
     def _rebuild(self, *_a) -> None:
-        if self.job is None:
+        if self.job is None or self.toolpath is None:
             return
         t = self.pb.time if self.pb else 0.0
-        self.pb = Playback(self.job, self.compiled.toolpath, self._cell())
+        cell = self._cell()
+        self.pb = Playback(self.job, self.toolpath, cell)
         self.view.set_field(self.pb.field)
         from ..engine.toolpath import motion_points
-        segs = [(a, b) for kind, a, b, _i in motion_points(self.compiled.toolpath.commands)
+        segs = [(a, b) for kind, a, b, _i in motion_points(self.toolpath.commands)
                 if kind == "cut"]
         self.view.set_toolpath_lines(np.asarray(segs, dtype=float).reshape(-1, 2, 3))
+        inch = self.job.is_inch
+        from . import messages
+        self.cells.setText(tr("{size} cells", size=messages.format_length(cell, inch)))
+        live = messages.format_length(self._cell_for("live"), inch)
+        final = messages.format_length(self._cell_for("final"), inch)
+        self.cells.setToolTip(tr(
+            "Preview uses about {live} cells for responsive playback and can show wavy "
+            "ridges that are the grid, not the G-code. High quality uses about {final} "
+            "cells for looking at the surface, and takes longer.", live=live, final=final))
         self.seek(t)
+
+    def _cell_for(self, mode) -> float:
+        from ..engine.simulate import cell_size
+        return cell_size(self.job, mode, self.FINAL_CELLS if mode == "final"
+                         else self.LIVE_CELLS)
 
     # ---- transport -----------------------------------------------------------
     def toggle(self) -> None:
@@ -475,6 +618,41 @@ class SimulationWindow(QWidget):
         else:
             self._timer.stop()
 
+    def _stop(self) -> None:
+        if self._playing:
+            self.toggle()
+
+    def step(self) -> None:
+        """One command further (2DCam's Step Forward)."""
+        if self.pb is None:
+            return
+        self._stop()
+        self.pb.step()
+        self.seek(self.pb.time)
+
+    def run_final(self) -> None:
+        """The whole job at high quality, drawn once it is done."""
+        if self.pb is None:
+            return
+        self._stop()
+        if self.quality.currentData() != "final":
+            self.quality.blockSignals(True)
+            self.quality.setCurrentIndex(self.quality.findData("final"))
+            self.quality.blockSignals(False)
+        self.pb = None
+        self._rebuild()
+        from PySide6.QtWidgets import QApplication
+        self.btn_final.setEnabled(False)
+        try:
+            n = 40
+            for k in range(1, n + 1):
+                self.pb.seek(self.pb.total * k / n)
+                self.info.setText(tr("Final simulation… {percent} %", percent=round(100 * k / n)))
+                QApplication.processEvents()
+        finally:
+            self.btn_final.setEnabled(True)
+        self.seek(self.pb.total)
+
     def _tick(self) -> None:
         now = time.monotonic()
         dt = now - (self._last or now)
@@ -487,6 +665,16 @@ class SimulationWindow(QWidget):
     def _on_slider(self, value: int) -> None:
         if self.pb is not None:
             self.seek(self.pb.total * value / 1000.0)
+
+    def _on_code_clicked(self, item) -> None:
+        """Clicking a line of the program runs the job up to it."""
+        if self.pb is None or not self.command_line:
+            return
+        row = self.code.row(item)
+        i = bisect.bisect_left(self.command_line, row)
+        i = min(i, len(self.pb.times) - 1)
+        self._stop()
+        self.seek(self.pb.times[i])
 
     def seek(self, t: float) -> None:
         if self.pb is None:
@@ -504,20 +692,54 @@ class SimulationWindow(QWidget):
             self.slider.blockSignals(False)
         self.clock.setText(f"{_clock(self.pb.time)} / {_clock(self.pb.total)}")
         idx = self.pb.command_index
-        op = next((self.op_names.get(k) for k, (a, b) in self.ranges.items() if a <= idx < b), "")
-        vol = self.pb.field.removed_volume
+        self._show_line(idx)
+        phase = self.pb.phase
+        self.phase.setText(phase_label(phase) if phase else "")
         inch = self.job.is_inch
+        if tip is not None:
+            k = 1 / 25.4 if inch else 1.0
+            d = 4 if inch else 3
+            self.coords.setText(f"X {tip[0] * k:.{d}f}  Y {tip[1] * k:.{d}f}  "
+                                f"Z {tip[2] * k:.{d}f}")
+        else:
+            self.coords.setText("X —  Y —  Z —")
+        op = (self.source_name or
+              next((self.op_names.get(k) for k, (a, b) in self.ranges.items() if a <= idx < b),
+                   ""))
+        vol = self.pb.field.removed_volume
         vol_text = (f"{vol / 16387.064:.2f} in³" if inch else f"{vol / 1000:.1f} cm³")
         self.info.setText(tr("{operation} · removed {volume} · tool {tool}",
                              operation=op or "—", volume=vol_text,
                              tool=(f"T{tool.number}" if tool else "—")))
-        self.playhead.emit((idx, tip, tool))
+        if self.source_name is None:
+            self.playhead.emit((idx, tip, tool))
+
+    def _show_line(self, idx: int) -> None:
+        total = len(self.pb.times)
+        done = min(idx + 1, total) if self.pb.time > 0 else 0
+        self.code_title.setText(tr("G-code  {done} / {total}", done=done, total=total))
+        if not self.command_line or idx >= len(self.command_line):
+            return
+        row = self.command_line[idx] if self.pb.time > 0 else 0
+        if row == getattr(self, "_shown_line", None) or row >= self.code.count():
+            return
+        self._shown_line = row
+        self.code.setCurrentRow(row)
+        self.code.scrollToItem(self.code.item(row), QListWidget.PositionAtCenter)
 
     def closeEvent(self, e) -> None:  # noqa: N802
         self._timer.stop()
         self._playing = False
         self.playhead.emit((None, None, None))
         super().closeEvent(e)
+
+
+def phase_label(kind: str) -> str:
+    return {
+        "roughing": tr("Roughing"), "finishing": tr("Finishing"), "rapid": tr("Rapid"),
+        "leadIn": tr("Lead-in"), "leadOut": tr("Lead-out"), "linking": tr("Linking"),
+        "cutting": tr("Cutting"), "auxiliary": tr("Auxiliary"),
+    }.get(kind, kind)
 
 
 def _clock(seconds: float) -> str:

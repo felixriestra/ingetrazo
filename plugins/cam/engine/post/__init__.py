@@ -39,3 +39,19 @@ def post_job(job, toolpath, translate=None, controller=None) -> PostResult:
             problem.params["file"] = f.suffix
             result.issues.append(problem)
     return result
+
+
+def listing(result: PostResult, base_name: str = "") -> tuple:
+    """Every file of ``result`` as one listing for the simulation's G-code
+    panel: ``(lines, command_line)`` where ``command_line[i]`` is the line
+    toolpath command ``i`` ends on. GRBL's per-tool files follow one
+    another in run order, each under a line naming it."""
+    lines, command_line = [], []
+    many = len(result.files) > 1
+    for f in result.files:
+        if many:
+            lines.append(f"(=== {base_name}{f.suffix}{f.extension} ===)")
+        offset = len(lines)
+        lines.extend(f.text.splitlines())
+        command_line.extend(offset + max(k, 0) for k in f.command_lines)
+    return lines, command_line

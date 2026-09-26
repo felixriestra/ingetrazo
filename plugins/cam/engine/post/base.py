@@ -107,6 +107,11 @@ class ProgramFile:
     extension: str
     text: str
     tool_numbers: list = field(default_factory=list)
+    #: For each toolpath command this file posted, in order: the index of
+    #: the last line written for it (the simulation's G-code panel shows
+    #: the running line). A command that writes nothing points at the line
+    #: before it.
+    command_lines: list = field(default_factory=list)
 
 
 @dataclass
@@ -196,6 +201,11 @@ class Writer:
         self.out = [None, None, None]         # the strings last written per axis
         self.feed_out = None
         self.flatten = False
+        self.command_lines: list = []
+
+    def done(self) -> None:
+        """One toolpath command handled: remember its last line."""
+        self.command_lines.append(len(self.lines) - 1)
 
     # -- emission helpers --
     def emit(self, line: str) -> None:
