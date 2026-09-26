@@ -184,6 +184,7 @@ class MainWindow(QMainWindow):
         self.viewport.glReady.connect(self._on_gl_ready)
         self.setCentralWidget(self.viewport)
 
+        self._extension_docks: list = []   # side panels added by plugins
         self._build_toolbar()
         self._build_tray()
         self._build_menubar()
@@ -1139,7 +1140,9 @@ class MainWindow(QMainWindow):
     def _sidebar_docks(self) -> list:
         return [d for d in (getattr(self, "tray", None),
                             getattr(self, "bim_tray", None),
-                            getattr(self, "georef_tray", None)) if d is not None]
+                            getattr(self, "georef_tray", None),
+                            *getattr(self, "_extension_docks", ()))
+                if d is not None]
 
     def _build_sidebar_handle(self) -> None:
         """LibreOffice's sidebar handle: a slim button sitting ON the line
@@ -1346,6 +1349,21 @@ class MainWindow(QMainWindow):
                  if not a.shortcut().isEmpty()}
 
         count = 0
+        from views.extension_api import ExtensionApp
+        for plug in list(plugins):
+            if plug.setup is None:
+                continue
+            try:
+                plug.setup(ExtensionApp(self, plug.stem))
+            except Exception as exc:  # noqa: BLE001 — never break startup
+                log.exception("plugin %r setup failed", plug.stem)
+                from core.extensions import PluginError
+                errors.append(PluginError(
+                    plug.stem, plug.path, f"{type(exc).__name__}: {exc}"))
+                plugins.remove(plug)
+                continue
+            if not plug.tools:
+                count += 1                  # a panel-only extension counts
         for plug in plugins:
             for tool in plug.tools:
                 key = f"plugin_{plug.stem}_{type(tool).__name__}"

@@ -368,6 +368,19 @@ def save_scene(scene, path: Path) -> dict:
     units = getattr(scene, "units", None)
     if isinstance(units, dict) and units != {"length": "m", "precision": 2}:
         payload["units"] = dict(units)     # only when not the metre default
+    pdata = getattr(scene, "plugin_data", None)
+    if pdata:
+        # Extensions' data: JSON-safe by contract; a value that is not is
+        # dropped with its key rather than breaking the save.
+        import json as _json
+        keep = {}
+        for key, value in pdata.items():
+            try:
+                keep[str(key)] = _json.loads(_json.dumps(value))
+            except (TypeError, ValueError):
+                continue
+        if keep:
+            payload["plugin_data"] = keep
     scales = getattr(scene, "custom_scales", None)
     if scales:
         payload["custom_scales"] = [float(n) for n in scales]
@@ -696,6 +709,8 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
     scene.camera_home = dict(cam) if isinstance(cam, dict) else None
     from core.units import model_units_of
     scene.units = model_units_of(payload)   # validated; absent = metres
+    pdata = payload.get("plugin_data")
+    scene.plugin_data = dict(pdata) if isinstance(pdata, dict) else {}
     scales = payload.get("custom_scales")
     if isinstance(scales, list):
         scene.custom_scales = [float(n) for n in scales

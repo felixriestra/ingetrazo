@@ -113,6 +113,50 @@ touch the document off the main thread. Relay results with a
 receiver runs on the WRONG thread (both bugs were hunted in these very
 plugins; the details are in the AI plugins' comments).
 
+## Beyond tools: `setup(app)`
+
+A plugin that needs more than a menu entry defines a module-level
+`setup(app)`. It is called once, when the main window is built, with an
+`ExtensionApp` (`views/extension_api.py`, `API_VERSION` 1). A plugin may
+have tools, a `setup`, or both; if `setup` raises, the plugin shows as a
+load error and the application opens regardless.
+
+```python
+def setup(app):
+    app.key                       # this plugin's name (its file stem)
+    app.window, app.viewport, app.scene
+
+    # Data IN THE DOCUMENT: one JSON-safe value per plugin, saved in the
+    # .igz, reset by New/Open. Each set is one undo step.
+    data = app.document_data(default={})
+    app.set_document_data({"levels": [...]})
+    app.on_document_changed(refresh)      # edits, undo, New, Open
+
+    # A tab in the side tray, beside Properties / BIM / Terrain.
+    app.add_panel("Levels", my_widget)
+
+    # Drawn with a QPainter over every frame, whatever the active tool.
+    app.add_overlay(lambda viewport, painter: ...)
+
+    # Offered the snap engine's answer on every hover and click; return a
+    # core.snap.SnapResult (its `label` is the ScreenTip) or None.
+    app.add_snap_provider(lambda viewport, snap, px, py: None)
+```
+
+Rules the host enforces: a snap provider never overrides a named point
+(endpoint, midpoint, centre, intersection, on edge…) — the user aimed at
+it; an overlay or provider that raises is logged and skipped, never
+breaking the frame or the cursor; document data that is not JSON-safe is
+dropped on save rather than failing it.
+
+**Worked example:** `examples/extensions/niveles.py` — building levels
+(PB, PA…) kept in the document, a side panel to edit them, dashed guides in
+parallel elevations and sections, and the cursor snapping to their heights
+(«PA» on the tip). Idea and first version by José Castro Basso (FADU–UDELAR)
+for teaching architectural representation. It is not bundled on purpose:
+copy it into your plugins folder to use it. Features only some users need
+belong in extensions like this one, not in the core.
+
 ## Bundled reference plugins
 
 - `plugins/model_info.py` — Model Info dialog (geometry / materials /
@@ -133,7 +177,8 @@ plugins; the details are in the AI plugins' comments).
 
 - Tool registration — **done** (Extensions menu, this page).
 - Importer / exporter registration.
-- Side-panel registration.
+- Side-panel registration, document data, viewport overlays and snap
+  providers — **done** (`setup(app)`, above).
 - Plugin manifest (`plugin.toml`) for metadata and dependencies.
 - Plugin manager UI (install, enable, disable, update) — after the API
   stabilises; a package format would freeze the API too early (see the

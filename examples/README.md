@@ -16,6 +16,10 @@ al lado, el PDF que sale de ahí para que compares.
 Están guardados con la versión 0.3.12 o posterior; una versión anterior no
 los abre. Los cuatro pesan 6,3 MB en total.
 
+## Extensiones
+
+`extensions/niveles.py` — **Niveles**: niveles del edificio (PB, PA…) guardados en el documento, guías a trazos en alzados y cortes en proyección paralela, y el cursor que se engancha a esas alturas. Idea y primera versión de José Castro Basso (FADU–UDELAR). Para usarla, cópiala en la carpeta de complementos (**Extensiones ▸ Abrir carpeta de complementos**) y reinicia IngeTrazo: aparece la pestaña «Niveles» en la bandeja lateral.
+
 ## Licencia
 
 Los documentos de esta carpeta (modelos, láminas y PDF) son de

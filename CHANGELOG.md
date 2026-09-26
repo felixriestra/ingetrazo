@@ -48,6 +48,15 @@ follow [SemVer](https://semver.org).
   al tomar una, el objeto gira en ese plano alrededor de su centro, con el
   transportador, los pasos de 15°, el ángulo tecleado y Ctrl = copia.
 
+- **Extensiones que van más allá de una herramienta**: con `setup(app)` una
+  extensión guarda sus datos en el documento (con deshacer), añade una
+  pestaña a la bandeja lateral, dibuja sobre el visor y ofrece inferencias al
+  cursor, sea cual sea la herramienta activa (`docs/plugins.md`). Ejemplo:
+  **Niveles** (`examples/extensions/niveles.py`), idea y primera versión de
+  José Castro Basso (FADU–UDELAR): niveles del edificio con guías en alzados
+  y cortes y enganche a sus alturas. No viene instalada: lo que solo algunos
+  necesitan vive en una extensión, no en el núcleo.
+
 ### Cambiado
 - **Icono de Zoom a extensión** (#112): ahora es la lupa con tres flechas
   hacia las esquinas, como en SketchUp, para que quien viene de allí lo

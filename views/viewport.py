@@ -820,6 +820,9 @@ class Viewport(QOpenGLWidget):
         self.active_tool: Optional[Tool] = None
         self.axis_lock: Optional[str] = None  # None | "x" | "y" | "z"
         self.last_snap: Optional[SnapResult] = None
+        # Extensions' overlays and snap providers (views.extension_api).
+        self._ext_overlays: list = []
+        self._ext_snap_providers: list = []
         # Copy/paste clipboard: copied geometry (faces + edges as positions,
         # groups as snapshot copies) plus a reference corner so Paste can
         # place it under the cursor.
@@ -5522,6 +5525,18 @@ class Viewport(QOpenGLWidget):
         hook = getattr(self.active_tool, "draw_overlay", None)
         if callable(hook):
             hook(self, painter)
+        # Extensions' overlays (``ExtensionApp.add_overlay``): whatever the
+        # active tool, and never able to break the frame.
+        for fn in list(getattr(self, "_ext_overlays", ())):
+            painter.save()
+            try:
+                fn(self, painter)
+            except Exception:  # noqa: BLE001 — a plugin never breaks paint
+                import logging
+                logging.getLogger("ingetrazo.plugins").exception(
+                    "extension overlay failed")
+            finally:
+                painter.restore()
 
         # Terrain-surface fills (draped / flat) under the georef paths — Track G.
         self._draw_geo_surfaces(painter)
@@ -5740,6 +5755,9 @@ class Viewport(QOpenGLWidget):
             label = "Level with point"
         if label:
             label = tr(label)
+        if getattr(snap, "label", None):
+            label = snap.label               # an extension's own words
+        if label:
             ctx_ = getattr(snap, "context", None)
             if ctx_ == "component":
                 label += " " + tr("in component")
@@ -11046,6 +11064,7 @@ class Viewport(QOpenGLWidget):
             work_plane_normal=self._work_plane_normal(),
         )
         snap = self._axis_source_cue(snap, px_x, px_y)
+        snap = self._extension_snap(snap, px_x, px_y)
         self.last_snap = snap
         ctx = ToolContext(
             viewport=self,
@@ -11377,6 +11396,33 @@ class Viewport(QOpenGLWidget):
         self.camera.toggle_two_point()
         self.update()
 
+    # ---- Extensions (views.extension_api) -----------------------------------
+    #: Built-in inferences an extension's may not override: a point with a
+    #: name is the user's target, and the snap engine already ranked it.
+    _NAMED_SNAPS = frozenset((
+        "endpoint", "midpoint", "arc_midpoint", "center", "origin",
+        "component_origin", "intersection", "close", "on_edge"))
+
+    def _extension_snap(self, snap, px_x: float, px_y: float):
+        """Offer the snap engine's answer to each extension's provider
+        (``ExtensionApp.add_snap_provider``); the first that returns a
+        :class:`SnapResult` wins. A named point is never overridden, and a
+        provider that raises is skipped — it cannot take the cursor away."""
+        providers = getattr(self, "_ext_snap_providers", None)
+        if not providers or snap is None or snap.kind in self._NAMED_SNAPS:
+            return snap
+        for fn in list(providers):
+            try:
+                got = fn(self, snap, px_x, px_y)
+            except Exception:  # noqa: BLE001 — a plugin never breaks input
+                import logging
+                logging.getLogger("ingetrazo.plugins").exception(
+                    "extension snap provider failed")
+                continue
+            if got is not None:
+                return got
+        return snap
+
     # ---- Helpers ------------------------------------------------------------
     def _build_ctx(self, ev) -> Optional[ToolContext]:
         self._sync_axes()
@@ -11431,6 +11477,7 @@ class Viewport(QOpenGLWidget):
             work_plane_normal=self._work_plane_normal(),
         )
         snap = self._axis_source_cue(snap, px_x, px_y)
+        snap = self._extension_snap(snap, px_x, px_y)
         return ToolContext(
             viewport=self,
             world=snap.point,

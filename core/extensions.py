@@ -27,6 +27,10 @@ The contract ``views/main_window.py`` relies on:
 - A broken plugin NEVER breaks startup. Import errors, constructor errors —
   every failure is logged, returned as a :class:`PluginError` and shown as a
   disabled menu entry; the application opens regardless.
+- A module-level ``setup(app)`` is called once with a
+  :class:`views.extension_api.ExtensionApp` (document data, a side panel,
+  viewport overlays and inferences); if it raises, the plugin shows as a
+  load error like an import failure.
 - Only ``Tool`` subclasses *defined in the plugin's own module* are
   registered. A plugin that imports ``LineTool`` (to reuse or subclass it)
   must not duplicate the built-in in the menu or clone its shortcut.
@@ -54,6 +58,9 @@ class LoadedPlugin:
     stem: str                       # file / package name, e.g. "model_info"
     path: Path
     tools: list = field(default_factory=list)   # instantiated Tool objects
+    #: The module's ``setup(app)`` (views.extension_api), or None — a plugin
+    #: may have tools, a setup, or both.
+    setup: object = None
 
 
 @dataclass
@@ -149,8 +156,11 @@ def discover_plugins(dirs=None):
                 errors.append(PluginError(
                     stem, file, f"{type(exc).__name__}: {exc}"))
                 continue
-            if tools:
-                plugins.append(LoadedPlugin(stem, file, tools))
+            setup = getattr(mod, "setup", None)
+            if not callable(setup):
+                setup = None
+            if tools or setup is not None:
+                plugins.append(LoadedPlugin(stem, file, tools, setup))
                 for t in tools:
                     log.info("loaded plugin tool %r from %s", t.name, file)
     return plugins, errors

@@ -74,6 +74,9 @@ class SnapResult:
     # ``"group"`` / ``"component"`` when the point belongs to one — the
     # ScreenTip adds "in group" / "in component" (SketchUp).
     context: Optional[str] = None
+    #: The ScreenTip's own words, already translated — what an extension's
+    #: inference says («Level PA»); wins over the kind's built-in label.
+    label: Optional[str] = None
 
 
 # ---- Helpers ---------------------------------------------------------------

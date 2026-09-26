@@ -91,6 +91,39 @@ class Command(ABC):
         """Reverse the operation."""
 
 
+class SetPluginDataCommand(Command):
+    """Replace one extension's document data (``scene.plugin_data[key]``),
+    undoably. ``value`` None removes the key. Values are copied through JSON
+    both ways, so neither the caller nor the history can alias them."""
+
+    def __init__(self, key: str, value) -> None:
+        import json
+        self.key = str(key)
+        self.value = None if value is None else json.loads(json.dumps(value))
+        self._had = False
+        self._before = None
+
+    def do(self, scene) -> None:
+        import json
+        data = scene.plugin_data
+        self._had = self.key in data
+        self._before = (json.loads(json.dumps(data[self.key]))
+                        if self._had else None)
+        if self.value is None:
+            data.pop(self.key, None)
+        else:
+            data[self.key] = json.loads(json.dumps(self.value))
+        scene.version += 1
+
+    def undo(self, scene) -> None:
+        import json
+        if self._had:
+            scene.plugin_data[self.key] = json.loads(json.dumps(self._before))
+        else:
+            scene.plugin_data.pop(self.key, None)
+        scene.version += 1
+
+
 class History:
     """Undo/redo stacks. ``execute`` is TRANSACTIONAL: if a command throws
     mid-mutation, the mesh is restored to its pre-command state, the failure
