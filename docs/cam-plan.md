@@ -325,8 +325,9 @@ A `QDockWidget` on the right, sitting beside the existing trays:
   safe and clearance Z, units, and **controller: GRBL / LinuxCNC**.
 - **Tools**: a table of number, type, diameter, flutes, feed, plunge and
   RPM. Add, duplicate, delete.
-- **Operations**: an ordered list with checkboxes, and **Add from
-  selection ▸ Profile / Pocket / Drill / Engrave / Face**. Selecting an
+- **Operations**: the job's paths, then an ordered list of operations
+  with checkboxes, and **Add operation ▸ Profile / Pocket / Drill /
+  Engrave / Face** for the chosen paths. Selecting an
   operation shows its parameter form and highlights its region in the
   viewport.
 - **Output**: Calculate (runs on a worker thread, cancellable), the
@@ -342,6 +343,49 @@ stock as a wireframe box. Toggles show or hide each item.
 Follow the house rules: every visible string goes through the plugin's
 `tr()`, the document is never touched off the main thread, and results
 come back via `Signal(object)` to a bound method.
+
+## The CAM workspace (decided 2026-09-26)
+
+v1 put the CAM job inside the model's `.igz` and read the 3D model's
+faces. The owner's review (2026-09-26) changed that. A user who opens CAM
+has stopped thinking in 3D objects: the work is 2.5D, on the stock.
+
+- **Setup first.** Opening CAM offers *New CAM job*, *Open CAM job…*,
+  recent jobs and, later, *From a stock template*. A new job starts with its
+  setup: job (file) name, stock size, thickness and material, units,
+  controller, machine limits, work zero (X/Y and Z). Nothing else in CAM is
+  available until the setup is done.
+- **A CAM job is its own file, `.igcam`,** not an `.igz`. It holds the
+  setup, the tool table, the 2D geometry on the stock (mm), the operations
+  (linked to paths by stable ids) and the last verification. CAM writes
+  nothing into `.igz` any more; a CAM block in an old `.igz` is ignored.
+  A stock template is an `.igcam` with only its setup (later).
+- **Same window, CAM mode.** Entering CAM parks the 3D model (its scene,
+  undo history, camera, file and saved state) untouched and shows the
+  job's own scene: the stock top is the ground plane (z = 0, stock below
+  it, its front-left corner at the origin), seen in plan view. Leaving CAM
+  brings the model back exactly as it was. Host hook H5
+  (`MainWindow.enter_workspace` / `leave_workspace`) does the parking and
+  routes Save, Save As, New, Open, the title and the quit prompt to the
+  workspace; autosave of the model pauses meanwhile.
+- **2D tools only.** Line, rectangle, circle, arcs, polygon, freehand,
+  offset, move, rotate, scale, flip, fillet, eraser, tape, protractor.
+  Push/pull, follow me, the solid tools, sections, paint, walk and the like
+  are switched off while in CAM (H5's tool filter).
+- **Geometry → paths → operations.** The path reader (`paths.py`) runs on
+  the job's geometry after every edit. Operations are linked to path ids;
+  when the geometry changes, linked operations follow and recalculate, and
+  an operation whose path is gone or no longer fits is flagged, never
+  changed silently. Each path shows a status: closed or open, crossing
+  itself, inside the stock, large enough for its tool.
+- **Import from a model, on request only.** *Import outlines from a
+  model…* copies the chosen faces' or part's outlines, flattened, into the
+  job. The model is never linked or changed.
+- **Out:** rotary / turning paths (the setup says so).
+
+Order: (1) `.igcam` and the setup-first flow; (2) CAM mode (H5) and the
+2D tool set; (3) operations linked to paths, path status; (4) stock
+templates.
 
 ## Milestones
 
