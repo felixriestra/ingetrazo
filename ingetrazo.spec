@@ -56,6 +56,9 @@ datas = [
     ('i18n/*.json',                'i18n'),
     # Bundled plugins (Extensions menu) — discovered by file path at runtime.
     ('plugins/*.py',               'plugins'),
+    # Example extensions: shipped but NOT loaded — Extensions ▸ Example
+    # extensions copies one into the user's plugins folder on request.
+    ('examples/extensions/*.py',   'examples/extensions'),
     # The MCP server (stdlib-only): `ingetrazo --mcp` runs it by path, and
     # the console build below makes it a program of its own on Windows.
     ('scripts/ingetrazo_mcp.py',   'scripts'),

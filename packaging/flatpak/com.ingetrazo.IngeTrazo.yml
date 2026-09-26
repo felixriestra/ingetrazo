@@ -74,6 +74,10 @@ modules:
       #    them under app_root(), which resolves to /app/ingetrazo here).
       - mkdir -p ${FLATPAK_DEST}/ingetrazo
       - cp -a main.py core views tools formats georef materials styles plugins resources i18n scripts LICENSE ${FLATPAK_DEST}/ingetrazo/
+      # The example extensions (Extensions ▸ Example extensions installs one
+      # into the user's plugins folder): shipped, never loaded by default.
+      - mkdir -p ${FLATPAK_DEST}/ingetrazo/examples
+      - cp -a examples/extensions ${FLATPAK_DEST}/ingetrazo/examples/
       - find ${FLATPAK_DEST}/ingetrazo -name '__pycache__' -type d -exec rm -rf {} +
       # 3. Launcher + desktop integration (exports must carry the app id).
       - install -Dm755 packaging/flatpak/flatpak-launcher.sh ${FLATPAK_DEST}/bin/ingetrazo

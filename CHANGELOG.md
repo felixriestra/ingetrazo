@@ -54,8 +54,10 @@ follow [SemVer](https://semver.org).
   cursor, sea cual sea la herramienta activa (`docs/plugins.md`). Ejemplo:
   **Niveles** (`examples/extensions/niveles.py`), idea y primera versión de
   José Castro Basso (FADU–UDELAR): niveles del edificio con guías en alzados
-  y cortes y enganche a sus alturas. No viene instalada: lo que solo algunos
-  necesitan vive en una extensión, no en el núcleo.
+  y cortes y enganche a sus alturas, y un botón «Ver alzado». Viene con el
+  programa pero sin activar: se instala desde **Extensiones ▸ Extensiones de
+  ejemplo**. Lo que solo algunos necesitan vive en una extensión, no en el
+  núcleo.
 
 ### Cambiado
 - **Asistente IA: LM Studio además de Ollama.** El proveedor local ya hablaba

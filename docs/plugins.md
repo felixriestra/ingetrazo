@@ -153,8 +153,9 @@ dropped on save rather than failing it.
 (PB, PA…) kept in the document, a side panel to edit them, dashed guides in
 parallel elevations and sections, and the cursor snapping to their heights
 («PA» on the tip). Idea and first version by José Castro Basso (FADU–UDELAR)
-for teaching architectural representation. It is not bundled on purpose:
-copy it into your plugins folder to use it. Features only some users need
+for teaching architectural representation. It ships with the app but is not loaded:
+**Extensions ▸ Example extensions ▸ Niveles** copies it into your plugins
+folder (and removes it again); restart to load it. Features only some users need
 belong in extensions like this one, not in the core.
 
 ## Bundled reference plugins

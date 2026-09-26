@@ -184,3 +184,37 @@ def test_levels_panel_has_a_one_click_way_to_where_the_guides_show(levels):
     panel._show_elevation()
     assert not vp.camera.perspective
     assert abs(vp.camera.pitch) < 1e-6
+
+
+def test_the_example_extensions_ship_but_install_only_on_request(tmp_path,
+                                                                 monkeypatch):
+    """Marco: «sería bueno tener esa extensión como ejemplo en IngeTrazo para
+    que otros usuarios vean» — shipped with the app, listed in Extensions ▸
+    Example extensions, loaded only once someone installs it there."""
+    from PySide6.QtWidgets import QMessageBox
+    from core import extensions
+    from views.main_window import MainWindow
+    examples = MainWindow.example_extensions()
+    assert any(p.name == "niveles.py" and title == "Niveles"
+               for p, title, _blurb in examples)
+    user = tmp_path / "plugins"
+    monkeypatch.setattr(extensions, "user_plugins_dir", lambda: user)
+    monkeypatch.setattr(extensions, "plugin_dirs", lambda: [user])
+    monkeypatch.setattr(QMessageBox, "information",
+                        staticmethod(lambda *a, **k: None))
+    win = _window()
+    try:
+        assert not win._extension_docks            # not loaded by default
+        menu = next(m for m in win.menuBar().actions()
+                    if m.menu() is not None and "xtensi" in m.text()).menu()
+        sub = next(a.menu() for a in menu.actions()
+                   if a.menu() is not None)
+        act = next(a for a in sub.actions() if a.text() == "Niveles")
+        assert not act.isChecked()
+        act.trigger()                               # install
+        assert (user / "niveles.py").read_bytes() == \
+            (EXAMPLES / "niveles.py").read_bytes()
+        act.trigger()                               # and remove
+        assert not (user / "niveles.py").exists()
+    finally:
+        _close(win)
