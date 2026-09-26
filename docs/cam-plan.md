@@ -417,7 +417,8 @@ people work on it.
    **done**: `engine/sheet.py` (content) and `ui/setup_sheet.py` (A4 PDF),
    from the Output tab.
 5. Nesting several parts onto one sheet (`LayoutEngine`), a strong fit
-   with IngeTrazo's cut list.
+   with IngeTrazo's cut list. **On hold** (2026-09-26): not planned for
+   now; kept here for later.
 6. ~~Bitmap tracing~~ — **done** without vtracer (its wheel crashes on
    Python 3.14): `engine/trace.py` and «Trace an image…» on the Operations
    tab.
