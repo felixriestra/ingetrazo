@@ -78,7 +78,8 @@ def _desktop_entry(appimage: Path) -> str:
         "Icon=ingetrazo\n"
         "Terminal=false\n"
         "Categories=Graphics;3DGraphics;Engineering;\n"
-        "MimeType=application/x-ingetrazo;model/vnd.collada+xml;application/vnd.sketchup.skp;\n"
+        "MimeType=application/x-ingetrazo;application/x-ingetrazo-cam;model/vnd.collada+xml;"
+        "application/vnd.sketchup.skp;\n"
         "StartupWMClass=ingetrazo\n"
         "X-AppImage-Integrated=true\n"
     )
