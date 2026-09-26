@@ -77,6 +77,18 @@
   <url type="vcs-browser">https://github.com/ingelibre/ingetrazo</url>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.5.3" date="2026-09-25">
+      <description>
+        <p>Rotation grips on Move and a Select submenu, as in SketchUp;
+        count and spacing in one entry (5x10m); 3D mouse navigation; Edit ▸
+        Invert Selection; an empty .skp opens empty. Fixes from users'
+        videos: Scale no longer tears loose geometry, a group turned about
+        its centre is redrawn, and a reference image is no longer covered
+        by what lies behind it. Opening documents no longer leaks memory. Extensions can now keep data in the
+        document, add a side panel and offer inferences — Levels is the
+        first, shipped as an example.</p>
+      </description>
+    </release>
     <release version="0.5.2" date="2026-09-24">
       <description>
         <p>A group of groups is a group again and Make Unique keeps the

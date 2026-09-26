@@ -4,7 +4,15 @@ All notable changes to IngeTrazo are documented here.
 Format inspired by [Keep a Changelog](https://keepachangelog.com); versions
 follow [SemVer](https://semver.org).
 
-## [Sin publicar]
+## [0.5.3] — 2026-09-25
+
+**Lo que pidieron los usuarios, y extensiones para lo que solo algunos
+necesitan.** Pinzas de rotación en Mover y un menú Seleccionar como los de
+SketchUp; copias `5x10m`; el ratón 3D; y los fallos que destaparon vuestros
+vídeos: Escalar que rompía la geometría, el cubo fantasma al girar y la foto
+tapada por lo que tenía detrás. Las extensiones ya pueden guardar datos en
+el documento, añadir un panel y ofrecer inferencias; Niveles, de José Castro
+Basso, es la primera y viene como ejemplo.
 
 ### Añadido
 - **Los componentes se desarman** (PR #96, Félix Riestra):
@@ -77,6 +85,13 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Fuga de memoria al abrir documentos**: cada Nuevo / Abrir dejaba vivos
+  los datos de dibujo del documento anterior (y con ellos sus caras), y cada
+  componente editado sus búferes en la tarjeta gráfica. Reabrir la plaza de
+  Yanque cinco veces llevaba la 0.5.2 de 610 a 1440 MB y cada apertura era
+  más lenta; ahora la memoria se estabiliza. Lo encontró la nueva
+  verificación previa a cada versión (`scripts/release_check.sh`, resultados
+  en `benchmarks/results/`).
 - **Láminas: una vista redimensionada ya no se estira** (PR #116, Pedro
   Caeiro, #80): como en LayOut, el dibujo conserva su escala, el borde nuevo
   se ve como papel y la vista se vuelve a renderizar sola al soltar (con
