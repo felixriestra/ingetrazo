@@ -2842,12 +2842,15 @@ class _SheetItem(QGraphicsItem):
         if self._press_state is None:
             return
         current = {k: getattr(self.model, k) for k in self._press_state}
-        if current != self._press_state:
+        moved = current != self._press_state
+        if moved:
             self.composer.push_geometry_edit(self.model, current,
                                              self._press_state)
         self._press_state = None
         if was_resizing:
             self.composer.on_item_geometry(self, final=True)
+        elif moved:
+            self.composer.on_item_moved(self)
 
     #: True while nudge_selected moves this item by a fixed step: the
     #: magnetic snap of a drag must not swallow a 1 mm arrow-key move.
@@ -5214,7 +5217,7 @@ class ComposerWindow(QMainWindow):
         self.hlr_cache: dict[int, object] = {}
         self.hlr_kinds: dict[int, object] = {}     # line class per segment
         self.hlr_fills: dict[int, object] = {}     # section-cut rings, mm
-        self.snap_cache: dict[int, object] = {}   # frame → page-mm snap pts
+        self.snap_cache: dict[int, object] = {}   # frame → (page stamp, snap pts)
         self.circle_cache: dict[int, list] = {}   # frame → page-mm circles
         self.annot_cache: dict[int, list] = {}    # frame → model annotations
         self._images: dict[str, QImage] = {}
@@ -8265,6 +8268,22 @@ class ComposerWindow(QMainWindow):
             self.fh_spin.setValue(item.model.h_mm)
             self._updating = False
 
+    def on_item_moved(self, item: _SheetItem) -> None:
+        """A finished move: the picture travels with the frame (paint_frame_mm
+        draws it from the frame's millimetres), but everything the frame caches
+        in PAGE millimetres -- snap points, circles, vector lines, annotations
+        -- was measured from the OLD spot, and Dimension kept catching the
+        vertices where the frame used to be. A move changes no size, so there
+        is nothing to re-render: the resize's sibling, minus the auto pass."""
+        if not isinstance(item, FrameItem):
+            return
+        frame = item.model
+        image = self.render_cache.get(id(frame))
+        self._forget_frame(frame)          # every page-mm cache is stale now
+        if image is not None:
+            self.render_cache[id(frame)] = image   # ... but not the picture
+        item.update()
+
     def _on_view_resized(self, item: FrameItem) -> None:
         """A finished resize must not blank the frame (#80: the user was told to
         Update after every corner drag). Everything the frame caches in PAGE
@@ -8469,6 +8488,9 @@ class ComposerWindow(QMainWindow):
                                       if isinstance(c, EditItemCommand)])
         self.history.execute(cmd, notify=False)
         self._mark_dirty()
+        for it in items:                   # arrow keys are a move too: the
+            if isinstance(it, FrameItem):  # page-mm caches are just as stale
+                self.on_item_moved(it)
         if follow:
             keep = [it.model for it in items]
             self._rebuild_canvas()
@@ -11268,18 +11290,33 @@ class ComposerWindow(QMainWindow):
                 best = (d, (cx, cy, r))
         return best[1] if best else None
 
+    def _frame_page_stamp(self, frame: MarcoVista) -> tuple:
+        """The page geometry ``frame_snap_points`` projects through, so its
+        cache can tell **by itself** whether the pair it holds still belongs
+        to where the frame is.
+
+        A move must not depend on whoever moved it remembering to drop the
+        cache: a drag lands in ``push_geometry_edit`` and an undo in
+        ``_on_history_change`` -> ``_rebuild_after_change``, and neither of
+        them forgets anything."""
+        return (frame.x_mm, frame.y_mm, frame.w_mm, frame.h_mm)
+
     def frame_snap_points(self, frame: MarcoVista):
         """Snappable geometry points of *frame*'s view — an ``(M, 2)`` array
         in PAGE millimetres paired with the same points in WORLD metres
         ``(M, 3)`` (the anchor data): every edge endpoint plus each edge's
-        midpoint. Cached by frame id. Small scenes use the same exact
-        hidden-line pass the vector style uses (a point only snaps where
-        the drawing shows an edge); big scenes project every edge without
-        the visibility kernel (see ``_EXACT_SNAP_EDGE_BUDGET``)."""
+        midpoint. Cached by frame id *and* the page geometry it was computed
+        at: a frame moved behind the cache's back (a drag, an undo) must
+                never be read with the endpoints of where it used to be. Small scenes
+        use the same exact hidden-line pass the vector style uses (a point
+        only snaps where the drawing shows an edge); big scenes project every
+        edge without the visibility kernel (see ``_EXACT_SNAP_EDGE_BUDGET``)."""
         import numpy as np
+        stamp = self._frame_page_stamp(frame)
         cached = self.snap_cache.get(id(frame))
-        if cached is not None:
-            return cached
+        if cached is not None and cached[0] == stamp:
+            return cached[1]
+
         from core.composition import frame_page_projector
         from core.hlr import _to_cam, camera_basis, hlr_view
 
@@ -11341,7 +11378,8 @@ class ComposerWindow(QMainWindow):
                  and not self.frame_is_perspective(frame))
         pair = self._with_frame_camera(frame, run_exact if exact
                                        else run_fast)
-        self.snap_cache[id(frame)] = pair
+        self.snap_cache[id(frame)] = (stamp, pair)
+
         return pair
 
     def _frame_world_to_page(self, frame: MarcoVista, world_pts):
