@@ -259,6 +259,28 @@ def add_operations(state, kind: str, ex=None) -> list:
     return ops
 
 
+#: The fields of an operation that come from its geometry, per kind; the
+#: rest (depths, feeds, tabs, entries…) are the user's and stay.
+GEOMETRY_FIELDS = {
+    "drilling": ("points",),
+    "engraving": ("points", "isClosed"),
+    "bore": ("center", "diameter"),
+    "slot": ("start", "end", "width"),
+    "chamfer": ("points", "isClosed", "inside"),
+}
+
+
+def copy_geometry(dst: Operation, src: Operation) -> None:
+    """Give ``dst`` the geometry of ``src`` (an operation of the same kind
+    just built from the edited paths), keeping everything the user set."""
+    fields = GEOMETRY_FIELDS.get(dst.kind)
+    if fields is None:                               # region operations
+        dst.strategy.geometry = src.strategy.geometry
+        return
+    for f in fields:
+        setattr(dst.parameters, f, getattr(src.parameters, f))
+
+
 def _slot_from_loop(state, job, loop, through, ops) -> bool:
     """A slot for a rectangular loop: along its long axis, as wide as its
     short side, the rows' ends moved in by the tool radius so the cut is

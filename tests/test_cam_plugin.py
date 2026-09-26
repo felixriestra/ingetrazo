@@ -492,3 +492,68 @@ def test_operation_form_check_boxes_wrap_their_text_and_still_toggle(settings_fi
     before = form.nearest.isChecked()
     label.mousePressEvent(None)
     assert form.nearest.isChecked() != before
+
+
+def _move_vertices(win, pred, dx_mm=0.0, dy_mm=0.0):
+    for v in win.viewport.scene.mesh.vertices:
+        if pred(v.position):
+            v.position.setX(v.position.x() + dx_mm / 1000.0)
+            v.position.setY(v.position.y() + dy_mm / 1000.0)
+    win.viewport.scene.version += 1
+    win.viewport.notify_scene_changed()
+
+
+def test_operations_follow_their_paths_when_the_drawing_changes(settings_file, tmp_path):
+    """Owner's review, 2026-09-26: «update any geometry already in a cam
+    file and generate new paths». Stretch the rectangle: its profile
+    follows and keeps its settings; undo brings both back; delete it: the
+    operation is flagged and keeps its last geometry."""
+    from plugins.cam.engine import geometry as geo
+    win, dock, _model = _job(settings_file, tmp_path)
+    _set_stock(dock, 300.0, 200.0, 18.0)
+    _draw(win, _rect(10, 10, 110, 70))
+    dock.refresh_paths()
+    _choose(dock, lambda p: True)
+    dock._on_add("outsideProfile")
+    dock.flush()
+    (op,) = dock.state.job.operations
+    op.parameters.stepDown = 4.0
+    dock._changed()
+    dock.flush()
+    _move_vertices(win, lambda q: q.x() > 0.1, dx_mm=40.0)       # 100 → 140 mm wide
+    dock.refresh_paths()
+    assert abs(geo.signed_area(op.strategy.geometry.boundary)) == pytest.approx(140 * 60)
+    assert op.parameters.stepDown == 4.0
+    assert dock.link_status[op.id] is None
+    # Saved with the new geometry, reopened: still linked (by shape).
+    assert dock.save_job()
+    dock.leave_job()
+    dock.open_job(tmp_path / "board.igcam")
+    (op,) = dock.state.job.operations
+    assert abs(geo.signed_area(op.strategy.geometry.boundary)) == pytest.approx(140 * 60)
+    assert dock.link_status.get(op.id) is None
+    # The path is erased: flagged, geometry kept.
+    scene = win.viewport.scene
+    for e in list(scene.mesh.edges):
+        scene.mesh.remove_edge(e)
+    scene.version += 1
+    win.viewport.notify_scene_changed()
+    dock.refresh_paths()
+    assert dock.link_status[op.id] == "path_missing"
+    assert dock.op_list.item(0).text().startswith("⚠")
+    assert abs(geo.signed_area(op.strategy.geometry.boundary)) == pytest.approx(140 * 60)
+    _close(win, dock)
+
+
+def test_paths_say_what_is_wrong_with_them(settings_file, tmp_path):
+    win, dock, _model = _job(settings_file, tmp_path)
+    _set_stock(dock, 100.0, 100.0, 18.0)
+    _draw(win, [(10, 10), (60, 60), (60, 10), (10, 60)])       # a bow tie
+    _draw(win, _rect(80, 80, 150, 90))                          # hangs off the stock
+    _draw(win, _rect(20, 20, 30, 30))                           # fine
+    dock.refresh_paths()
+    texts = sorted(dock.path_list.item(i).text() for i in range(dock.path_list.count()))
+    assert sum(t.startswith("⚠") for t in texts) == 2
+    tips = " ".join(dock.path_list.item(i).toolTip() for i in range(dock.path_list.count()))
+    assert "crosses itself" in tips and "partly outside the stock" in tips
+    _close(win, dock)

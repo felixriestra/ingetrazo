@@ -40,13 +40,14 @@ class JobFileError(Exception):
     """The file is not a CAM job this version can read."""
 
 
-def save_job(scene, path) -> None:
-    """Write the job shown in ``scene`` (its geometry, and its CAM state in
-    ``scene.plugin_data["cam"]``) to ``path``, atomically: a failed save
-    leaves the previous file whole."""
+def save_job(scene, path, state: dict | None = None) -> None:
+    """Write the job shown in ``scene`` — its geometry, and ``state`` or
+    else the CAM state in ``scene.plugin_data["cam"]`` — to ``path``,
+    atomically: a failed save leaves the previous file whole."""
     from formats import igz
     path = Path(path)
-    state = (getattr(scene, "plugin_data", None) or {}).get(PLUGIN_KEY)
+    if state is None:
+        state = (getattr(scene, "plugin_data", None) or {}).get(PLUGIN_KEY)
     if state is None:
         raise JobFileError("no CAM job in this scene")
     doc = {"format": FORMAT, "version": VERSION, "state": state}
