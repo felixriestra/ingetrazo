@@ -42,6 +42,10 @@ _TEXTS = {
            "Add": "Añadir", "Edit": "Editar", "Delete": "Eliminar",
            "Name:": "Nombre:", "Height:": "Altura:", "New level": "Nuevo nivel",
            "Edit level": "Editar nivel", "Level {n}": "Nivel {n}",
+           "Show elevation": "Ver alzado",
+           "Front view in parallel projection, where the level guides show.":
+           "Vista frontal en proyección paralela, donde se ven las guías de "
+           "nivel.",
            "Double-click a level to edit it. The guides show in elevations "
            "and sections in parallel projection.":
            "Doble clic en un nivel para editarlo. Las guías se ven en alzados "
@@ -50,6 +54,10 @@ _TEXTS = {
               "Add": "Adicionar", "Edit": "Editar", "Delete": "Excluir",
               "Name:": "Nome:", "Height:": "Altura:", "New level": "Novo nível",
               "Edit level": "Editar nível", "Level {n}": "Nível {n}",
+              "Show elevation": "Ver elevação",
+              "Front view in parallel projection, where the level guides show.":
+              "Vista frontal em projeção paralela, onde as guias de nível "
+              "aparecem.",
               "Double-click a level to edit it. The guides show in elevations "
               "and sections in parallel projection.":
               "Clique duas vezes num nível para editá-lo. As guias aparecem "
@@ -131,11 +139,25 @@ class LevelsPanel(QWidget):
             b.clicked.connect(slot)
             row.addWidget(b)
         lay.addLayout(row)
+        # The guides only exist in a parallel elevation — which is exactly
+        # where nobody starts. One click gets there (Marco's first try, 25-09:
+        # «hice niveles pero no veo nada en el dibujo» — he was in perspective).
+        elev = QPushButton(_t("Show elevation"))
+        elev.setToolTip(_t("Front view in parallel projection, where the "
+                           "level guides show."))
+        elev.clicked.connect(self._show_elevation)
+        lay.addWidget(elev)
         hint = QLabel(_t("Double-click a level to edit it. The guides show in "
                          "elevations and sections in parallel projection."))
         hint.setWordWrap(True)
         lay.addWidget(hint)
         self.refresh()
+
+    def _show_elevation(self) -> None:
+        vp = self.app.viewport
+        vp.camera.set_view("front")
+        vp.camera.perspective = False
+        vp.update()
 
     def refresh(self) -> None:
         st = _state(self.app)

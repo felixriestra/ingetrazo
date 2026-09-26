@@ -172,3 +172,15 @@ def test_a_raising_provider_cannot_take_the_cursor(levels):
     vp._ext_snap_providers.insert(0, broken)
     s = SnapResult(V(0, 0, 0), "on_face")
     assert vp._extension_snap(s, 10, 10) is s
+
+
+def test_levels_panel_has_a_one_click_way_to_where_the_guides_show(levels):
+    """«Hice niveles pero no veo nada en el dibujo» — the camera was in
+    perspective. The panel's button goes to a parallel front elevation."""
+    win = levels
+    vp = win.viewport
+    vp.camera.perspective = True
+    panel = win._extension_docks[0].widget()
+    panel._show_elevation()
+    assert not vp.camera.perspective
+    assert abs(vp.camera.pitch) < 1e-6
