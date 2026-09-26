@@ -23,9 +23,11 @@ Pedro Caeiro <pacaeiro2@sapo.pt>  (github.com/pacaeiro)
     colliding with Alt+Tab. Much of IngeTrazo's parity with SketchUp's
     everyday gestures comes from him using the program as a draftsman does
     and writing down every one that did not answer the same.
-    He kept going through 0.4 and 0.5 (#27–#79): axis locks and their
+    He kept going through 0.4 and 0.5 (#27–#106): axis locks and their
     snaps, local axes in groups and components (#44), the sheet composer,
-    Fillet 3D, Orient Faces, copy/paste between documents, and many more.
+    Fillet 3D, Orient Faces, copy/paste between documents, and many more —
+    and a pull request of his own for the composer (#116): a resized view
+    keeps its drawing undistorted and renders again off the release.
 
 Rafael García Rodríguez — "Rafael 3D" (youtube.com/@Rafa3D)
     Draftsman and 3D modelling reviewer.
@@ -63,6 +65,8 @@ Félix Riestra  (github.com/felixriestra)
 Gabriel Rodríguez  (github.com/canalsecuario-blip)
     The Back color in Styles (pull request #99): SketchUp's Front/Back
     colour pair, the tint of faces seen from behind.
+    Edit ▸ Invert Selection (pull request #113), SketchUp's Ctrl+Shift+I,
+    leaving out what is hidden or locked.
 
 Sherod Taylor  (github.com/sherodtaylor)
     The First Person tool (pull request #86): walking the model like a

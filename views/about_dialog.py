@@ -43,8 +43,12 @@ CONTRIBUTORS = [
      "Brazilian Portuguese translation of the interface.",
      "https://github.com/dafrobozao"),
     ("Félix Riestra",
-     "The macOS package: IngeTrazo for Mac.",
+     "The macOS package: IngeTrazo for Mac. Components that come apart: "
+     "parts, cut list and exploded view.",
      "https://github.com/felixriestra"),
+    ("Gabriel Rodríguez",
+     "The Back color in Styles and Edit ▸ Invert Selection.",
+     "https://github.com/canalsecuario-blip"),
     ("Sherod Taylor",
      "The First Person tool: walk the model like a game.",
      "https://github.com/sherodtaylor"),
