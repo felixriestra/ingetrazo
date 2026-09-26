@@ -14,6 +14,11 @@ follow [SemVer](https://semver.org).
   Preferencias ya ofrece el portugués, que solo estaba en el menú.
 
 ### Corregido
+- **Las unidades se recuerdan para los documentos nuevos** (#121): elegir
+  milímetros en Preferencias ▸ Unidades solo valía para el documento abierto
+  y cada archivo nuevo (o cada arranque) volvía a metros. Ahora la casilla
+  «Usar también para documentos nuevos» las guarda; un archivo que se abre
+  sigue con sus propias unidades.
 - **Las líneas guía se cruzan donde deben** (#110): el cruce de dos guías
   diagonales, y lo que se dibujaba desde él, quedaba hasta 2 mm fuera de las
   guías (se veía al acercar el zoom). Una guía «infinita» llegaba al cálculo

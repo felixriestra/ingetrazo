@@ -107,6 +107,46 @@ def model_units_of(scene) -> dict:
     return dict(DEFAULT_MODEL_UNITS)
 
 
+#: QSettings key of the units a NEW document starts with (issue #121: «I
+#: model every part in millimetres» — the unit was lost with each new file).
+NEW_DOCUMENT_KEY = "units/new_document"
+
+
+def new_document_units() -> dict:
+    """The units a new, empty document starts with: the ones the user last
+    chose «for new documents» in Preferences, or metres. Opening a file never
+    reads this — a document keeps its own units (an old .igz without them is
+    in metres, as it was drawn)."""
+    import json
+
+    from PySide6.QtCore import QSettings
+    try:
+        raw = QSettings().value(NEW_DOCUMENT_KEY)
+        return model_units_of({"units": json.loads(raw)} if raw else {})
+    except (TypeError, ValueError):
+        return dict(DEFAULT_MODEL_UNITS)
+
+
+def remember_new_document_units(units: dict) -> None:
+    import json
+
+    from PySide6.QtCore import QSettings
+    st = QSettings()
+    st.setValue(NEW_DOCUMENT_KEY, json.dumps(model_units_of({"units": units})))
+    st.sync()
+
+
+def apply_units(scene, units: dict) -> None:
+    """Give ``scene`` these units; the dimension style follows them, as the
+    Preferences dialog has always done."""
+    chosen = model_units_of({"units": units})
+    scene.units = chosen
+    style = getattr(scene, "dimension_style", None)
+    if isinstance(style, dict):
+        style["units"] = chosen["length"]
+        style["decimals"] = chosen["precision"]
+
+
 def model_units() -> dict:
     return model_units_of(_SCENE)
 

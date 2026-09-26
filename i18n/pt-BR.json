@@ -642,7 +642,7 @@
  "3D Mouse": "Mouse 3D",
  "Click what to move (or select it first). Red + on a group = rotate it.": "Clique no que quer mover (ou selecione antes). O + vermelho de um grupo o gira.",
  "Rotate: move to turn, click or type the angle. Ctrl = copy": "Girar: mova para girar, clique ou digite o ângulo. Ctrl = cópia",
- "The toolbars were hidden \u2014 they are back in their places.": "As barras de ferramentas estavam ocultas: já estão no lugar.",
+ "The toolbars were hidden — they are back in their places.": "As barras de ferramentas estavam ocultas: já estão no lugar.",
  "empty = local AI (Ollama, LM Studio)": "vazia = IA local (Ollama, LM Studio)",
  "Local AI URL:": "URL da IA local:",
  "Local AI server — Ollama: http://localhost:11434, LM Studio: http://localhost:1234 (key left empty)": "Servidor de IA local — Ollama: http://localhost:11434, LM Studio: http://localhost:1234 (chave em branco)",
@@ -1383,5 +1383,6 @@
  "Brazilian Portuguese translation of the interface.": "Tradução da interface para o português do Brasil.",
  "The macOS package: IngeTrazo for Mac.": "O pacote para macOS: IngeTrazo para Mac.",
  "The First Person tool: walk the model like a game.": "A ferramenta Primeira pessoa: percorrer o modelo como num videogame.",
- "And thanks to everyone who tries IngeTrazo and reports what they find.": "E obrigado a todas as pessoas que testam o IngeTrazo e relatam o que encontram."
+ "And thanks to everyone who tries IngeTrazo and reports what they find.": "E obrigado a todas as pessoas que testam o IngeTrazo e relatam o que encontram.",
+ "Also use for new documents": "Usar também para documentos novos"
 }

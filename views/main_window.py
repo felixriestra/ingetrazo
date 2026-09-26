@@ -171,6 +171,7 @@ class MainWindow(QMainWindow):
 
         self._setup_ui()
         self._activate_tool("select")
+        self._apply_new_document_units()
         self._insert_scale_figure()
         self._update_title()
 
@@ -3329,12 +3330,20 @@ class MainWindow(QMainWindow):
         self.viewport.reset_texture_cache()
         self._current_path = None
         self._import_name = None
+        self._apply_new_document_units()
         self._insert_scale_figure()
         self.viewport.notify_scene_changed()
         self._sync_style_menu()
         self._sync_section_menu()
         self._update_title()
         self.settle_heap()
+
+    def _apply_new_document_units(self) -> None:
+        """A new, empty document starts in the units chosen for new documents
+        in Preferences (#121). Not a change to the document: no version bump,
+        so it does not ask to be saved."""
+        from core import units as _units
+        _units.apply_units(self.viewport.scene, _units.new_document_units())
 
     def _on_recover_discarded(self) -> None:
         """Open one of the retired auto-save copies as a NEW, unsaved

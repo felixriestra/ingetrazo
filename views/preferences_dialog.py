@@ -300,6 +300,12 @@ class PreferencesDialog(QDialog):
         self._decimals.setRange(0, 6)
         self._decimals.setValue(int(current.get("precision", 2)))
         form.addRow(tr("Decimals"), self._decimals)
+        # Issue #121: the choice used to live only in the open document, so
+        # every new file went back to metres.
+        self._units_for_new = QCheckBox(tr("Also use for new documents"))
+        self._units_for_new.setChecked(
+            _units.new_document_units() == current)
+        form.addRow("", self._units_for_new)
         note = QLabel(tr(
             "These are the units of the document you have open — they are "
             "saved with it. A number typed without a unit is in this unit "
@@ -326,13 +332,11 @@ class PreferencesDialog(QDialog):
         chosen = {"length": str(self._unit.currentData()),
                   "precision": int(self._decimals.value())}
         if scene is not None and chosen != _units.model_units_of(scene):
-            scene.units = chosen
-            style = getattr(scene, "dimension_style", None)
-            if isinstance(style, dict):
-                style["units"] = chosen["length"]
-                style["decimals"] = chosen["precision"]
+            _units.apply_units(scene, chosen)
             scene.version += 1
             self._window.viewport.update()
+        if self._units_for_new.isChecked():
+            _units.remember_new_document_units(chosen)
 
         # Language: same contract as the menu (persists; applies on restart).
         # Reverting a still-pending change back to the running language just

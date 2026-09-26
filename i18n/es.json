@@ -371,7 +371,6 @@
  "Dark wood logs": "Pared de troncos oscuros",
  "Darkness:": "Oscuridad:",
  "Date:": "Fecha:",
- "Decimals": "Decimales",
  "Decimals:": "Decimales:",
  "Default": "Predeterminado",
  "Default for new title blocks": "Predeterminada para cajetines nuevos",
@@ -683,7 +682,7 @@
  "3D Mouse": "Ratón 3D",
  "Click what to move (or select it first). Red + on a group = rotate it.": "Clic en lo que quieres mover (o selecciónalo antes). La + roja de un grupo lo gira.",
  "Rotate: move to turn, click or type the angle. Ctrl = copy": "Girar: mueve para girar, haz clic o escribe el ángulo. Ctrl = copia",
- "The toolbars were hidden \u2014 they are back in their places.": "Las barras de herramientas estaban ocultas: ya están en su sitio.",
+ "The toolbars were hidden — they are back in their places.": "Las barras de herramientas estaban ocultas: ya están en su sitio.",
  "empty = local AI (Ollama, LM Studio)": "vacía = IA local (Ollama, LM Studio)",
  "Local AI URL:": "URL de la IA local:",
  "Local AI server — Ollama: http://localhost:11434, LM Studio: http://localhost:1234 (key left empty)": "Servidor de IA local — Ollama: http://localhost:11434, LM Studio: http://localhost:1234 (con la clave vacía)",
@@ -1314,7 +1313,6 @@
  "Unhid {n} edge(s).": "{n} arista(s) mostrada(s).",
  "Unhide All Edges": "Mostrar todas las aristas",
  "Unit:": "Unidad:",
- "Units": "Unidades",
  "Unlock": "Desbloquear",
  "Unsaved changes": "Cambios sin guardar",
  "Untag": "Quitar tag",
@@ -2079,5 +2077,6 @@
  "Click a part to select it inside the component; the check shows or hides it. To rename: double-click the name, press F2, or right-click ▸ Rename": "Haz clic en una parte para seleccionarla dentro del componente; la casilla la muestra u oculta. Para renombrar: doble clic en el nombre, F2, o clic derecho ▸ Renombrar",
  "{area} — surface": "{area} — superficie",
  "surface": "superficie",
- "No thickness: a surface drawn as a single plane (a skin, a decal, a glass pane). It stays in the model; the cut list marks it as a surface.": "Sin espesor: una superficie dibujada como un solo plano (un revestimiento, una calcomanía, un vidrio). Se queda en el modelo; la lista de corte la marca como superficie."
+ "No thickness: a surface drawn as a single plane (a skin, a decal, a glass pane). It stays in the model; the cut list marks it as a surface.": "Sin espesor: una superficie dibujada como un solo plano (un revestimiento, una calcomanía, un vidrio). Se queda en el modelo; la lista de corte la marca como superficie.",
+ "Also use for new documents": "Usar también para documentos nuevos"
 }
