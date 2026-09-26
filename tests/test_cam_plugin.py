@@ -611,3 +611,20 @@ def test_stock_templates(settings_file, tmp_path):
         _close(win, dock)
     finally:
         CamDock.template_folder = None
+
+
+def test_a_job_file_opens_before_the_cam_panel_ever_did(settings_file, tmp_path):
+    """A double-clicked .igcam (or one on the command line) must open into
+    CAM even when the CAM panel was never opened in this session: the
+    plugin claims the suffix at startup (its install hook)."""
+    win, dock, _model = _job(settings_file, tmp_path)
+    _close(win, dock)
+    win.close()
+    fresh = _window()
+    assert "cam_dock" not in fresh.plugin_docks()
+    assert ".igcam" in fresh.file_openers
+    assert fresh.open_path(tmp_path / "board.igcam")
+    dock = fresh.plugin_docks()["cam_dock"]
+    assert dock.in_job() and fresh.windowTitle() == "IngeTrazo — board.igcam"
+    assert not dock.isHidden()
+    _close(fresh, dock)

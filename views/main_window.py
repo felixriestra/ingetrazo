@@ -1407,6 +1407,18 @@ class MainWindow(QMainWindow):
                 ext_menu.addAction(action)
                 count += 1
 
+        # Startup hook: a plugin may register what must work before its
+        # tool is ever picked — the CAM plugin claims «.igcam», so a
+        # double-clicked job opens straight into CAM. A failing hook is
+        # logged and skipped, like a failing import.
+        for plug in plugins:
+            hook = getattr(plug.module, "install", None)
+            if callable(hook):
+                try:
+                    hook(self)
+                except Exception:           # noqa: BLE001 — contract: never break startup
+                    log.exception("plugin %r: install(window) failed", plug.stem)
+
         for err in errors:
             action = ext_menu.addAction(
                 tr("\u26a0 {name} (load error)", name=err.stem))

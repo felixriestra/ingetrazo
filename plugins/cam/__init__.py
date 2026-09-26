@@ -17,6 +17,23 @@ from __future__ import annotations
 from tools.base import Tool
 
 
+def install(window) -> None:
+    """Startup hook (core/extensions.py): claim ``.igcam`` so a job
+    double-clicked in the file manager, passed on the command line or picked
+    from Open Recent opens straight into CAM mode, whether or not the CAM
+    panel was ever opened. Nothing else loads until a job is opened."""
+    if hasattr(window, "file_openers"):
+        window.file_openers[".igcam"] = lambda path: open_job(window, path)
+
+
+def open_job(window, path) -> bool:
+    """Open the CAM job at ``path`` in ``window``, with the CAM panel."""
+    from pathlib import Path
+
+    from .ui.dock import show_dock
+    return show_dock(window.viewport).open_job(Path(path))
+
+
 class CamTool(Tool):
     """Opens (or brings forward) the CAM dock."""
 

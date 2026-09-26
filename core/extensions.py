@@ -61,6 +61,9 @@ class LoadedPlugin:
     #: The module's ``setup(app)`` (views.extension_api), or None — a plugin
     #: may have tools, a setup, or both.
     setup: object = None
+    #: The imported module: the window calls its optional ``install(window)``
+    #: once at startup (see docs/plugins.md, «Startup hook»).
+    module: object = None
 
 
 @dataclass
@@ -192,7 +195,7 @@ def discover_plugins(dirs=None):
             if not callable(setup):
                 setup = None
             if tools or setup is not None:
-                plugins.append(LoadedPlugin(stem, file, tools, setup))
+                plugins.append(LoadedPlugin(stem, file, tools, setup, mod))
                 for t in tools:
                     log.info("loaded plugin tool %r from %s", t.name, file)
     return plugins, errors

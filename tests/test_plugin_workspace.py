@@ -143,3 +143,62 @@ def test_autosave_pauses_while_the_model_is_parked(win, monkeypatch):
     win._on_autosave_tick()
     assert written == []
     win.leave_workspace()
+
+
+def test_a_plugin_install_hook_runs_at_startup(tmp_path, monkeypatch):
+    """``install(window)`` in a plugin module is called once when the window
+    loads its plugins; one that raises is skipped without breaking it."""
+    good = tmp_path / "hooked"
+    good.mkdir()
+    (good / "__init__.py").write_text(
+        "from tools.base import Tool\n"
+        "class HookedTool(Tool):\n"
+        "    name = 'Hooked'\n"
+        "    def on_activate(self, viewport): pass\n"
+        "    def on_deactivate(self, viewport): pass\n"
+        "def install(window):\n"
+        "    window.file_openers['.hooked'] = lambda p: True\n")
+    bad = tmp_path / "broken_hook"
+    bad.mkdir()
+    (bad / "__init__.py").write_text(
+        "from tools.base import Tool\n"
+        "class BrokenTool(Tool):\n"
+        "    name = 'Broken'\n"
+        "    def on_activate(self, viewport): pass\n"
+        "    def on_deactivate(self, viewport): pass\n"
+        "def install(window):\n"
+        "    raise RuntimeError('boom')\n")
+    import core.extensions as ext
+    real = ext.plugin_dirs
+    monkeypatch.setattr(ext, "plugin_dirs", lambda: [tmp_path] + list(real()))
+    path = tmp_path / "prefs.ini"
+    import PySide6.QtCore as qc
+    import views.main_window as mw
+    factory = lambda *a: QSettings(str(path), QSettings.IniFormat)  # noqa: E731
+    monkeypatch.setattr(qc, "QSettings", factory)
+    monkeypatch.setattr(mw, "QSettings", factory, raising=False)
+    from views.main_window import MainWindow
+    w = MainWindow()
+    assert ".hooked" in w.file_openers
+    assert ".igcam" in w.file_openers            # the CAM plugin's, from its hook
+    assert w.open_path(Path("/tmp/x.hooked"))
+    w.close()
+
+
+def test_the_launcher_hands_a_plugin_file_to_the_window():
+    """A double-click (macOS Apple Event, or argv on Linux/Windows) goes
+    through main._open_document_in: a suffix a plugin claimed must reach
+    the window's open_path, not be dropped as unknown."""
+    import main
+    opened = []
+
+    class Win:
+        file_openers = {".igcam": None}
+
+        def open_path(self, p):
+            opened.append(p)
+            return True
+
+    main._open_document_in(Win(), Path("/tmp/job.igcam"))
+    main._open_document_in(Win(), Path("/tmp/notes.txt"))
+    assert opened == [Path("/tmp/job.igcam")]

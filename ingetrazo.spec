@@ -366,6 +366,13 @@ if sys.platform == 'darwin':
                     'LSHandlerRank': 'Owner',
                 },
                 {
+                    # The CAM plugin's jobs (plugins/cam/jobfile.py).
+                    'CFBundleTypeName': 'IngeTrazo CAM job',
+                    'CFBundleTypeExtensions': ['igcam'],
+                    'CFBundleTypeRole': 'Editor',
+                    'LSHandlerRank': 'Owner',
+                },
+                {
                     'CFBundleTypeName': 'SketchUp document',
                     'CFBundleTypeExtensions': ['skp'],
                     'CFBundleTypeRole': 'Editor',
