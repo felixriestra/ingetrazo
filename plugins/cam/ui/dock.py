@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDockWidget, 
                                QPushButton, QScrollArea, QSpinBox, QTabWidget,
                                QToolButton, QVBoxLayout, QWidget)
 
+from views.tray import FlowLayout       # the host's wrapping row
+
 from .. import build
 from ..engine.issues import CamError, ERROR
 from ..engine.models import Tool, new_id
@@ -120,6 +122,9 @@ class CamDock(QDockWidget):
     # ==== layout ==============================================================
     def _build(self) -> None:
         self.tabs = QTabWidget()
+        # Tighter tabs: with Qt's default padding the four titles need about
+        # 270 px, and a scrolling tab bar hides Output in a narrow dock.
+        self.tabs.setStyleSheet("QTabBar::tab { padding: 4px 7px; }")
         self.tabs.addTab(_scroll(self._build_job()), tr("Job"))
         self.tabs.addTab(self._build_tools(), tr("Tools"))
         self.tabs.addTab(self._build_operations(), tr("Operations"))
@@ -266,7 +271,7 @@ class CamDock(QDockWidget):
         self.tool_list = QListWidget()
         self.tool_list.currentRowChanged.connect(self._on_tool_selected)
         lay.addWidget(self.tool_list, 1)
-        row = QHBoxLayout()
+        row = FlowLayout(spacing=4)
         for label, slot in ((tr("Add"), self._on_tool_add), (tr("Duplicate"), self._on_tool_dup),
                             (tr("Delete"), self._on_tool_delete)):
             b = QPushButton(label)
@@ -376,7 +381,7 @@ class CamDock(QDockWidget):
         self.issue_list.setWordWrap(True)
         lay.addWidget(self.issue_list, 1)
         box = QGroupBox(tr("Show in the model"))
-        h = QHBoxLayout(box)
+        h = FlowLayout(box, spacing=8)
         self.show_cuts = QCheckBox(tr("Toolpaths"))
         self.show_rapids = QCheckBox(tr("Rapids"))
         self.show_stock = QCheckBox(tr("Stock"))
