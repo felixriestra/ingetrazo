@@ -7,6 +7,11 @@ follow [SemVer](https://semver.org).
 ## [Sin publicar]
 
 ### Corregido
+- **Modelos grandes con cotas o textos ya no van a tirones**: para saber qué
+  parte de cada cota queda tapada, el visor lanzaba miles de rayos contra
+  todo el modelo en cada cuadro (una casa de 284 000 triángulos con 25
+  cotas: casi 2 s por cuadro al orbitar). Ahora lo lee de la profundidad que
+  la tarjeta gráfica ya calculó: 34 ms por cuadro, 50 veces más rápido.
 - **Modelos de SketchUp 2018 (y anteriores) que abrían incompletos**: una
   cota anclada a un punto dentro de grupos anidados desalineaba la lectura y
   se perdía casi todo lo que venía después en la raíz del modelo (una casa

@@ -1987,6 +1987,13 @@ class Viewport(QOpenGLWidget):
             self._scene_fbo.release()
             return
 
+        # The depth this frame just drew, read ONCE for the overlay's
+        # annotations (dimensions, leader texts), which ask «is this point
+        # hidden?» for every sample of every line — see _occluded_on_screen.
+        self._depth_snap = None
+        if self._annotations_need_depth():
+            self._capture_depth(w, h)
+
         # Blit colour from our scene FBO to the widget's default framebuffer.
         # We can't use QOpenGLFramebufferObject.blitFramebuffer(None, src) here
         # because in QOpenGLWidget the "default" framebuffer the widget shows
@@ -6538,7 +6545,7 @@ class Viewport(QOpenGLWidget):
                 continue
             painter.setPen(QPen(ink, 1.2))
             self._draw_occluded_segment(painter, lab.anchor, pos)   # leader
-            if p_anchor is not None and not self._is_occluded(lab.anchor):
+            if p_anchor is not None and not self._occluded_on_screen(lab.anchor):
                 painter.setBrush(ink)
                 painter.drawEllipse(QPointF(*p_anchor), 2.5, 2.5)
                 painter.setBrush(Qt.NoBrush)
@@ -6594,7 +6601,7 @@ class Viewport(QOpenGLWidget):
             if ln > 1e-6 and ends != "none":
                 ux, uy = dx / ln, dy / ln
                 for (cx, cy), w, sign in ((pap, ap, 1.0), (pbp, bp, -1.0)):
-                    if self._is_occluded(w):
+                    if self._occluded_on_screen(w):
                         continue
                     if ends == "tick":
                         ox, oy = -uy * 4.0, ux * 4.0
@@ -6617,7 +6624,7 @@ class Viewport(QOpenGLWidget):
             # point is behind the solid.
             mid_world = dim.midpoint()
             mid = self._world_to_pixel(mid_world)
-            if mid is not None and not self._is_occluded(mid_world):
+            if mid is not None and not self._occluded_on_screen(mid_world):
                 text = dim.display_text(
                     self._format_dim_value(dim.value(), style))
                 painter.setFont(font)
@@ -6646,7 +6653,7 @@ class Viewport(QOpenGLWidget):
             t = i / samples
             w = p3a + (p3b - p3a) * t
             px = self._world_to_pixel(w)
-            vis = px is not None and not self._is_occluded(w)
+            vis = px is not None and not self._occluded_on_screen(w)
             if prev_px is not None and px is not None and prev_vis and vis:
                 painter.drawLine(QPointF(*prev_px), QPointF(*px))
             prev_px, prev_vis = px, vis
@@ -9566,6 +9573,83 @@ class Viewport(QOpenGLWidget):
         if self.style_override is not None:
             return self.style_override
         return getattr(self.scene, "display_style", None) or Style()
+
+    # ---- Screen-depth occlusion for the overlay's annotations ---------------
+    def _annotations_need_depth(self) -> bool:
+        if self._effective_style().face_mode in ("xray", "wireframe"):
+            return False
+        sc = self.scene
+        return bool(getattr(sc, "dimensions", None)
+                    or getattr(sc, "text_labels", None))
+
+    def _capture_depth(self, w: int, h: int) -> None:
+        """Copy the frame's depth out of the (multisampled) scene FBO into a
+        single-sample one and read it back once. The overlay then answers
+        «is this point hidden?» with a lookup instead of a ray cast against
+        the whole model: a SketchUp 2018 house with 25 dimensions spent
+        2.8 s of every frame casting 1350 rays against 284 000 triangles
+        (Juan José Noriega's files, 26-09-2026); the read-back is ~8 ms."""
+        try:
+            import numpy as np
+            from PySide6.QtOpenGL import (QOpenGLFramebufferObject,
+                                          QOpenGLFramebufferObjectFormat)
+            dfbo = getattr(self, "_depth_fbo", None)
+            if dfbo is None or (dfbo.width(), dfbo.height()) != (w, h):
+                fmt = QOpenGLFramebufferObjectFormat()
+                fmt.setAttachment(QOpenGLFramebufferObject.CombinedDepthStencil)
+                fmt.setSamples(0)
+                dfbo = self._depth_fbo = QOpenGLFramebufferObject(w, h, fmt)
+            extra = self.context().extraFunctions()
+            self._gl.glBindFramebuffer(GL_READ_FRAMEBUFFER,
+                                       self._scene_fbo.handle())
+            self._gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dfbo.handle())
+            extra.glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
+                                    GL_DEPTH_BUFFER_BIT, GL_NEAREST)
+            self._gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, dfbo.handle())
+            buf = np.empty((h, w), dtype=np.float32)
+            self._gl.glReadPixels(0, 0, w, h, 0x1902, GL_FLOAT, buf)  # DEPTH
+        except Exception:  # noqa: BLE001 — fall back to rays, never break paint
+            self._depth_snap = None
+            return
+        mvp = self.camera.projection_matrix() * self.camera.view_matrix()
+        inv, ok = mvp.inverted()
+        if not ok:
+            return
+        self._depth_snap = (buf, mvp, inv, w, h, self.camera.eye(),
+                            self.camera.forward())
+
+    def _occluded_on_screen(self, world: QVector3D) -> bool:
+        """``_is_occluded`` for what the overlay draws this frame, read from
+        the depth the frame just rendered (``_capture_depth``). The point is
+        hidden when the nearest surface at its pixel lies clearly in front
+        of it along the view — with a tolerance, so a dimension ending ON a
+        face or an edge is not hidden by that same surface. Without a
+        snapshot (an export, a failed read-back) it asks the rays."""
+        snap = getattr(self, "_depth_snap", None)
+        if snap is None:
+            return self._is_occluded(world)
+        buf, mvp, inv, w, h, eye, fwd = snap
+        c = mvp.map(QVector4D(world.x(), world.y(), world.z(), 1.0))
+        if c.w() <= 1e-9:
+            return False
+        nx, ny = c.x() / c.w(), c.y() / c.w()
+        px, py = (nx + 1.0) * 0.5 * w, (ny + 1.0) * 0.5 * h
+        ix, iy = int(px), int(py)
+        if not (0 <= ix < w and 0 <= iy < h):
+            return False
+        # The FARTHEST depth of the 3×3 around the pixel: a point on a
+        # silhouette must not be hidden by the face next to it.
+        d = float(buf[max(iy - 1, 0):iy + 2, max(ix - 1, 0):ix + 2].max())
+        if d >= 1.0:
+            return False                       # background: nothing in front
+        q = inv.map(QVector4D(nx, ny, d * 2.0 - 1.0, 1.0))
+        if abs(q.w()) < 1e-12:
+            return False
+        surf = QVector3D(q.x() / q.w(), q.y() / q.w(), q.z() / q.w())
+        along_pt = QVector3D.dotProduct(world - eye, fwd)
+        along_surf = QVector3D.dotProduct(surf - eye, fwd)
+        tol = max(0.02, 0.003 * abs(along_pt))
+        return along_surf < along_pt - tol
 
     def _is_occluded(self, world: QVector3D) -> bool:
         """Whether geometry sits between the camera and ``world`` — i.e. the
