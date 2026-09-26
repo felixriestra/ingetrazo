@@ -144,6 +144,30 @@ types (an entry that fails to serialise is dropped from the file and
 logged, the rest of the document is saved); data of plugins that are not
 installed is carried along untouched when the document is re-saved.
 
+## Workspaces: a document of your own
+
+A plugin whose work is not the 3D model — the CAM plugin's jobs, 2.5D
+drawings on the stock — can show its own document in the model's place:
+
+```python
+win = viewport.window()
+win.enter_workspace(ws)     # the model is parked, untouched
+...
+win.leave_workspace()       # the model is back: geometry, undo, file, camera
+```
+
+`ws` provides `scene` and `history` (a `core.scene.Scene` and its
+`core.history.History`), `title()`, `is_dirty()`, `save()`, `save_as()` and
+`confirm_leave()` (True when it may go). Optional: `new()`, `open()`,
+`allowed_tools` (tool keys; the rest are disabled while it shows),
+`camera` (restored on entry, updated on leaving) and `left()`.
+
+While a workspace shows, File ▸ New / Open / Save / Save As, the window
+title, the unsaved-changes prompts and quitting go to it, and the
+model's autosave pauses. Quitting asks the workspace first, then the
+model. `win.file_openers[".ext"] = callable(path)` lets Open Recent, the
+command line and a double-click open your own file type.
+
 ## Developing interactively
 
 **Extensions → Python Console** (`Ctrl+Shift+P`) is a live REPL over the
