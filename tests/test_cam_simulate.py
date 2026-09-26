@@ -125,11 +125,12 @@ def test_the_simulation_window_drives_the_viewport_playhead(tmp_path, monkeypatc
     factory = lambda *a: QSettings(str(tmp_path / "p.ini"), QSettings.IniFormat)  # noqa: E731
     monkeypatch.setattr(qc, "QSettings", factory)
     monkeypatch.setattr(mw, "QSettings", factory)
-    from tests.test_cam_plugin import _wait, _window_with_board
-    from plugins.cam.ui.dock import show_dock
-    win, _g = _window_with_board(None)
-    dock = show_dock(win.viewport)
-    dock._on_part_operations()
+    from tests.test_cam_plugin import _close, _draw_board, _job, _set_stock, _wait
+    win, dock, _model = _job(None, tmp_path)
+    _set_stock(dock, 320.0, 220.0, 18.0)
+    _draw_board(win, dock)
+    dock.choose_paths(set(range(len(dock.paths))))
+    dock._on_add("pocket")
     dock.calculate()
     _wait(dock)
     assert dock.btn_sim.isEnabled()
@@ -139,4 +140,4 @@ def test_the_simulation_window_drives_the_viewport_playhead(tmp_path, monkeypatc
     assert "cm³" in sim.info.text()
     sim.close()
     assert dock.overlay.play_index is None
-    dock.dispose()
+    _close(win, dock)

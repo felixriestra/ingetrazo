@@ -77,7 +77,8 @@ def _templates() -> dict:
             "The depth per pass {depth} is more than the tool's recommended {limit}."),
         "non_finite_motion": tr("The calculation produced an invalid coordinate."),
         "empty_selection": tr(
-            "Select faces, edges or one part in the model first."),
+            "Choose a path first: in the path list, or click one of its edges in the "
+            "drawing."),
         "open_path": tr("One selected path is open. Close it to use it as an outline."),
         "degenerate_path": tr("One selected outline encloses almost no area."),
         "self_intersecting_path": tr("One selected outline crosses itself."),

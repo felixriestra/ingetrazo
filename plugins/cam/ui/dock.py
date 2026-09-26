@@ -1,10 +1,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Felix Riestra (2DCam engine port).
 # Copyright (C) 2026 Marco Sumari Tellez and IngeTrazo contributors.
-"""The CAM dock: Job ▸ Tools ▸ Operations ▸ Output.
+"""The CAM dock: a start page, then Job ▸ Tools ▸ Operations ▸ Output.
 
-The dock owns a :class:`~..state.CamState` and keeps it and the document in
-step, both ways:
+With the model in front, the dock is a start page: New CAM job, Open CAM
+job, recent jobs. A job is its own ``.igcam`` file (:mod:`..jobfile`) and
+opens in CAM mode (:mod:`.workspace`): the window shows the job's drawing
+on the stock while the model waits, parked. The job setup comes first —
+until it is confirmed, the other tabs and the drawing tools stay off.
+
+Inside a job, the dock owns a :class:`~..state.CamState` and keeps it and
+the job's scene in step, both ways:
 
 - **dock → document.** Every edit marks the state dirty; 600 ms after the
   last one the whole state is written to ``scene.plugin_data["cam"]``
@@ -34,6 +40,7 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDockWidget, 
 from views.tray import FlowLayout       # the host's wrapping row
 
 from .. import build
+from ..jobfile import SUFFIX, JobFileError, load_job, save_job
 from ..engine.issues import CamError, ERROR
 from ..engine.models import Tool, new_id
 from ..i18n import tr
@@ -43,6 +50,7 @@ from .op_forms import (CompactSpin, FeedSpin, LengthSpin, OperationForm, compact
                        kind_label, tool_kind_label)
 from .overlay import ToolpathOverlay
 from .worker import Calculation
+from .workspace import CamWorkspace, file_filter, recent_jobs, remember_job
 
 DOCK_NAME = "cam_dock"
 PERSIST_MS = 600
@@ -57,6 +65,9 @@ ZERO_GRID = (("topLeft", "topCenter", "topRight"),
              ("centerLeft", "center", "centerRight"),
              ("bottomLeft", "bottomCenter", "bottomRight"))
 
+#: Stock materials: 2DCam's five plus the two sheet goods a router cuts most.
+MATERIALS = ("clearWood", "darkWood", "mdf", "plywood", "plastic", "aluminium", "steel")
+
 
 def show_dock(viewport) -> "CamDock":
     """Open the CAM dock (creating it the first time) and return it."""
@@ -68,6 +79,7 @@ def show_dock(viewport) -> "CamDock":
         dock = win.add_plugin_dock(dock)
     else:                                   # a host without H2: float it
         dock.show()
+    dock.show_page()
     dock.give_focus_to_model()
     return dock
 
@@ -134,9 +146,11 @@ class CamDock(QDockWidget):
         viewport.overlay_painters.append(self.overlay)
         viewport.sceneVersionChanged.connect(self._on_scene_changed)
         self.visibilityChanged.connect(self._on_visibility)
-        self._reload_from_document(force=True)
-        self.refresh_paths()
+        win = viewport.window()
+        if hasattr(win, "file_openers"):
+            win.file_openers[SUFFIX] = self.open_job
         self._sel_timer.start()
+        self.show_page()
 
     # ==== layout ==============================================================
     def _build(self) -> None:
@@ -156,27 +170,81 @@ class CamDock(QDockWidget):
         bar.setUsesScrollButtons(False)
         for i in range(self.tabs.count()):
             bar.setTabToolTip(i, self.tabs.tabText(i))
-        self.setWidget(self.tabs)
+        job_page = QWidget()
+        col = QVBoxLayout(job_page)
+        col.setContentsMargins(0, 0, 0, 0)
+        col.addWidget(self._build_header())
+        col.addWidget(self.tabs, 1)
+        from PySide6.QtWidgets import QStackedWidget
+        self.pages = QStackedWidget()
+        self.pages.addWidget(self._build_start())
+        self.pages.addWidget(job_page)
+        self.setWidget(self.pages)
+
+    # ---- start page (the model is in front) ----
+    def _build_start(self) -> QWidget:
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        intro = QLabel(tr("A CAM job is a 2.5D drawing on the stock, saved as its own "
+                          "file. The model is put aside while a job is open, and comes "
+                          "back untouched."))
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        self.btn_new_job = QPushButton(tr("New CAM job…"))
+        self.btn_new_job.clicked.connect(lambda: self.new_job())
+        self.btn_open_job = QPushButton(tr("Open CAM job…"))
+        self.btn_open_job.clicked.connect(lambda: self.open_job())
+        self.btn_template = QPushButton(tr("New from a stock template…"))
+        self.btn_template.setEnabled(False)
+        self.btn_template.setToolTip(tr("Stock templates are not available yet."))
+        for b in (self.btn_new_job, self.btn_open_job, self.btn_template):
+            lay.addWidget(b)
+        lay.addWidget(QLabel(tr("Recent jobs")))
+        self.recent_list = QListWidget()
+        self.recent_list.setTextElideMode(Qt.ElideMiddle)
+        self.recent_list.itemActivated.connect(
+            lambda it: self.open_job(Path(it.data(Qt.UserRole))))
+        lay.addWidget(self.recent_list, 1)
+        return w
+
+    def _refresh_recent(self) -> None:
+        self.recent_list.clear()
+        for p in recent_jobs():
+            it = QListWidgetItem(p.name)
+            it.setToolTip(str(p))
+            it.setData(Qt.UserRole, str(p))
+            self.recent_list.addItem(it)
+
+    # ---- job header (CAM mode) ----
+    def _build_header(self) -> QWidget:
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(6, 4, 6, 0)
+        self.job_title = QLabel()
+        self.job_title.setTextFormat(Qt.PlainText)
+        font = self.job_title.font()
+        font.setBold(True)
+        self.job_title.setFont(font)
+        lay.addWidget(self.job_title)
+        row = FlowLayout(spacing=4)
+        self.btn_save_job = QPushButton(tr("Save"))
+        self.btn_save_job.clicked.connect(self.save_job)
+        self.btn_leave = QPushButton(tr("Back to the model"))
+        self.btn_leave.setToolTip(tr("Close the CAM job and show the model again."))
+        self.btn_leave.clicked.connect(self.leave_job)
+        row.addWidget(self.btn_save_job)
+        row.addWidget(self.btn_leave)
+        lay.addLayout(row)
+        return w
 
     # ---- Job ----
     def _build_job(self) -> QWidget:
         w = QWidget()
         lay = QVBoxLayout(w)
-        self.btn_setup = QPushButton(tr("Set up from selection"))
-        self.btn_setup.setToolTip(tr("Use the selected faces, edges or part to place the "
-                                     "machining plane and size the stock."))
-        self.btn_setup.clicked.connect(self._on_setup_from_selection)
-        self.btn_part = QPushButton(tr("Part → operations"))
-        self.btn_part.setToolTip(tr("Add every operation the selected part needs: pockets, "
-                                    "holes and the cut-out with tabs."))
-        self.btn_part.clicked.connect(self._on_part_operations)
-        lay.addWidget(self.btn_setup)
-        lay.addWidget(self.btn_part)
-        self.btn_refresh = QPushButton(tr("Refresh from the part"))
-        self.btn_refresh.setToolTip(tr("Read the part's outline and holes again after "
-                                       "changing the model. Parameters are kept."))
-        self.btn_refresh.clicked.connect(self._on_refresh)
-        lay.addWidget(self.btn_refresh)
+        self.setup_note = QLabel(tr("Set up the job first: the stock, its material, the "
+                                    "machine and the work zero. Then draw on the stock."))
+        self.setup_note.setWordWrap(True)
+        lay.addWidget(self.setup_note)
 
         box = QGroupBox(tr("Job"))
         f = _form(box)
@@ -198,14 +266,15 @@ class CamDock(QDockWidget):
         box = QGroupBox(tr("Stock"))
         f = _form(box)
         self.stock_w, self.stock_d, self.stock_h = LengthSpin(), LengthSpin(), LengthSpin()
-        self.margin = LengthSpin(1000.0)
         for spin, label in ((self.stock_w, tr("Width")), (self.stock_d, tr("Depth")),
-                            (self.stock_h, tr("Thickness")), (self.margin, tr("Margin"))):
+                            (self.stock_h, tr("Thickness"))):
             spin.valueChanged.connect(self._on_stock_edited)
             f.addRow(label, spin)
-        self.btn_fit = QPushButton(tr("Fit stock to the part"))
-        self.btn_fit.clicked.connect(self._on_fit_stock)
-        f.addRow("", self.btn_fit)
+        self.material = compact_combo()
+        for key in MATERIALS:
+            self.material.addItem(material_label(key), key)
+        self.material.currentIndexChanged.connect(self._on_stock_edited)
+        f.addRow(tr("Material"), self.material)
         lay.addWidget(box)
 
         box = QGroupBox(tr("Work zero"))
@@ -279,6 +348,16 @@ class CamDock(QDockWidget):
             c.toggled.connect(self._on_job_edited)
             f.addRow("", c)
         lay.addWidget(box)
+        rotary = QLabel(tr("Milling on a flat stock (2.5D). Turning on a rotary axis is "
+                           "not supported yet."))
+        rotary.setWordWrap(True)
+        rotary.setEnabled(False)
+        lay.addWidget(rotary)
+        self.btn_start = QPushButton(tr("Start the job"))
+        self.btn_start.setToolTip(tr("Confirm the setup: the drawing tools and the other "
+                                     "tabs become available."))
+        self.btn_start.clicked.connect(self._on_start_job)
+        lay.addWidget(self.btn_start)
         lay.addStretch(1)
         return w
 
@@ -363,11 +442,16 @@ class CamDock(QDockWidget):
         self.path_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.path_list.itemSelectionChanged.connect(self._on_paths_chosen)
         lay.addWidget(self.path_list)
+        self.btn_import = QPushButton(tr("Import outlines from the model"))
+        self.btn_import.setToolTip(tr(
+            "Copy the outlines of what was selected in the model when CAM opened (faces, "
+            "edges or one part), flattened onto the stock. The model is not changed."))
+        self.btn_import.clicked.connect(self.import_from_model)
+        lay.addWidget(self.btn_import)
         row = QHBoxLayout()
         self.btn_add = QToolButton()
         self.btn_add.setText(tr("Add operation"))
-        self.btn_add.setToolTip(tr("For the chosen paths, or for the selection in the model "
-                                   "(a part from the Parts list, for example)."))
+        self.btn_add.setToolTip(tr("For the chosen paths."))
         self.btn_add.setPopupMode(QToolButton.InstantPopup)
         menu = QMenu(self.btn_add)
         for kind in ("outsideProfile", "insideProfile", "pocket", "openPocket", "drilling",
@@ -375,8 +459,6 @@ class CamDock(QDockWidget):
             menu.addAction(kind_label(kind), lambda k=kind: self._on_add(k))
         menu.addSeparator()
         menu.addAction(kind_label("facing"), lambda: self._on_add("facing"))
-        menu.addSeparator()
-        menu.addAction(tr("Every operation for the selected part"), self._on_part_operations)
         self.btn_add.setMenu(menu)
         row.addWidget(self.btn_add)
         for label, slot, tip in (("↑", self._on_op_up, tr("Move up")),
@@ -462,10 +544,14 @@ class CamDock(QDockWidget):
 
     # ==== document ⇄ dock =====================================================
     def _document_data(self):
+        if not self.in_job():
+            return None                   # the model's .igz never carries a job
         pd = getattr(self.viewport.scene, "plugin_data", None)
         return pd.get(PLUGIN_KEY) if isinstance(pd, dict) else None
 
     def _on_scene_changed(self, _version=None) -> None:
+        if not self.in_job():
+            return
         if self.isVisible():                # tabbed away: read when shown again
             self._paths_timer.start(PATHS_MS)
         if self._persist_timer.isActive():
@@ -511,6 +597,9 @@ class CamDock(QDockWidget):
         self.viewport.history.execute(SetPluginData(PLUGIN_KEY, data))
         self.viewport.notify_scene_changed()
 
+    def has_pending_edit(self) -> bool:
+        return self._persist_timer.isActive()
+
     def flush(self) -> None:
         """Write a pending edit now (tests, export)."""
         if self._persist_timer.isActive():
@@ -526,7 +615,7 @@ class CamDock(QDockWidget):
             self.job_name.setText(job.name)
             self.controller.setCurrentIndex(max(0, self.controller.findData(job.post.controller)))
             self.units.setCurrentIndex(max(0, self.units.findData(job.units)))
-            for s in (self.stock_w, self.stock_d, self.stock_h, self.margin, self.safe,
+            for s in (self.stock_w, self.stock_d, self.stock_h, self.safe,
                       self.clearance, self.t_diameter, self.t_flute, self.t_length, self.t_tip):
                 s.set_inch(inch)
             for s in (self.max_feed, self.max_plunge, self.rapid, self.t_feed, self.t_plunge):
@@ -536,7 +625,7 @@ class CamDock(QDockWidget):
             self.stock_w.set_mm(st.width)
             self.stock_d.set_mm(st.depth)
             self.stock_h.set_mm(st.height)
-            self.margin.set_mm(self.state.margin)
+            self.material.setCurrentIndex(max(0, self.material.findData(st.material)))
             b = self.zero_buttons.get(st.referencePoint)
             if b is not None:
                 b.setChecked(True)
@@ -557,6 +646,7 @@ class CamDock(QDockWidget):
             self._refresh_operations()
         finally:
             self._loading = False
+        self._apply_setup_gate()
         self.overlay.set_stock(self.state)
         self.viewport.update()
 
@@ -623,26 +713,9 @@ class CamDock(QDockWidget):
         if self._loading:
             return
         st = self.state.job.stock
-        new_margin = self.margin.mm()
-        if abs(new_margin - self.state.margin) > 1e-9:
-            self.state.margin = new_margin
-            if self.state.stockAuto:
-                self.state.fit_stock()
-        elif abs(self.stock_w.mm() - st.width) > 1e-9 or abs(self.stock_d.mm() - st.depth) > 1e-9:
-            self.state.stockAuto = False
-            st.width, st.depth = self.stock_w.mm(), self.stock_d.mm()
-        st.height = self.stock_h.mm()
+        st.width, st.depth, st.height = self.stock_w.mm(), self.stock_d.mm(), self.stock_h.mm()
+        st.material = self.material.currentData() or st.material
         st.align_origin_to_reference()
-        self._loading = True
-        self.stock_w.set_mm(st.width)
-        self.stock_d.set_mm(st.depth)
-        self._loading = False
-        self._changed()
-
-    def _on_fit_stock(self) -> None:
-        self.state.stockAuto = True
-        self.state.fit_stock()
-        self._refresh_all()
         self._changed()
 
     def _on_zero_edited(self, *_args) -> None:
@@ -658,94 +731,12 @@ class CamDock(QDockWidget):
 
     # ==== selection → job =====================================================
     def _extract(self):
-        """What the next operation is for: the chosen paths, or else the
-        model's selection (a part, faces)."""
-        from ..extract import extract_selection
+        """What the next operation is for: the chosen paths."""
         from ..paths import extraction
         chosen = self.chosen_paths()
-        if chosen:
-            return extraction(chosen, self._path_frame)
-        return extract_selection(self.viewport.scene, self.state.frame)
-
-    def _on_setup_from_selection(self) -> None:
-        from ..extract import extract_selection
-        from ..paths import extraction, plan_frame
-        try:
-            chosen = self.chosen_paths()
-            if chosen and self.state.frame is None:
-                ex = extraction(chosen, self._path_frame)
-            elif chosen:
-                ex = extraction(chosen, plan_frame(self.viewport.scene))
-            else:
-                ex = extract_selection(self.viewport.scene, None)
-        except CamError as exc:
-            self._report_error(exc.issue)
-            return
-        if self.state.job.operations and self.state.frame is not None \
-                and not self.state.frame.parallel_to(ex.frame):
-            answer = QMessageBox.question(
-                self, tr("CAM"),
-                tr("The job's operations are on another plane. Start the job again on "
-                   "the selected one?"))
-            if answer != QMessageBox.Yes:
-                return
-            self.state.job.operations.clear()
-            self.state.sources.clear()
-        self.state.frame = ex.frame
-        self.state.bounds = None
-        self.state.stockAuto = True
-        if ex.thickness:
-            self.state.job.stock.height = round(ex.thickness, 4)
-        self.state.sourceGroup = ex.group_uid
-        self.state.include_bounds(ex.all_points())
-        self.state.fit_stock()
-        self._refresh_all()
-        self._changed()
-        self.refresh_paths()                # read on the new plane
-        self._set_status(tr("Machining plane and stock set from the selection."))
-        self.give_focus_to_model()
-
-    def _find_group(self, uid):
-        from core.group import iter_placements
-        for top in self.viewport.scene.groups:
-            for g, _m in iter_placements(top):
-                if getattr(g, "uid", None) == uid:
-                    return g
-        return None
-
-    def _on_refresh(self) -> None:
-        from ..extract import extract_part
-        uid = self.state.sourceGroup
-        group = self._find_group(uid) if uid else None
-        if group is None:
-            self._set_status(tr("The part this job was made from is no longer in the model. "
-                                "The job keeps its geometry."), error=True)
-            return
-        try:
-            ex = extract_part(group, self.state.frame)
-        except CamError as exc:
-            self._report_error(exc.issue)
-            return
-        updated, unmatched = build.refresh_from_part(self.state, ex)
-        self._refresh_all()
-        self._changed()
-        if unmatched:
-            self._set_status(tr("Refreshed {count} operation(s). These no longer match the "
-                                "part and kept their old geometry: {names}",
-                                count=len(updated), names=", ".join(unmatched)), error=True)
-        else:
-            self._set_status(tr("Refreshed {count} operation(s) from the part.",
-                                count=len(updated)))
-        self.give_focus_to_model()
-
-    def _on_part_operations(self) -> None:
-        try:
-            ex = self._extract()
-            ops = build.suggest_operations(self.state, ex)
-        except CamError as exc:
-            self._report_error(exc.issue)
-            return
-        self._after_add(ops)
+        if not chosen:
+            raise CamError("empty_selection")
+        return extraction(chosen, self._path_frame)
 
     def _on_add(self, kind: str) -> None:
         try:
@@ -767,11 +758,209 @@ class CamDock(QDockWidget):
         self._changed()
         self.give_focus_to_model()
 
+    # ==== the job: new, open, save, leave ========================================
+    def in_job(self) -> bool:
+        """A CAM job of this dock is shown (CAM mode)."""
+        win = self.viewport.window()
+        ws = win.workspace() if hasattr(win, "workspace") else None
+        return isinstance(ws, CamWorkspace) and ws.dock is self
+
+    def workspace(self):
+        return self.viewport.window().workspace() if self.in_job() else None
+
+    def show_page(self) -> None:
+        """The start page with the model in front, the job in CAM mode."""
+        if self.in_job():
+            self.pages.setCurrentIndex(1)
+            self.job_title.setText(self.workspace().title())
+        else:
+            self._refresh_recent()
+            self.pages.setCurrentIndex(0)
+
+    def new_job(self, path=None) -> bool:
+        """Start a CAM job. The file comes first — the job is named after
+        it — then the setup (``path`` given: no dialog)."""
+        if path is None:
+            path_str, _ = QFileDialog.getSaveFileName(
+                self, tr("New CAM job"), tr("New job") + SUFFIX, file_filter())
+            if not path_str:
+                return False
+            path = Path(path_str)
+        path = Path(path)
+        if path.suffix.lower() != SUFFIX:
+            path = path.with_suffix(SUFFIX)
+        if not self._leave_current_job():
+            return False
+        from core.scene import Scene
+        scene = Scene()
+        state = CamState.new_job(path.stem, translate=tr)
+        scene.plugin_data = {PLUGIN_KEY: state.to_dict()}
+        try:
+            save_job(scene, path)
+        except (OSError, JobFileError) as exc:
+            self._set_status(tr("The job could not be saved: {error}", error=str(exc)),
+                             error=True)
+            return False
+        return self._enter(scene, path)
+
+    def open_job(self, path=None) -> bool:
+        """Open a saved CAM job (``path`` given: no dialog)."""
+        if path is None:
+            path_str, _ = QFileDialog.getOpenFileName(self, tr("Open CAM job"), "",
+                                                      file_filter())
+            if not path_str:
+                return False
+            path = Path(path_str)
+        path = Path(path)
+        if not self._leave_current_job():
+            return False
+        from core.scene import Scene
+        scene = Scene()
+        try:
+            load_job(scene, path)
+        except JobFileError as exc:
+            QMessageBox.warning(self, tr("CAM"), tr("{name} is not a CAM job this version "
+                                                    "can open ({error}).", name=path.name,
+                                                    error=str(exc)))
+            return False
+        return self._enter(scene, path)
+
+    def _leave_current_job(self) -> bool:
+        win = self.viewport.window()
+        if hasattr(win, "workspace") and win.workspace() is not None:
+            return win.leave_workspace()
+        return True
+
+    def _enter(self, scene, path) -> bool:
+        win = self.viewport.window()
+        self.state = CamState.from_dict(scene.plugin_data[PLUGIN_KEY])
+        ws = CamWorkspace(self, scene, path)
+        if not win.enter_workspace(ws):
+            return False
+        ws.mark_saved()                     # entering moved the version on
+        remember_job(path)
+        self.paths, self._path_frame = [], None
+        self._reload_from_document(force=True)
+        self.refresh_paths()
+        self.show_page()
+        self.tabs.setCurrentIndex(0 if not self.state.setupDone else 2)
+        self.show()
+        self.raise_()
+        win._update_title()
+        return True
+
+    def save_job(self) -> bool:
+        ws = self.workspace()
+        ok = bool(ws and ws.save())
+        self.viewport.window()._update_title()
+        return ok
+
+    def on_job_saved(self) -> None:
+        ws = self.workspace()
+        if ws is not None:
+            self.job_title.setText(ws.title())
+            self._set_status(tr("Saved {name}.", name=ws.title()))
+
+    def leave_job(self) -> bool:
+        return self._leave_current_job()
+
+    def on_workspace_left(self, _ws) -> None:
+        """The job is closed and the model is back: the start page again."""
+        self._persist_timer.stop()
+        self._recalc_timer.stop()
+        self._paths_timer.stop()
+        self._last_doc = None
+        self._result = None
+        self.paths, self._path_frame = [], None
+        self.path_list.clear()
+        self.overlay.clear()
+        self.state = CamState.new(translate=tr)
+        self.show_page()
+        self.viewport.update()
+
+    def _on_start_job(self) -> None:
+        """Confirm the setup: drawing and operations open up."""
+        self.state.setupDone = True
+        self._changed()
+        self._apply_setup_gate()
+        self.tabs.setCurrentIndex(2)
+        self._set_status(tr("Setup confirmed. Draw on the stock, then choose paths and add "
+                            "operations."))
+        self.give_focus_to_model()
+
+    def _apply_setup_gate(self) -> None:
+        done = self.state.setupDone
+        for i in (1, 2, 3):
+            self.tabs.setTabEnabled(i, done)
+        self.btn_start.setVisible(not done)
+        self.setup_note.setVisible(not done)
+        ws = self.workspace()
+        if ws is not None:
+            self.viewport.window().set_tool_filter(ws.allowed_tools)
+
+    def import_from_model(self) -> int:
+        """Copy the outlines of what is selected in the parked model into
+        the job, flattened onto the stock top; returns how many loops and
+        lines came in. The model is only read."""
+        win = self.viewport.window()
+        parked = getattr(win, "_parked", None)
+        model = parked.get("scene") if parked else None
+        if model is None or not getattr(model, "selection", None):
+            self._set_status(tr("Nothing is selected in the model. Select faces, edges or a "
+                                "part there before opening the job."), error=True)
+            return 0
+        from ..extract import extract_selection
+        try:
+            ex = extract_selection(model, None)
+        except CamError as exc:
+            self._report_error(exc.issue)
+            return 0
+        loops = [o.points for o, _h in ex.regions] + [h.points for _o, hs in ex.regions
+                                                         for h in hs]
+        loops += [lp.points for lp in ex.loops]
+        lines = list(ex.paths)
+        pts = [p for lp in loops + lines for p in lp]
+        if not pts:
+            return 0
+        # Onto the stock: the outlines' lower-left corner on the stock's,
+        # 10 mm in, or centred when they fit with less.
+        st = self.state.job.stock
+        umin, vmin = min(p[0] for p in pts), min(p[1] for p in pts)
+        umax, vmax = max(p[0] for p in pts), max(p[1] for p in pts)
+        du = (st.width - (umax - umin)) * 0.5 - umin
+        dv = (st.depth - (vmax - vmin)) * 0.5 - vmin
+        from PySide6.QtGui import QVector3D
+        from core.history import SnapshotImport
+
+        def world(p):
+            return QVector3D((p[0] + du) / 1000.0, (p[1] + dv) / 1000.0, 0.0)
+
+        def add(scene):
+            m = scene.mesh
+            for lp in loops:
+                ring = [world(p) for p in lp]
+                for a, b in zip(ring, ring[1:] + ring[:1]):
+                    m.add_edge(a, b)
+            for ln in lines:
+                ring = [world(p) for p in ln]
+                for a, b in zip(ring, ring[1:]):
+                    m.add_edge(a, b)
+
+        self.flush()                        # a pending job edit goes first on the stack
+        self.viewport.history.execute(SnapshotImport(add))
+        self.viewport.notify_scene_changed()
+        self.refresh_paths()
+        n = len(loops) + len(lines)
+        self._set_status(tr("{count} outline(s) imported from the model.", count=n))
+        return n
+
     # ==== paths ===============================================================
     def refresh_paths(self) -> None:
         """Read the drawing as paths again (after an edit), keeping the
         paths that were chosen chosen."""
         from ..paths import find_paths, plan_frame
+        if not self.in_job():
+            return
         scene = self.viewport.scene
         before = set().union(*(p.edges for p in self.chosen_paths())) if self.paths else set()
         frame = self.state.frame or plan_frame(scene)
@@ -812,7 +1001,7 @@ class CamDock(QDockWidget):
     def _sync_paths_from_model(self) -> None:
         """Clicking one edge of a rectangle in the model chooses the whole
         rectangle here (and a face, its outline and holes)."""
-        if self.isHidden():
+        if self.isHidden() or not self.in_job():
             return
         from core.mesh import Edge, Face
         from ..paths import face_edges, paths_for_edges
@@ -1215,6 +1404,14 @@ def _style_enabled(item, enabled: bool) -> None:
     font.setStrikeOut(not enabled)
     item.setFont(font)
     item.setForeground(item.listWidget().palette().text() if enabled else Qt.gray)
+
+
+def material_label(key: str) -> str:
+    return {
+        "clearWood": tr("Light wood"), "darkWood": tr("Dark wood"), "mdf": tr("MDF"),
+        "plywood": tr("Plywood"), "plastic": tr("Plastic"), "aluminium": tr("Aluminium"),
+        "steel": tr("Steel"),
+    }.get(key, key)
 
 
 def _path_label(p, n: int, inch: bool) -> str:

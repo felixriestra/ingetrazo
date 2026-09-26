@@ -28,6 +28,10 @@ OP_COLORS = ["#0072B2", "#009E73", "#CC79A7", "#56B4E9", "#E69F00", "#D55E00", "
 RAPID = QColor(220, 40, 40, 200)
 PLUNGE = QColor(240, 140, 20, 230)
 STOCK = QColor(130, 110, 80, 200)
+#: The stock top's tint per material (2DCam's colours; MDF and plywood ours).
+MATERIAL_COLORS = {"clearWood": "#D9A860", "darkWood": "#5E3618", "mdf": "#B0895A",
+                   "plywood": "#D2B48C", "plastic": "#4D5A66", "aluminium": "#C4C8CA",
+                   "steel": "#7C8083"}
 #: The paths chosen in the CAM tab's path list.
 CHOSEN = QColor(255, 150, 0, 235)
 
@@ -43,6 +47,10 @@ class ToolpathOverlay:
         self.kind = np.empty(0, dtype=np.int8)
         self.op = np.empty(0, dtype=np.int32)
         self.stock_edges = np.empty((0, 2, 3))
+        #: The stock top as a polygon (4, 3) and its tint: in CAM mode the
+        #: stock is the drawing surface, so it reads as a sheet, not a wire.
+        self.stock_top = np.empty((0, 3))
+        self.stock_tint = QColor(MATERIAL_COLORS["clearWood"])
         self.op_ids: list = []
         self.selected_op: str | None = None
         self.show_cuts = True
@@ -70,6 +78,7 @@ class ToolpathOverlay:
         if state.frame is None:
             # No machining plane yet: there is nowhere true to draw it.
             self.stock_edges = np.empty((0, 2, 3))
+            self.stock_top = np.empty((0, 3))
             return
         st = state.job.stock
         ox, oy, oz = st.origin
@@ -86,6 +95,9 @@ class ToolpathOverlay:
             for j in (0, 1):
                 edges.append((corners[(0, j, k)], corners[(1, j, k)]))
         self.stock_edges = np.asarray(edges, dtype=float)
+        self.stock_top = np.asarray([corners[(0, 0, 1)], corners[(1, 0, 1)],
+                                     corners[(1, 1, 1)], corners[(0, 1, 1)]], dtype=float)
+        self.stock_tint = QColor(MATERIAL_COLORS.get(st.material, MATERIAL_COLORS["clearWood"]))
 
     def set_paths(self, frame, paths) -> None:
         """Highlight ``paths`` (:class:`..paths.CamPath`, on ``frame``) —
@@ -177,6 +189,16 @@ class ToolpathOverlay:
         if not self.visible:
             return
         painter.setRenderHint(painter.RenderHint.Antialiasing, True)
+        if self.show_stock and len(self.stock_top):
+            px, py, ok = viewport.world_to_pixels(self.stock_top)
+            if ok.all():
+                from PySide6.QtGui import QPolygonF
+                fill = QColor(self.stock_tint)
+                fill.setAlpha(55)
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(fill)
+                painter.drawPolygon(QPolygonF([QPointF(x, y) for x, y in zip(px, py)]))
+                painter.setBrush(Qt.NoBrush)
         if self.show_stock and len(self.stock_edges):
             pen = QPen(STOCK, 1.0)
             pen.setStyle(Qt.DashLine)
