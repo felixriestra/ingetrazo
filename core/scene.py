@@ -48,11 +48,6 @@ class Scene:
     # Imported survey points (GPS / total station, UTM CSV) — reference markers
     # the trace snaps to; never part of the mesh (Track G, municipal flow).
     geo_points: list = field(default_factory=list)
-    # Per-plugin document data (host hook H4): ``{plugin_key: dict}``, JSON
-    # values only. Travels in the .igz as ``payload["plugin_data"]``; older
-    # readers ignore the key. Plugins own their entry and change it through
-    # ``core.history.SetPluginData`` so the edit is undoable.
-    plugin_data: dict = field(default_factory=dict)
     # Construction guides (Tape Measure): infinite dashed lines / points used to
     # align real drawing. Scaffolding, never part of the mesh.
     guides: list = field(default_factory=list)
@@ -107,7 +102,8 @@ class Scene:
     units: dict = field(default_factory=lambda: {"length": "m", "precision": 2})
     #: Extensions' own document data, one JSON-safe value per extension key
     #: (``views.extension_api.ExtensionApp.document_data``). Travels in the
-    #: .igz; the core never reads it.
+    #: .igz; the core never reads it. Changed through
+    #: ``core.history.SetPluginDataCommand`` so each edit is undoable.
     plugin_data: dict = field(default_factory=dict)
     dimension_style: dict = field(default_factory=lambda: {
         "decimals": 2, "units": "m", "font_size": 9, "color": [45, 55, 75],

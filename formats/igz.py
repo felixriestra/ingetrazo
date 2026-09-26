@@ -368,19 +368,6 @@ def save_scene(scene, path: Path) -> dict:
     units = getattr(scene, "units", None)
     if isinstance(units, dict) and units != {"length": "m", "precision": 2}:
         payload["units"] = dict(units)     # only when not the metre default
-    pdata = getattr(scene, "plugin_data", None)
-    if pdata:
-        # Extensions' data: JSON-safe by contract; a value that is not is
-        # dropped with its key rather than breaking the save.
-        import json as _json
-        keep = {}
-        for key, value in pdata.items():
-            try:
-                keep[str(key)] = _json.loads(_json.dumps(value))
-            except (TypeError, ValueError):
-                continue
-        if keep:
-            payload["plugin_data"] = keep
     scales = getattr(scene, "custom_scales", None)
     if scales:
         payload["custom_scales"] = [float(n) for n in scales]
@@ -479,7 +466,7 @@ def save_scene(scene, path: Path) -> dict:
 def _plugin_data_json(scene) -> dict:
     """``scene.plugin_data`` checked entry by entry for the document.
 
-    Each plugin's entry must be a JSON object under a string key. One that
+    Each plugin's entry is any JSON-safe value under a string key. One that
     is not (a set, a QVector3D, a NaN — ``allow_nan`` is off so the file
     stays strict JSON) is left out and logged: a plugin bug may cost that
     plugin its data, never the user their document."""
@@ -488,8 +475,8 @@ def _plugin_data_json(scene) -> dict:
         return {}
     out = {}
     for key, value in raw.items():
-        if not isinstance(key, str) or not isinstance(value, dict):
-            _log_plugin_data_skip(key, "not a str key with a dict value")
+        if not isinstance(key, str):
+            _log_plugin_data_skip(key, "not a str key")
             continue
         try:
             out[key] = json.loads(json.dumps(value, allow_nan=False))
@@ -743,8 +730,6 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
     scene.camera_home = dict(cam) if isinstance(cam, dict) else None
     from core.units import model_units_of
     scene.units = model_units_of(payload)   # validated; absent = metres
-    pdata = payload.get("plugin_data")
-    scene.plugin_data = dict(pdata) if isinstance(pdata, dict) else {}
     scales = payload.get("custom_scales")
     if isinstance(scales, list):
         scene.custom_scales = [float(n) for n in scales
@@ -812,13 +797,11 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
     for raw in payload.get("image_planes", []):
         scene.image_planes.append(ImagePlane.from_dict(raw))
 
-    # Plugin data (H4) is kept even when the plugin that wrote it is not
+    # Plugin data is kept even when the plugin that wrote it is not
     # installed here, so opening and saving the document elsewhere does not
     # destroy it. Absent = empty: the previous document's must not leak.
     raw_pd = payload.get("plugin_data")
-    scene.plugin_data = ({k: v for k, v in raw_pd.items()
-                          if isinstance(k, str) and isinstance(v, dict)}
-                         if isinstance(raw_pd, dict) else {})
+    scene.plugin_data = (dict(raw_pd) if isinstance(raw_pd, dict) else {})
 
     scene.version += 1
 

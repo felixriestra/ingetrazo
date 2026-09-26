@@ -14,8 +14,8 @@ the job's scene in step, both ways:
 
 - **dock → document.** Every edit marks the state dirty; 600 ms after the
   last one the whole state is written to ``scene.plugin_data["cam"]``
-  through ``SetPluginData`` — ONE undo step per burst of edits, not one per
-  keystroke — and the document is marked modified.
+  through ``SetPluginDataCommand`` — ONE undo step per burst of edits, not
+  one per keystroke — and the document is marked modified.
 - **document → dock.** On every scene change the dock compares the
   document's ``plugin_data["cam"]`` with what it last wrote or read; when
   they differ (undo, redo, File ▸ Open, File ▸ New) it reloads.
@@ -605,12 +605,12 @@ class CamDock(QDockWidget):
             self._schedule_recalc()
 
     def _persist(self) -> None:
-        from core.history import SetPluginData
+        from core.history import SetPluginDataCommand
         data = self.state.to_dict()
         if data == self._last_doc:
             return
         self._last_doc = copy.deepcopy(data)
-        self.viewport.history.execute(SetPluginData(PLUGIN_KEY, data))
+        self.viewport.history.execute(SetPluginDataCommand(PLUGIN_KEY, data))
         self.viewport.notify_scene_changed()
 
     def has_pending_edit(self) -> bool:

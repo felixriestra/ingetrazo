@@ -13,7 +13,7 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from core.history import History, SetPluginData
+from core.history import History, SetPluginDataCommand
 from core.scene import Scene
 from formats import igz
 
@@ -69,20 +69,20 @@ def test_an_unserialisable_entry_costs_that_plugin_only(tmp_path):
     scene.plugin_data["good"] = {"x": 1}
     scene.plugin_data["bad"] = {"s": {1, 2}}                 # a set
     scene.plugin_data["nan"] = {"v": float("nan")}           # not strict JSON
-    scene.plugin_data["notadict"] = [1, 2]
+    scene.plugin_data["alist"] = [1, 2]          # any JSON value is fine
     back, _ = _roundtrip(scene, tmp_path)
-    assert back.plugin_data == {"good": {"x": 1}}
+    assert back.plugin_data == {"good": {"x": 1}, "alist": [1, 2]}
 
 
-def test_malformed_plugin_data_in_a_file_is_ignored(tmp_path):
+def test_plugin_data_is_read_back_as_written_and_a_non_object_is_ignored(tmp_path):
     path = tmp_path / "m.igz"
     igz.save_scene(Scene(), path)
     doc = json.loads(path.read_text(encoding="utf-8"))
-    doc["scene"]["plugin_data"] = {"ok": {"a": 1}, "junk": 7}
+    doc["scene"]["plugin_data"] = {"ok": {"a": 1}, "n": 7}
     path.write_text(json.dumps(doc), encoding="utf-8")
     back = Scene()
     igz.load_into(back, path)
-    assert back.plugin_data == {"ok": {"a": 1}}
+    assert back.plugin_data == {"ok": {"a": 1}, "n": 7}
     doc["scene"]["plugin_data"] = "garbage"
     path.write_text(json.dumps(doc), encoding="utf-8")
     igz.load_into(back, path)
@@ -102,10 +102,10 @@ def test_set_plugin_data_is_undoable_and_isolated_from_the_live_dict():
     scene = Scene()
     hist = History(scene)
     job = {"n": 1}
-    hist.execute(SetPluginData("cam", job))
+    hist.execute(SetPluginDataCommand("cam", job))
     job["n"] = 99                         # the plugin keeps editing its dict
     assert scene.plugin_data == {"cam": {"n": 1}}
-    hist.execute(SetPluginData("cam", {"n": 2}))
+    hist.execute(SetPluginDataCommand("cam", {"n": 2}))
     assert scene.plugin_data["cam"] == {"n": 2}
     scene.plugin_data["cam"]["n"] = 50    # live mutation after the command
     hist.undo()
@@ -121,21 +121,21 @@ def test_set_plugin_data_none_removes_the_entry():
     scene = Scene()
     scene.plugin_data["cam"] = {"n": 1}
     hist = History(scene)
-    hist.execute(SetPluginData("cam", None))
+    hist.execute(SetPluginDataCommand("cam", None))
     assert "cam" not in scene.plugin_data
     hist.undo()
     assert scene.plugin_data == {"cam": {"n": 1}}
 
 
 def test_plugin_data_edits_mark_the_document_modified():
-    """Found 2026-09-26: SetPluginData left the version alone, so a plugin's
+    """Found 2026-09-26: SetPluginDataCommand left the version alone, so a plugin's
     edit (a CAM job's operation) never showed «*» nor asked to be saved."""
-    from core.history import History, SetPluginData
+    from core.history import History, SetPluginDataCommand
     from core.scene import Scene
     scene = Scene()
     h = History(scene)
     v0 = scene.version
-    h.execute(SetPluginData("x", {"a": 1}))
+    h.execute(SetPluginDataCommand("x", {"a": 1}))
     assert scene.version > v0
     v1 = scene.version
     h.undo()
