@@ -7,7 +7,8 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QKeyEvent, QVector3D
 
-from core.composition import CotaItem, Composicion, MarcoVista
+from core.composition import (CotaItem, Composicion, MarcoVista,
+                              mm_to_px)
 
 
 def _composer(monkeypatch):
@@ -161,7 +162,8 @@ def test_raster_frame_with_an_image_never_shows_the_placeholder(monkeypatch):
     monkeypatch.setattr("views.composer._draw_text_mm",
                         lambda *a, **k: seen.append(a[2]))
     frame = MarcoVista(w_mm=100.0, h_mm=50.0, style="sombreado")
-    img = QImage(10, 5, QImage.Format_ARGB32)
+    img = QImage(mm_to_px(frame.w_mm), mm_to_px(frame.h_mm),
+                 QImage.Format_ARGB32)
     img.fill(0xFF336699)
     out = QImage(200, 100, QImage.Format_ARGB32)
     out.fill(0xFFFFFFFF)
@@ -176,6 +178,26 @@ def test_raster_frame_with_an_image_never_shows_the_placeholder(monkeypatch):
     paint_frame_mm(p, frame, None, annots=None)
     p.end()
     assert any("render" in str(t) for t in seen)      # no image: placeholder
+
+
+def test_a_grown_raster_frame_keeps_the_picture_undistorted():
+    """#80: the render is drawn at the size it was rendered for and merely
+    clipped to the frame, so a frame that grows shows paper where the
+    picture does not reach instead of stretching the drawing."""
+    from PySide6.QtGui import QImage, QPainter
+    from views.composer import paint_frame_mm
+    frame = MarcoVista(w_mm=100.0, h_mm=50.0, style="sombreado")
+    img = QImage(mm_to_px(100.0), mm_to_px(50.0), QImage.Format_ARGB32)
+    img.fill(0xFF336699)                    # the picture as it was rendered
+    frame.w_mm = 200.0                      # the frame grew to twice as wide
+    out = QImage(400, 100, QImage.Format_ARGB32)
+    out.fill(0xFFFFFFFF)
+    p = QPainter(out)
+    p.scale(2, 2)
+    paint_frame_mm(p, frame, img, annots=None)
+    p.end()
+    assert out.pixel(50, 50) & 0xFFFFFF == 0x336699     # inside the picture
+    assert out.pixel(300, 50) & 0xFFFFFF == 0xFFFFFF    # grown part: paper
 
 
 def test_raster_frame_image_is_made_opaque(monkeypatch):

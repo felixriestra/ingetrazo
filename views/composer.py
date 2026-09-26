@@ -759,7 +759,22 @@ def paint_frame_mm(painter: QPainter, frame: MarcoVista,
                           tr("Update the view to render"), 3.5,
                           color=QColor(140, 150, 160))
     elif image is not None and not image.isNull():
-        painter.drawImage(r, image)
+        # Never stretch the picture: draw it at the size it was rendered
+        # for and clip it to the frame, so a frame resized mid-gesture
+        # keeps an undistorted drawing (#80). What no longer fits is
+        # hidden and the new area is paper; when the frame has not
+        # changed since the render the two rects coincide (a 1:1 blit).
+        img_r = QRectF(0, 0, image.width() * 25.4 / RENDER_DPI,
+                       image.height() * 25.4 / RENDER_DPI)
+        if (abs(img_r.width() - r.width()) < 0.1
+                and abs(img_r.height() - r.height()) < 0.1):
+            painter.drawImage(r, image)
+        else:
+            painter.fillRect(r, QColor(255, 255, 255))
+            painter.save()
+            painter.setClipRect(r)
+            painter.drawImage(img_r, image)
+            painter.restore()
     else:
         painter.fillRect(r, QColor(245, 246, 248))
         _draw_text_mm(painter, r.adjusted(2, 2, -2, -2),
@@ -8242,14 +8257,33 @@ class ComposerWindow(QMainWindow):
 
     def on_item_geometry(self, item: _SheetItem, final: bool = False) -> None:
         if isinstance(item, FrameItem) and final:
-            self._forget_frame(item.model)
-            item.update()
+            self._on_view_resized(item)
         if isinstance(item, FrameItem) and not self._updating \
                 and item is self._selected_item():
             self._updating = True
             self.fw_spin.setValue(item.model.w_mm)
             self.fh_spin.setValue(item.model.h_mm)
             self._updating = False
+
+    def _on_view_resized(self, item: FrameItem) -> None:
+        """A finished resize must not blank the frame (#80: the user was told to
+        Update after every corner drag). Everything the frame caches in PAGE
+        millimetres -- snap points, circles, vector lines, annotations -- was
+        projected through its OLD size and has to go, or Dimension keeps
+        catching the vertices where they used to be. The picture is the one
+        exception: it stays, cropped to the new frame by paint_frame_mm, and
+        the 400 ms auto timer renders it again off the release; with
+        Auto-render off the badge asks for it."""
+        frame = item.model
+        image = self.render_cache.get(id(frame))
+        self._forget_frame(frame)          # every page-mm cache is stale now
+        if image is not None:
+            self.render_cache[id(frame)] = image   # ... but not the picture
+        self._stale.add(id(frame))
+        self.refresh_items()               # the stale badge is painted here
+        item.update()
+        if self._auto_render and self.isVisible():
+            self._auto_timer.start()       # 400 ms: off the release, coalesced
 
     # ---- Sheet templates (QGIS layout templates) ------------------------------
     @staticmethod
@@ -9974,6 +10008,12 @@ class ComposerWindow(QMainWindow):
         self._sync_vector_widgets(m)
         self._sync_title_widgets(m)
         self.refresh_items()                 # bound scale labels re-read {escala}
+        if (self._auto_render and self.isVisible()
+                and changed - paint_only - annot_only):
+            # The picture was dropped above: let the auto pass bring the
+            # raster frames back on its own instead of asking for a manual
+            # Update after every panel edit (#80).
+            self._auto_timer.start()
 
     def _on_frame_perspective(self, *_a) -> None:
         """The perspective switch and its lens. Turning it ON seeds the eye
