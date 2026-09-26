@@ -119,6 +119,11 @@ def _templates() -> dict:
     }
 
 
+def format_length(mm, inch: bool) -> str:
+    """``mm`` in the job's units, trailing zeros dropped."""
+    return _format_length(mm, inch)
+
+
 def _format_length(mm, inch: bool) -> str:
     if inch:
         return f"{mm / MM_PER_INCH:.4f}".rstrip("0").rstrip(".") + " in"

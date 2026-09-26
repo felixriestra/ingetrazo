@@ -32,7 +32,13 @@ pockets cut in flat layers, straight down from the machining plane.
 
 ## Operations
 
-Select faces, edges or a part, then **Operations ▸ Add from selection**.
+The **Operations** tab lists the **paths** of the drawing as soon as CAM
+opens: a rectangle, or a solid's top outline, is one closed path; lines that
+meet end to end are one path; a round hole is a circle. Choose paths in the
+list, or click any one of their edges in the model (the whole path is
+chosen and drawn in orange), then **Add operation**. With no path chosen,
+**Add operation** takes the selection in the model instead, such as a part
+from the Parts list.
 
 | Operation | From | Cuts |
 |---|---|---|

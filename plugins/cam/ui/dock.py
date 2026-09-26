@@ -47,6 +47,10 @@ from .worker import Calculation
 DOCK_NAME = "cam_dock"
 PERSIST_MS = 600
 RECALC_MS = 350
+#: The path list follows the model this long after its last edit.
+PATHS_MS = 250
+#: How often the path list looks at the model's selection.
+SELECTION_POLL_MS = 200
 
 #: The 9-point work zero, laid out as it looks from above.
 ZERO_GRID = (("topLeft", "topCenter", "topRight"),
@@ -111,6 +115,19 @@ class CamDock(QDockWidget):
         self._recalc_timer = QTimer(self)
         self._recalc_timer.setSingleShot(True)
         self._recalc_timer.timeout.connect(self.calculate)
+        #: The drawing read as paths (:mod:`..paths`), on ``_path_frame``.
+        self.paths: list = []
+        self._path_frame = None
+        self._sel_key = None
+        self._paths_timer = QTimer(self)
+        self._paths_timer.setSingleShot(True)
+        self._paths_timer.timeout.connect(self.refresh_paths)
+        # The host has no selection signal (the trays re-read the selection
+        # on every scene change); a cheap poll of the selection's identity
+        # keeps the path list in step with clicks in the model.
+        self._sel_timer = QTimer(self)
+        self._sel_timer.setInterval(SELECTION_POLL_MS)
+        self._sel_timer.timeout.connect(self._sync_paths_from_model)
 
         self._build()
         self._hand_back_on_enter()
@@ -118,6 +135,8 @@ class CamDock(QDockWidget):
         viewport.sceneVersionChanged.connect(self._on_scene_changed)
         self.visibilityChanged.connect(self._on_visibility)
         self._reload_from_document(force=True)
+        self.refresh_paths()
+        self._sel_timer.start()
 
     # ==== layout ==============================================================
     def _build(self) -> None:
@@ -129,6 +148,14 @@ class CamDock(QDockWidget):
         self.tabs.addTab(self._build_tools(), tr("Tools"))
         self.tabs.addTab(self._build_operations(), tr("Operations"))
         self.tabs.addTab(self._build_output(), tr("Output"))
+        # In a narrow dock (or in Spanish, «Herramientas») the titles shorten
+        # with an ellipsis rather than scroll Output out of sight; the full
+        # title is the tab's tooltip.
+        bar = self.tabs.tabBar()
+        bar.setElideMode(Qt.ElideRight)
+        bar.setUsesScrollButtons(False)
+        for i in range(self.tabs.count()):
+            bar.setTabToolTip(i, self.tabs.tabText(i))
         self.setWidget(self.tabs)
 
     # ---- Job ----
@@ -323,9 +350,24 @@ class CamDock(QDockWidget):
     def _build_operations(self) -> QWidget:
         w = QWidget()
         lay = QVBoxLayout(w)
+        self.paths_label = QLabel(tr("Paths"))
+        self.paths_label.setToolTip(tr(
+            "The drawing read as machining paths: a rectangle or a solid's outline is one "
+            "closed path, lines that meet end to end are one path. Choose paths here or "
+            "click any of their edges in the model, then add an operation."))
+        lay.addWidget(self.paths_label)
+        self.path_list = QListWidget()
+        self.path_list.setSelectionMode(QListWidget.ExtendedSelection)
+        self.path_list.setMaximumHeight(120)
+        self.path_list.setTextElideMode(Qt.ElideRight)
+        self.path_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.path_list.itemSelectionChanged.connect(self._on_paths_chosen)
+        lay.addWidget(self.path_list)
         row = QHBoxLayout()
         self.btn_add = QToolButton()
-        self.btn_add.setText(tr("Add from selection"))
+        self.btn_add.setText(tr("Add operation"))
+        self.btn_add.setToolTip(tr("For the chosen paths, or for the selection in the model "
+                                   "(a part from the Parts list, for example)."))
         self.btn_add.setPopupMode(QToolButton.InstantPopup)
         menu = QMenu(self.btn_add)
         for kind in ("outsideProfile", "insideProfile", "pocket", "openPocket", "drilling",
@@ -424,6 +466,8 @@ class CamDock(QDockWidget):
         return pd.get(PLUGIN_KEY) if isinstance(pd, dict) else None
 
     def _on_scene_changed(self, _version=None) -> None:
+        if self.isVisible():                # tabbed away: read when shown again
+            self._paths_timer.start(PATHS_MS)
         if self._persist_timer.isActive():
             return                        # our own pending edit wins; it lands soon
         self._reload_from_document()
@@ -442,6 +486,7 @@ class CamDock(QDockWidget):
         self._result = None
         self.overlay.clear()
         self._refresh_all()
+        self._on_paths_chosen()
         self._schedule_recalc()
 
     def _changed(self, recalc: bool = True) -> None:
@@ -570,6 +615,7 @@ class CamDock(QDockWidget):
             return
         self.state.job.units = self.units.currentData()
         self._refresh_all()
+        self.refresh_paths()                # the sizes in the path list
         self._changed(recalc=False)
         self._show_result()
 
@@ -612,13 +658,26 @@ class CamDock(QDockWidget):
 
     # ==== selection → job =====================================================
     def _extract(self):
+        """What the next operation is for: the chosen paths, or else the
+        model's selection (a part, faces)."""
         from ..extract import extract_selection
+        from ..paths import extraction
+        chosen = self.chosen_paths()
+        if chosen:
+            return extraction(chosen, self._path_frame)
         return extract_selection(self.viewport.scene, self.state.frame)
 
     def _on_setup_from_selection(self) -> None:
         from ..extract import extract_selection
+        from ..paths import extraction, plan_frame
         try:
-            ex = extract_selection(self.viewport.scene, None)
+            chosen = self.chosen_paths()
+            if chosen and self.state.frame is None:
+                ex = extraction(chosen, self._path_frame)
+            elif chosen:
+                ex = extraction(chosen, plan_frame(self.viewport.scene))
+            else:
+                ex = extract_selection(self.viewport.scene, None)
         except CamError as exc:
             self._report_error(exc.issue)
             return
@@ -642,6 +701,7 @@ class CamDock(QDockWidget):
         self.state.fit_stock()
         self._refresh_all()
         self._changed()
+        self.refresh_paths()                # read on the new plane
         self._set_status(tr("Machining plane and stock set from the selection."))
         self.give_focus_to_model()
 
@@ -698,12 +758,76 @@ class CamDock(QDockWidget):
 
     def _after_add(self, ops) -> None:
         self._refresh_all()
+        if self._path_frame is not self.state.frame:
+            self.refresh_paths()            # the job just took its plane
         self.tabs.setCurrentIndex(2)
         if ops:
             self.op_list.setCurrentRow(self.state.job.operations.index(ops[-1]))
         self._set_status(tr("{count} operation(s) added.", count=len(ops)))
         self._changed()
         self.give_focus_to_model()
+
+    # ==== paths ===============================================================
+    def refresh_paths(self) -> None:
+        """Read the drawing as paths again (after an edit), keeping the
+        paths that were chosen chosen."""
+        from ..paths import find_paths, plan_frame
+        scene = self.viewport.scene
+        before = set().union(*(p.edges for p in self.chosen_paths())) if self.paths else set()
+        frame = self.state.frame or plan_frame(scene)
+        try:
+            self.paths = find_paths(scene, frame) if frame is not None else []
+        except Exception:  # noqa: BLE001 — a model the reader trips on must not break the dock
+            self.paths = []
+        self._path_frame = frame
+        inch = self.state.job.is_inch
+        self.path_list.blockSignals(True)
+        self.path_list.clear()
+        for n, p in enumerate(self.paths, 1):
+            item = QListWidgetItem(_path_label(p, n, inch))
+            item.setToolTip(item.text())
+            self.path_list.addItem(item)
+            item.setSelected(bool(before & p.edges))
+        self.path_list.blockSignals(False)
+        self.paths_label.setText(tr("Paths ({count})", count=len(self.paths)))
+        self._sel_key = None                # re-read the model's selection
+        self._on_paths_chosen()
+
+    def chosen_paths(self) -> list:
+        rows = sorted(i.row() for i in self.path_list.selectedIndexes())
+        return [self.paths[r] for r in rows if r < len(self.paths)]
+
+    def choose_paths(self, rows) -> None:
+        self.path_list.blockSignals(True)
+        for r in range(self.path_list.count()):
+            self.path_list.item(r).setSelected(r in rows)
+        self.path_list.blockSignals(False)
+        self._on_paths_chosen()
+
+    def _on_paths_chosen(self) -> None:
+        if self._path_frame is not None:
+            self.overlay.set_paths(self._path_frame, self.chosen_paths())
+        self.viewport.update()
+
+    def _sync_paths_from_model(self) -> None:
+        """Clicking one edge of a rectangle in the model chooses the whole
+        rectangle here (and a face, its outline and holes)."""
+        if self.isHidden():
+            return
+        from core.mesh import Edge, Face
+        from ..paths import face_edges, paths_for_edges
+        sel = getattr(self.viewport.scene, "selection", ()) or ()
+        key = frozenset(id(e) for e in sel)
+        if key == self._sel_key:
+            return
+        self._sel_key = key
+        ids: set = set()
+        for ent in sel:
+            if isinstance(ent, Edge):
+                ids.add(id(ent))
+            elif isinstance(ent, Face):
+                ids |= face_edges(ent)
+        self.choose_paths(set(paths_for_edges(self.paths, ids)) if ids else set())
 
     # ==== tools ===============================================================
     def _current_tool(self):
@@ -864,7 +988,7 @@ class CamDock(QDockWidget):
         if not any(o.isEnabled for o in self.state.job.operations):
             self._result = None
             self.overlay.set_result(self.state, _EmptyResult())
-            self._set_status(tr("Add operations from the selection to begin."))
+            self._set_status(tr("Choose a path and add an operation to begin."))
             self._show_result()
             return
         self._generation += 1
@@ -942,6 +1066,8 @@ class CamDock(QDockWidget):
         # Closed, not merely tabbed behind another tray: the toolpaths stay
         # in the model while the user looks at Properties.
         self.overlay.visible = not self.isHidden()
+        if self.isVisible():
+            self._paths_timer.start(0)      # the model may have changed meanwhile
         self.viewport.update()
 
     # ==== simulation ===========================================================
@@ -1042,6 +1168,8 @@ class CamDock(QDockWidget):
         self.flush()
         if self._sim is not None:
             self._sim.close()
+        self._sel_timer.stop()
+        self._paths_timer.stop()
         if self.overlay in self.viewport.overlay_painters:
             self.viewport.overlay_painters.remove(self.overlay)
         try:
@@ -1087,6 +1215,19 @@ def _style_enabled(item, enabled: bool) -> None:
     font.setStrikeOut(not enabled)
     item.setFont(font)
     item.setForeground(item.listWidget().palette().text() if enabled else Qt.gray)
+
+
+def _path_label(p, n: int, inch: bool) -> str:
+    """How a path reads in the list: its kind and its size."""
+    size = lambda mm: messages.format_length(mm, inch)  # noqa: E731
+    if p.circle:
+        return tr("Circle {n} · Ø{diameter}", n=n, diameter=size(p.circle[2]))
+    if p.closed:
+        du, dv = p.extent
+        text = tr("Hole {n} · {width} × {depth}") if p.hole else \
+            tr("Closed path {n} · {width} × {depth}")
+        return text.format(n=n, width=size(du), depth=size(dv))
+    return tr("Open path {n} · {length}", n=n, length=size(p.length))
 
 
 def _op_label(op) -> str:

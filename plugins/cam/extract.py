@@ -245,6 +245,15 @@ def chain_edges(edges) -> tuple:
     """Chain edges by shared vertices: ``(closed, open)`` lists of vertex
     position sequences (world tuples). Branches (a vertex with three
     selected edges) end a chain there."""
+    closed, open_ = chain_vertices(edges)
+    return ([[_v(x.position) for x in seq] for seq, _e in closed],
+            [[_v(x.position) for x in seq] for seq, _e in open_])
+
+
+def chain_vertices(edges) -> tuple:
+    """:func:`chain_edges` on the mesh objects: ``(closed, open)`` lists of
+    ``(vertices, edges)`` — a closed chain's vertices do not repeat the
+    first one."""
     adj: dict = {}
     for e in edges:
         adj.setdefault(e.v0, []).append(e)
@@ -253,30 +262,30 @@ def chain_edges(edges) -> tuple:
     closed, open_ = [], []
 
     def walk(start_v, first_edge):
-        seq = [start_v]
+        seq, chain = [start_v], []
         e, v = first_edge, start_v
         while e is not None and e not in used:
             used.add(e)
+            chain.append(e)
             v = e.other(v)
             seq.append(v)
             nxt = [x for x in adj.get(v, ()) if x not in used]
             e = nxt[0] if len(adj.get(v, ())) == 2 and nxt else None
-        return seq
+        return seq, chain
 
     # Open chains start at dead ends (or branch points).
     for v, es in adj.items():
         if len(es) != 2:
             for e in es:
                 if e not in used:
-                    seq = walk(v, e)
-                    open_.append([_v(x.position) for x in seq])
+                    open_.append(walk(v, e))
     for e in edges:
         if e not in used:
-            seq = walk(e.v0, e)
+            seq, chain = walk(e.v0, e)
             if seq[0] is seq[-1]:
-                closed.append([_v(x.position) for x in seq[:-1]])
+                closed.append((seq[:-1], chain))
             else:
-                open_.append([_v(x.position) for x in seq])
+                open_.append((seq, chain))
     return closed, open_
 
 

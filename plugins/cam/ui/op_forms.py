@@ -16,7 +16,7 @@ writes them back to the operation on every edit, then says so with
 from __future__ import annotations
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QLineEdit,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QLabel, QLineEdit,
                                QSpinBox, QWidget)
 
 from ..engine.models import (FINISHING_TOOL_KINDS, MM_PER_INCH, Region, Tab)
@@ -159,6 +159,18 @@ def _set_combo(combo: QComboBox, value) -> None:
     combo.blockSignals(False)
 
 
+def _check_label(check: QCheckBox) -> QLabel:
+    """Move a check box's text to a word-wrapping row label. A check box's
+    own text is one line: «Recorrido más corto entre agujeros» alone made
+    the form 260 px wide. Clicking the label still toggles the box."""
+    label = QLabel(check.text())
+    label.setWordWrap(True)
+    label.setToolTip(check.toolTip())
+    check.setText("")
+    label.mousePressEvent = lambda _e: check.isEnabled() and check.toggle()
+    return label
+
+
 class OperationForm(QWidget):
     """Edits one :class:`~..engine.models.Operation` in place."""
 
@@ -240,6 +252,8 @@ class OperationForm(QWidget):
             ("open_edges", tr("Open edges"), self.open_edges),
         ]
         for _key, label, w in self._rows:
+            if isinstance(w, QCheckBox) and not label:
+                label = _check_label(w)
             f.addRow(label, w)
         self.name.editingFinished.connect(self._apply)
         self.open_edges.editingFinished.connect(self._apply)

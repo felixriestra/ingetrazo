@@ -35,8 +35,14 @@ mecanizado.
 
 ## Operaciones
 
-Selecciona caras, aristas o una pieza y usa
-**Operaciones ▸ Añadir desde la selección**.
+La pestaña **Operaciones** muestra los **trazados** del dibujo en cuanto
+se abre CAM: un rectángulo, o el contorno superior de un sólido, es un
+trazado cerrado; las líneas que se unen extremo con extremo son un solo
+trazado; un agujero redondo es un círculo. Elige trazados en la lista, o
+haz clic en cualquiera de sus aristas en el modelo (se elige el trazado
+entero y se dibuja en naranja), y usa **Añadir operación**. Si no hay
+ningún trazado elegido, **Añadir operación** toma la selección del modelo,
+por ejemplo una pieza de la lista de piezas.
 
 | Operación | A partir de | Corta |
 |---|---|---|

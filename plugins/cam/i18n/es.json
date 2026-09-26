@@ -18,7 +18,6 @@
   "Work zero": "Cero pieza",
   "Heights": "Alturas",
   "Machine": "Máquina",
-  "Add from selection": "Añadir desde la selección",
   "Every operation for the selected part": "Todas las operaciones de la pieza seleccionada",
   "Calculate": "Calcular",
   "Cancel": "Cancelar",
@@ -60,7 +59,6 @@
   "The job's operations are on another plane. Start the job again on the selected one?": "Las operaciones del trabajo están en otro plano. ¿Empezar el trabajo de nuevo en el seleccionado?",
   "New tool": "Herramienta nueva",
   "This tool is used by: {operations}. Choose another tool for them first.": "Esta herramienta la usan: {operations}. Elige otra herramienta para ellas primero.",
-  "Add operations from the selection to begin.": "Añade operaciones desde la selección para empezar.",
   "Verification found problems: fix them before exporting.": "La verificación encontró problemas: corrígelos antes de exportar.",
   "Ready to export.": "Listo para exportar.",
   "The G-code failed its final check and was not saved.": "El código G no pasó la comprobación final y no se guardó.",
@@ -264,5 +262,15 @@
   "Write arcs as straight segments (LinuxCNC).": "Escribir los arcos como segmentos rectos (LinuxCNC).",
   "Z0 on the machine bed": "Z0 en la mesa de la máquina",
   "Z0 on the stock top": "Z0 en la cara superior del material",
-  "Untitled Part": "Pieza sin título"
+  "Untitled Part": "Pieza sin título",
+  "Paths": "Trazados",
+  "The drawing read as machining paths: a rectangle or a solid's outline is one closed path, lines that meet end to end are one path. Choose paths here or click any of their edges in the model, then add an operation.": "El dibujo leído como trazados para mecanizar: un rectángulo o el contorno de un sólido es un trazado cerrado, y las líneas que se unen extremo con extremo son un solo trazado. Elige trazados aquí o haz clic en cualquiera de sus aristas en el modelo, y luego añade una operación.",
+  "Add operation": "Añadir operación",
+  "For the chosen paths, or for the selection in the model (a part from the Parts list, for example).": "Para los trazados elegidos, o para la selección en el modelo (por ejemplo, una pieza de la lista de piezas).",
+  "Paths ({count})": "Trazados ({count})",
+  "Circle {n} · Ø{diameter}": "Círculo {n} · Ø{diameter}",
+  "Hole {n} · {width} × {depth}": "Agujero {n} · {width} × {depth}",
+  "Closed path {n} · {width} × {depth}": "Trazado cerrado {n} · {width} × {depth}",
+  "Choose a path and add an operation to begin.": "Elige un trazado y añade una operación para empezar.",
+  "Open path {n} · {length}": "Trazado abierto {n} · {length}"
 }

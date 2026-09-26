@@ -28,6 +28,8 @@ OP_COLORS = ["#0072B2", "#009E73", "#CC79A7", "#56B4E9", "#E69F00", "#D55E00", "
 RAPID = QColor(220, 40, 40, 200)
 PLUNGE = QColor(240, 140, 20, 230)
 STOCK = QColor(130, 110, 80, 200)
+#: The paths chosen in the CAM tab's path list.
+CHOSEN = QColor(255, 150, 0, 235)
 
 CUT, PLUNGE_KIND, RAPID_KIND = 0, 1, 2
 
@@ -56,6 +58,9 @@ class ToolpathOverlay:
         #: per edge, drawn thin (open edges dashed) and numbered.
         self.outline: list = []
         self.outline_numbers = False
+        #: The chosen paths, as world segments ``(A, B)`` (N, 3) arrays.
+        self.chosen_a = np.empty((0, 3))
+        self.chosen_b = np.empty((0, 3))
 
     def clear(self) -> None:
         self.__init__()
@@ -81,6 +86,20 @@ class ToolpathOverlay:
             for j in (0, 1):
                 edges.append((corners[(0, j, k)], corners[(1, j, k)]))
         self.stock_edges = np.asarray(edges, dtype=float)
+
+    def set_paths(self, frame, paths) -> None:
+        """Highlight ``paths`` (:class:`..paths.CamPath`, on ``frame``) —
+        the ones chosen in the list, each drawn whole however few of its
+        edges the model's selection holds."""
+        a, b = [], []
+        for p in paths:
+            pts = [frame.to_world(u, v, p.w) for u, v in p.points]
+            pairs = zip(pts, pts[1:] + pts[:1]) if p.closed else zip(pts, pts[1:])
+            for p0, p1 in pairs:
+                a.append(p0)
+                b.append(p1)
+        self.chosen_a = np.asarray(a, dtype=float).reshape(-1, 3)
+        self.chosen_b = np.asarray(b, dtype=float).reshape(-1, 3)
 
     def set_result(self, state, compiled) -> None:
         """World-space segments for ``compiled`` (a CompileResult)."""
@@ -164,6 +183,10 @@ class ToolpathOverlay:
             painter.setPen(pen)
             self._lines(painter, viewport, self.stock_edges[:, 0], self.stock_edges[:, 1],
                         np.ones(len(self.stock_edges), dtype=bool))
+        if len(self.chosen_a):
+            painter.setPen(QPen(CHOSEN, 3.0))
+            self._lines(painter, viewport, self.chosen_a, self.chosen_b,
+                        np.ones(len(self.chosen_a), dtype=bool))
         if not len(self.a):
             return
         if self.show_rapids:

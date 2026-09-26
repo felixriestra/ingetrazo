@@ -6,8 +6,9 @@
 Qt-free: the dock calls these with an :class:`~.extract.Extraction` and a
 :class:`~.state.CamState`, and tests call them with hand-built ones.
 
-- :func:`add_operations` — the "Add from selection ▸ Profile / Pocket /
-  Drill / Engrave / Face" menu: one operation per region, loop or path.
+- :func:`add_operations` — the "Add operation ▸ Profile / Pocket /
+  Drill / Engrave / Face" menu, for the chosen paths (:mod:`.paths`) or
+  the model's selection: one operation per region, loop or path.
 - :func:`suggest_operations` — the "Part → CAM" flow: from a board, every
   operation it plainly needs (blind holes pocketed to their depth, round
   through holes drilled when a drill of that size exists, other holes
