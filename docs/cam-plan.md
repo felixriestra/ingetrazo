@@ -418,7 +418,9 @@ people work on it.
    from the Output tab.
 5. Nesting several parts onto one sheet (`LayoutEngine`), a strong fit
    with IngeTrazo's cut list.
-6. Bitmap tracing (`vtracer`), if users ask for it.
+6. ~~Bitmap tracing~~ — **done** without vtracer (its wheel crashes on
+   Python 3.14): `engine/trace.py` and «Trace an image…» on the Operations
+   tab.
 
 ## Risks
 

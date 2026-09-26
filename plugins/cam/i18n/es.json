@@ -556,5 +556,21 @@
   "{feed} {unit} max": "{feed} {unit} máx.",
   "{rpm} rpm max": "{rpm} rpm máx.",
   "Ø": "Ø",
-  "Cut length": "Long. corte"
+  "Cut length": "Long. corte",
+  "Add to the job": "Añadir al trabajo",
+  "Automatic": "Automático",
+  "Choose a picture: a logo, lettering or a scanned drawing. Dark areas become shapes to machine.": "Elige una imagen: un logotipo, unas letras o un dibujo escaneado. Las zonas oscuras se convierten en formas para mecanizar.",
+  "Choose image…": "Elegir imagen…",
+  "Detail": "Detalle",
+  "Height": "Alto",
+  "Images ({patterns})": "Imágenes ({patterns})",
+  "Left: every pixel. Right: smooth, simple outlines and no small specks.": "Izquierda: cada píxel. Derecha: contornos suaves y simples, sin motas pequeñas.",
+  "This picture could not be read: {reason}": "No se pudo leer esta imagen: {reason}",
+  "Threshold": "Umbral",
+  "Trace an image": "Vectorizar una imagen",
+  "Trace an image…": "Vectorizar una imagen…",
+  "Trace the light areas": "Vectorizar las zonas claras",
+  "Turn a picture — a logo, lettering, a scanned drawing — into outlines on the stock, ready for profiles, pockets or engraving.": "Convierte una imagen —un logotipo, unas letras, un dibujo escaneado— en contornos sobre el material, listos para perfilados, vaciados o grabados.",
+  "{count} outline(s) traced from the picture.": "{count} contorno(s) vectorizado(s) de la imagen.",
+  "{count} outlines (holes: {holes}), {points} points. Match with the picture: {match} %": "{count} contornos (agujeros: {holes}), {points} puntos. Coincidencia con la imagen: {match} %"
 }

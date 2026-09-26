@@ -160,6 +160,20 @@ malla se hace más gruesa sola.
 La simulación muestra lo que hace la trayectoria. No sustituye al corte
 en vacío en la máquina.
 
+## Vectorizar una imagen
+
+**Vectorizar una imagen…**, en la pestaña **Operaciones**, convierte una
+imagen —un logotipo, unas letras, un dibujo escaneado— en contornos sobre el
+material. La ventana muestra la imagen con los contornos encima y cuánto
+coinciden. **Detalle** va de cada píxel (izquierda) a contornos suaves y
+simples, sin motas (derecha); el **umbral** entre oscuro y claro se calcula
+solo, o lo fijas tú; **Vectorizar las zonas claras** los intercambia. Pon el
+**ancho** y el alto sigue a la imagen. **Añadir al trabajo** dibuja los
+contornos sobre el material, centrados, como trazados igual que los
+dibujados: elígelos y añade un perfilado, un vaciado o un grabado. Las
+letras conservan sus huecos: vaciar un logotipo vectorizado da un vaciado
+por forma, cada uno con sus islas. Un solo deshacer quita todo.
+
 ## La biblioteca de herramientas
 
 La pestaña **Herramientas** tiene las fresas de un trabajo. La **biblioteca

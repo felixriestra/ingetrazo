@@ -157,6 +157,21 @@ marcada onde está. Numa chapa grande, a malha fica mais grossa sozinha.
 A simulação mostra o que o percurso faz. Não substitui o corte no ar na
 máquina.
 
+## Vetorizar uma imagem
+
+**Vetorizar uma imagem…**, na aba **Operações**, transforma uma imagem — um
+logotipo, letras, um desenho escaneado — em contornos sobre o material. A
+janela mostra a imagem com os contornos por cima e quanto eles
+correspondem. **Detalhe** vai de cada pixel (esquerda) a contornos suaves e
+simples, sem pontinhos (direita); o **limiar** entre escuro e claro é
+calculado sozinho, ou você o define; **Vetorizar as áreas claras** os
+inverte. Defina a **largura** e a altura acompanha a imagem. **Adicionar ao
+trabalho** desenha os contornos sobre o material, centralizados, como
+traçados iguais aos desenhados: escolha-os e adicione um perfil, um rebaixo
+ou uma gravação. As letras mantêm seus furos: rebaixar um logotipo
+vetorizado dá um rebaixo por forma, cada um com suas ilhas. Um só desfazer
+remove tudo.
+
 ## A biblioteca de ferramentas
 
 A aba **Ferramentas** tem as fresas de um trabalho. A **biblioteca de

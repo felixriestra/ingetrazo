@@ -101,3 +101,11 @@ first, then in `es.json` and `pt-BR.json`.
 | Plan view | Vista en planta | Vista em planta | Toolpaths seen from above |
 | Work offset | Decalaje de trabajo | Deslocamento de trabalho | G54… |
 | Travel limits | Límites de recorrido | Limites de curso | |
+
+### Bitmap tracing
+
+| en | es | pt-BR | Notes |
+|---|---|---|---|
+| Trace (an image) | Vectorizar (una imagen) | Vetorizar (uma imagem) | Picture → outlines |
+| Threshold | Umbral | Limiar | Grey level between black and white |
+| Detail | Detalle | Detalhe | |

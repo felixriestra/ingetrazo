@@ -143,6 +143,20 @@ automatically.
 The simulation shows what the toolpath does. It is not a replacement for
 an air cut on the machine.
 
+## Tracing a picture
+
+**Trace an image…** on the **Operations** tab turns a picture — a logo,
+lettering, a scanned drawing — into outlines on the stock. The window shows
+the picture with the traced outlines over it and how well they match.
+**Detail** runs from every pixel (left) to smooth, simple outlines without
+specks (right); the **threshold** between dark and light is found
+automatically, or set it yourself; **Trace the light areas** swaps them.
+Set the **width** and the height follows the picture. **Add to the job**
+draws the outlines on the stock, centred, as paths like any drawn ones —
+choose them and add a profile, a pocket or an engraving. Letters keep their
+holes: pocketing a traced logo gives one pocket per shape, each with its
+islands. One undo removes the whole trace.
+
 ## The tool library
 
 The **Tools** tab holds the cutters of one job. The **tool library** is your

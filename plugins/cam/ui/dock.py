@@ -480,6 +480,12 @@ class CamDock(QDockWidget):
             "edges or one part), flattened onto the stock. The model is not changed."))
         self.btn_import.clicked.connect(self.import_from_model)
         lay.addWidget(self.btn_import)
+        self.btn_trace = QPushButton(tr("Trace an image…"))
+        self.btn_trace.setToolTip(tr(
+            "Turn a picture — a logo, lettering, a scanned drawing — into outlines on the "
+            "stock, ready for profiles, pockets or engraving."))
+        self.btn_trace.clicked.connect(self.trace_image)
+        lay.addWidget(self.btn_trace)
         row = QHBoxLayout()
         self.btn_add = QToolButton()
         self.btn_add.setText(tr("Add operation"))
@@ -1087,11 +1093,18 @@ class CamDock(QDockWidget):
                                                          for h in hs]
         loops += [lp.points for lp in ex.loops]
         lines = list(ex.paths)
-        pts = [p for lp in loops + lines for p in lp]
+        n = self.add_outlines(loops, lines)
+        if n:
+            self._set_status(tr("{count} outline(s) imported from the model.", count=n))
+        return n
+
+    def add_outlines(self, loops, lines=()) -> int:
+        """Draw closed ``loops`` and open ``lines`` (plane millimetres) on
+        the stock, centred on it, as one undoable step; returns how many."""
+        lines = list(lines)
+        pts = [p for lp in list(loops) + lines for p in lp]
         if not pts:
             return 0
-        # Onto the stock: the outlines' lower-left corner on the stock's,
-        # 10 mm in, or centred when they fit with less.
         st = self.state.job.stock
         umin, vmin = min(p[0] for p in pts), min(p[1] for p in pts)
         umax, vmax = max(p[0] for p in pts), max(p[1] for p in pts)
@@ -1118,8 +1131,17 @@ class CamDock(QDockWidget):
         self.viewport.history.execute(SnapshotImport(add))
         self.viewport.notify_scene_changed()
         self.refresh_paths()
-        n = len(loops) + len(lines)
-        self._set_status(tr("{count} outline(s) imported from the model.", count=n))
+        return len(loops) + len(lines)
+
+    def trace_image(self) -> int:
+        """«Trace an image…»: pick a picture, trace it, add its outlines."""
+        from .trace_dialog import TraceDialog
+        st = self.state.job.stock
+        dlg = TraceDialog(self.state.job.is_inch, round(st.width * 0.8, 1), self)
+        if dlg.exec() != QDialog.Accepted or not dlg.outlines_mm:
+            return 0
+        n = self.add_outlines(dlg.outlines_mm)
+        self._set_status(tr("{count} outline(s) traced from the picture.", count=n))
         return n
 
     # ==== paths ===============================================================

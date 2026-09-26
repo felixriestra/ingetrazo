@@ -174,6 +174,28 @@ draws 2DCam's A4 layout and pagination on `QPdfWriter`.
     job sides and job notes (the port's job has neither). Warnings are
     engine codes (`sheet_*`), worded by the UI.
 
+## Bitmap tracing
+
+27. **Our own tracer, not vtracer.** 2DCam traces with vtracer (a Rust
+    library it links). The `vtracer` Python wheel (0.6.15, the latest)
+    crashes the interpreter on Python 3.14 — a segfault on every call,
+    checked on macOS; it works on 3.13 — and a crash inside the app would
+    close IngeTrazo. `engine/trace.py` does the CAM trace in NumPy:
+    threshold (Otsu), pixel-boundary outlines with holes, specks dropped,
+    the staircase smoothed with real corners kept exact, Douglas–Peucker.
+    No new dependency. Revisit vtracer (curve fitting, colour) once its
+    wheel runs on the Python IngeTrazo ships.
+28. **CAM purpose only.** 2DCam's trace also makes icons and editable
+    colour SVGs; here the only purpose is cut geometry. Its ladder of
+    candidates is one **Detail** slider, and its SSIM fidelity a black
+    overlap score (intersection over union) — the thing that matters for
+    a cut.
+29. **Loose loops nest.** Pocketing several drawn or traced loops groups
+    them by containment (a loop inside another is its hole; inside that, a
+    shape again). The port used to take the largest loop as the wall and
+    every other as an island, which is wrong for a logo's separate letters.
+    Outside profiles go round shapes only, inside profiles round holes.
+
 ## Additions that keep parity when unused
 
 - **Peck drilling and dwell** (`peckDepth`, `dwellSeconds`). 2DCam drills

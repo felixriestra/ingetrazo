@@ -135,13 +135,16 @@ def add_operations(state, kind: str, ex=None) -> list:
         raise CamError("missing_tool")
     through = _through_depth(state, ex)
 
-    closed = [outer for outer, _h in ex.regions] + list(ex.loops)
+    # Loose closed chains (drawn or traced) nest like a picture's shapes: a
+    # loop inside another is its hole, a loop inside that hole a new shape.
+    nested = nest_loops(ex.loops)
+    closed = [outer for outer, _h in ex.regions] + [outer for outer, _h in nested]
     if kind == "outsideProfile":
         for loop in closed:
             ops.append(_profile(state, kind, loop, tool, through, tabs=True))
             job.operations.append(ops[-1])
     elif kind == "insideProfile":
-        holes = [h for _o, hs in ex.regions for h in hs]
+        holes = [h for _o, hs in list(ex.regions) + nested for h in hs]
         for loop in holes or closed:
             depth = loop.depth if loop.depth else through
             ops.append(_profile(state, kind, loop, tool, depth))
@@ -149,9 +152,9 @@ def add_operations(state, kind: str, ex=None) -> list:
     elif kind == "pocket":
         regions = [(o, hs) for o, hs in ex.regions]
         if not regions and ex.loops:
-            # Closed chains: the largest is the wall, the others islands.
-            loops = sorted(ex.loops, key=lambda lp: -abs(_area(lp.points)))
-            regions = [(loops[0], loops[1:])]
+            # Closed chains: each shape with the islands directly inside it
+            # (a traced logo's letters are separate pockets).
+            regions = nested
         for outer, holes in regions:
             depth = round(-outer.w, 4) if outer.w < -0.01 else min(5.0, through)
             op = Operation(_name(state, kind), kind, tool.id,
@@ -406,6 +409,43 @@ def _all_loops(ex):
         yield outer
         yield from holes
     yield from ex.loops
+
+
+def nest_loops(loops) -> list:
+    """``[(outer, [holes])]`` for closed loops (objects with ``.points``):
+    a loop inside an odd number of others is a hole of the smallest loop
+    that contains it; one inside an even number is a shape of its own."""
+    loops = list(loops)
+    if not loops:
+        return []
+    areas = [abs(_area(lp.points)) for lp in loops]
+    parents = []
+    for i, lp in enumerate(loops):
+        probe = lp.points[0]
+        containers = [j for j, other in enumerate(loops)
+                      if j != i and areas[j] > areas[i] and _inside(probe, other.points)]
+        parents.append(containers)
+    depth = [len(c) for c in parents]
+    out = {i: (loops[i], []) for i in range(len(loops)) if depth[i] % 2 == 0}
+    for i in range(len(loops)):
+        if depth[i] % 2 == 1:
+            direct = min(parents[i], key=lambda j: areas[j])
+            if direct in out:
+                out[direct][1].append(loops[i])
+    return [out[i] for i in sorted(out, key=lambda k: -areas[k])]
+
+
+def _inside(p, poly) -> bool:
+    """Even-odd point in polygon."""
+    x, y = p[0], p[1]
+    inside = False
+    n = len(poly)
+    for k in range(n):
+        x0, y0 = poly[k][0], poly[k][1]
+        x1, y1 = poly[(k + 1) % n][0], poly[(k + 1) % n][1]
+        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
+            inside = not inside
+    return inside
 
 
 def _area(pts) -> float:
