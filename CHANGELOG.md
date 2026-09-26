@@ -14,6 +14,12 @@ follow [SemVer](https://semver.org).
   Preferencias ya ofrece el portugués, que solo estaba en el menú.
 
 ### Corregido
+- **La esfera con Sígueme sale bien** (#125, #128): un círculo barrido
+  alrededor de otro con el mismo centro daba una esfera achatada cuando el
+  perfil no caía justo sobre un vértice del camino, y un perfil de círculo
+  entero se barría dos veces. Ahora Sígueme gira el perfil alrededor del eje
+  (esfera, torno, jarrón) y la esfera sale cerrada, exacta y como una sola
+  superficie lisa que se pinta de un clic.
 - **Compositor: una vista movida engancha donde está** (#122, PR #124 de
   @pacaeiro): tras mover una vista (con el ratón, las flechas o deshacer),
   la cota y todo lo que engancha seguían buscando los vértices donde estaba

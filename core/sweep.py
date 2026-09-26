@@ -74,12 +74,162 @@ def _project_ring(points, direction, plane_pt, plane_n):
     return out
 
 
+def _wall(quad):
+    """A wall quad without its repeated corners, or ``None`` when fewer than
+    three distinct corners remain."""
+    out = []
+    for p in quad:
+        if not out or (p - out[-1]).length() >= 1e-9:
+            out.append(p)
+    if len(out) > 1 and (out[0] - out[-1]).length() < 1e-9:
+        out.pop()
+    return out if len(out) >= 3 else None
+
+
+def _clip_half(loop, keep_tol):
+    """The part of a closed ``loop`` (points as (h, x, y) in the revolution
+    frame) with x >= 0 — Sutherland–Hodgman against the axis. Points on the
+    cut land exactly ON the axis (x = y = 0), so every station repeats them
+    bit for bit and the pole quads collapse to triangles."""
+    out = []
+    m = len(loop)
+    for i in range(m):
+        cur, nxt = loop[i], loop[(i + 1) % m]
+        cin, nin = cur[1] >= -keep_tol, nxt[1] >= -keep_tol
+        if cin:
+            out.append((cur[0], max(cur[1], 0.0), cur[2])
+                       if cur[1] > keep_tol else (cur[0], 0.0, 0.0))
+        if cin != nin:
+            t = cur[1] / (cur[1] - nxt[1])
+            out.append((cur[0] + (nxt[0] - cur[0]) * t, 0.0, 0.0))
+    clean = []
+    for q in out:
+        if not clean or any(abs(q[k] - clean[-1][k]) > 1e-12 for k in range(3)):
+            clean.append(q)
+    while len(clean) > 1 and all(abs(clean[0][k] - clean[-1][k]) <= 1e-12
+                                 for k in range(3)):
+        clean.pop()
+    return clean if len(clean) >= 3 else None
+
+
+def _revolution_rings(face, path):
+    """Rings for a profile turned about an AXIS (#125/#128), or ``None``.
+
+    A closed, planar, circular path whose axis lies in the profile's plane
+    is a lathe: SketchUp's sphere is a circle swept along a circle that
+    shares its centre. The mitre construction only reproduces that when the
+    profile stands exactly on a path vertex — anywhere else it SLIDES the
+    profile onto the first joint plane and squashes it (a «sphere» with
+    radii 0.93–1.00) — and a full circle, crossing the axis, was swept
+    twice over itself. Here each station is the profile ROTATED about the
+    axis to that path vertex, and a profile that crosses the axis keeps the
+    half on its own side (the other half is the same surface again)."""
+    import math
+
+    n = len(path)
+    if n < 3:
+        return None
+    pts = [(p.x(), p.y(), p.z()) for p in path]
+    c = tuple(sum(p[k] for p in pts) / n for k in range(3))
+    # Newell normal of the path polygon: the axis.
+    ax = [0.0, 0.0, 0.0]
+    for i in range(n):
+        a, b = pts[i], pts[(i + 1) % n]
+        ax[0] += (a[1] - b[1]) * (a[2] + b[2])
+        ax[1] += (a[2] - b[2]) * (a[0] + b[0])
+        ax[2] += (a[0] - b[0]) * (a[1] + b[1])
+    la = math.sqrt(sum(v * v for v in ax))
+    if la < 1e-12:
+        return None
+    ax = [v / la for v in ax]
+    rel = [tuple(p[k] - c[k] for k in range(3)) for p in pts]
+    radii = [math.sqrt(sum(v * v for v in r)) for r in rel]
+    rmean = sum(radii) / n
+    if rmean < 1e-9:
+        return None
+    tol = max(1e-4, 1e-3 * rmean)
+    dot = lambda u, v: u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
+    cross = lambda u, v: (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
+                          u[0] * v[1] - u[1] * v[0])
+    if any(abs(dot(r, ax)) > tol for r in rel):
+        return None                                   # not planar
+    if max(radii) - min(radii) > tol + 1e-2 * rmean:
+        return None                                   # not a circle
+    fn = face.normal()
+    fn = (fn.x(), fn.y(), fn.z())
+    lf = math.sqrt(dot(fn, fn))
+    if lf < 1e-12:
+        return None
+    fn = tuple(v / lf for v in fn)
+    if abs(dot(fn, ax)) > 1e-3:
+        return None                                   # axis not in the plane
+    v0 = face.vertices[0]
+    if abs(dot((v0.x() - c[0], v0.y() - c[1], v0.z() - c[2]), fn)) > tol:
+        return None                                   # plane misses the axis
+    radial = cross(ax, fn)
+    lr = math.sqrt(dot(radial, radial))
+    radial = tuple(v / lr for v in radial)
+    fc = face.centroid()
+    if dot((fc.x() - c[0], fc.y() - c[1], fc.z() - c[2]), radial) < 0.0:
+        radial = tuple(-v for v in radial)
+    side = cross(ax, radial)               # completes the right-handed frame
+
+    def local(p):
+        r = (p.x() - c[0], p.y() - c[1], p.z() - c[2])
+        return (dot(r, ax), dot(r, radial), dot(r, side))
+
+    size = max(max(abs(q) for q in local(v)) for v in face.vertices) or 1.0
+    keep_tol = max(1e-7, 1e-6 * size)
+    outer = [local(v) for v in face.vertices]
+    if min(q[1] for q in outer) < -keep_tol:
+        outer = _clip_half(outer, keep_tol)
+        if outer is None:
+            return None
+    else:
+        outer = [(q[0], q[1], 0.0) if abs(q[1]) > keep_tol else (q[0], 0.0, 0.0)
+                 for q in outer]
+    holes = []
+    for h in face.holes:
+        hl = [local(v) for v in h]
+        xs = [q[1] for q in hl]
+        if min(xs) >= -keep_tol:
+            holes.append(hl)
+        elif max(xs) > keep_tol:
+            return None               # a hole across the axis: not a lathe
+    loops = [outer] + holes
+
+    rings = []
+    for r in rel:
+        # Station angle of this path vertex, measured from the profile.
+        ca, sa = dot(r, radial), dot(r, side)
+        norm = math.hypot(ca, sa) or 1.0
+        ca, sa = ca / norm, sa / norm
+        ring = []
+        for lp in loops:
+            ring.append([QVector3D(*(
+                c[k] + ax[k] * h + (radial[k] * ca + side[k] * sa) * x
+                + (side[k] * ca - radial[k] * sa) * y for k in range(3)))
+                for h, x, y in lp])
+        rings.append(ring)
+    dirs = []
+    for i in range(n):
+        d = path[(i + 1) % n] - path[i]
+        if d.length() < 1e-9:
+            return None
+        dirs.append(d.normalized())
+    return rings, dirs, n
+
+
 def sweep_rings(face, path, closed):
     """The profile's rings (outer loop + holes) at every path station.
 
     Returns ``(rings, dirs, spans)`` or ``None`` on degenerate input — a
     180° reversal in the path, a segment parallel to a joint plane, a
     zero-length span."""
+    if closed:
+        rev = _revolution_rings(face, path)
+        if rev is not None:
+            return rev
     dirs = []
     n = len(path)
     spans = n if closed else n - 1
@@ -146,9 +296,9 @@ def sweep_preview_faces(face, path, closed):
             for j in range(m):
                 a, b = lp0[j], lp0[(j + 1) % m]
                 b2, a2 = lp1[(j + 1) % m], lp1[j]
-                if (a - a2).length() < 1e-9 and (b - b2).length() < 1e-9:
-                    continue
-                out.append(Face([a, b, b2, a2], attrs=attrs))
+                quad = _wall([a, b, b2, a2])
+                if quad is not None:
+                    out.append(Face(quad, attrs=attrs))
     if not closed:
         out.append(Face(list(rings[-1][0]), list(rings[-1][1:]) or None,
                         attrs=attrs))
@@ -294,6 +444,7 @@ def sweep_profile(mesh, face, path, closed) -> bool:
     # Build: walls per span per loop edge; the closed path's last span goes
     # straight back to ring 0 (exact weld, no seam).
     before_edges = set(mesh.edges)
+    before_faces = {id(f) for f in mesh.faces}
     profile_loops = [list(face.loop)] + [list(h) for h in face.hole_loops]
     mesh.remove_face(face)                           # profile is consumed
     for s in range(spans):
@@ -304,11 +455,12 @@ def sweep_profile(mesh, face, path, closed) -> bool:
             for j in range(m):
                 a, b = lp0[j], lp0[(j + 1) % m]
                 b2, a2 = lp1[(j + 1) % m], lp1[j]
-                quad = [a, b, b2, a2]
-                # Skip degenerate quads (a span that doesn't move this edge).
-                if (a - a2).length() < 1e-9 and (b - b2).length() < 1e-9:
-                    continue
-                mesh.add_face(quad)
+                # A span that doesn't move this edge adds nothing; one that
+                # moves only one end (a point on a revolution axis) is a
+                # triangle.
+                quad = _wall([a, b, b2, a2])
+                if quad is not None:
+                    mesh.add_face(quad)
     if not closed:
         mesh.add_face(list(reversed(rings[0][0])),
                       [list(reversed(h)) for h in rings[0][1:]] or None)
@@ -327,8 +479,14 @@ def sweep_profile(mesh, face, path, closed) -> bool:
     run_stitch(mesh, seed, None, coplanar_merge=False)
     # Soften the seams of a curved sweep (shallow dihedral between successive
     # spans) so a moulding around a circle reads smooth; real corners stay.
+    # An edge that existed before counts too when the sweep built BOTH of its
+    # faces: the path circle of a sphere lies on its equator and the profile
+    # on a meridian, and left hard they cut the sphere into four surfaces
+    # that had to be painted one by one.
     for e in mesh.edges:
-        if e in before_edges or e.soft or len(e.faces) != 2:
+        if e.soft or len(e.faces) != 2:
+            continue
+        if e in before_edges and any(id(f) in before_faces for f in e.faces):
             continue
         d = QVector3D.dotProduct(e.faces[0].normal().normalized(),
                                  e.faces[1].normal().normalized())
