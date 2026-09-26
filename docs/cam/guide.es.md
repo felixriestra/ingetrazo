@@ -1,9 +1,10 @@
 # CAM en IngeTrazo — guía de uso
 
-**Extensiones ▸ CAM…** convierte lo que modelas en código G para una
-fresadora o router con **GRBL** o **LinuxCNC**. Mecaniza en 2,5D: contornos,
-agujeros y vaciados cortados en capas planas, en vertical desde el plano de
-mecanizado.
+**Extensiones ▸ CAM…** convierte un dibujo 2D sobre el material en bruto
+en código G para una fresadora o router con **GRBL** o **LinuxCNC**.
+Mecaniza en 2,5D: contornos, agujeros y vaciados cortados en capas planas,
+en vertical desde la cara superior del material. El torneado con eje
+rotativo aún no está disponible.
 
 > **Experimental.** Las trayectorias se verifican antes de exportarlas, pero
 > ninguna comprobación sustituye a tus ojos. Ejecuta cada programa nuevo
@@ -12,50 +13,55 @@ mecanizado.
 
 ## Inicio rápido: un tablero con agujeros
 
-1. Modela la pieza como un sólido: un tablero con sus agujeros y vaciados.
-   Conviértela en grupo, o separa un componente en piezas.
-2. Selecciona la pieza en el modelo o en la bandeja Piezas.
-3. Abre **Extensiones ▸ CAM…**. En la pestaña **Trabajo**, pulsa
-   **Pieza → operaciones**. CAM añade todas las operaciones que necesita la
-   pieza:
-   - un **vaciado** por cada agujero ciego, a su profundidad;
-   - **taladrado** para cada agujero pasante redondo que coincida con una
-     broca de la tabla de herramientas;
-   - un **perfilado interior** para los demás agujeros pasantes;
-   - un **perfilado exterior** alrededor del contorno, con cuatro puentes.
+1. Abre **Extensiones ▸ CAM…** y pulsa **Nuevo trabajo CAM…**. Primero se
+   nombra el archivo: un trabajo CAM es su propio archivo `.igcam`, no parte
+   del modelo. Mientras el trabajo está abierto el modelo queda apartado, y
+   vuelve intacto.
+2. **Prepara el trabajo** en la pestaña **Trabajo**: el ancho, el fondo, el
+   grosor y el material del material en bruto, el **controlador**, las
+   **unidades**, los límites de la máquina y el **cero pieza** (el punto que
+   tocarás en la máquina: uno de los nueve puntos del material, en su cara
+   superior o en su base). Luego pulsa **Empezar el trabajo**. Hasta
+   entonces no hay nada más disponible.
+3. **Dibuja sobre el material** con las herramientas de dibujo: líneas,
+   rectángulos, círculos, arcos, polígonos, equidistancia, mover… La cara
+   superior del material es el suelo, visto desde arriba. Las herramientas
+   3D (empujar/tirar, sígueme, las de sólidos) están desactivadas en un
+   trabajo CAM. Para aprovechar un modelo, selecciona sus caras o su pieza
+   antes de abrir CAM y pulsa **Importar contornos del modelo**.
 4. Revisa las herramientas en la pestaña **Herramientas**. El diámetro, la
    longitud de corte, los avances y la velocidad del husillo deben ser los
    de tu fresa, no los de ejemplo.
-5. Elige el **controlador**, las **unidades** y el **cero pieza** en la
-   pestaña **Trabajo**. El cero pieza es el punto que tocarás en la máquina:
-   uno de los nueve puntos del material, en su cara superior o en su base.
+5. En **Operaciones**, elige trazados y pulsa **Añadir operación** (ver
+   abajo).
 6. Abre **Salida**. El trabajo se calcula solo y las trayectorias aparecen
-   en el modelo. La verificación debe decir **No se encontraron problemas**.
-7. Pulsa **Exportar código G…**.
+   sobre el dibujo. La verificación debe decir **No se encontraron
+   problemas**.
+7. Pulsa **Exportar código G…** y **Guardar** el trabajo (Archivo ▸ Guardar
+   también lo guarda). **Volver al modelo** cierra el trabajo.
 
 ## Operaciones
 
-La pestaña **Operaciones** muestra los **trazados** del dibujo en cuanto
-se abre CAM: un rectángulo, o el contorno superior de un sólido, es un
-trazado cerrado; las líneas que se unen extremo con extremo son un solo
-trazado; un agujero redondo es un círculo. Elige trazados en la lista, o
-haz clic en cualquiera de sus aristas en el modelo (se elige el trazado
-entero y se dibuja en naranja), y usa **Añadir operación**. Si no hay
-ningún trazado elegido, **Añadir operación** toma la selección del modelo,
-por ejemplo una pieza de la lista de piezas.
+La pestaña **Operaciones** muestra los **trazados** del dibujo y sigue
+cada cambio: un rectángulo es un trazado cerrado; las líneas que se unen
+extremo con extremo son un solo trazado; un agujero redondo es un círculo.
+Elige trazados en la lista, o haz clic en cualquiera de sus aristas en el
+dibujo (se elige el trazado entero y se dibuja en naranja), y usa **Añadir
+operación**. Los trazados cerrados dentro de otro son sus agujeros o
+islas.
 
 | Operación | A partir de | Corta |
 |---|---|---|
-| Perfilado exterior | una cara, aristas cerradas, el contorno de una pieza | por fuera: la pieza queda |
-| Perfilado interior | agujeros de una cara, aristas cerradas | por dentro: el agujero sale |
-| Vaciado | una cara con sus agujeros como islas, o aristas cerradas | vacía toda la zona hasta una profundidad |
-| Taladrado | agujeros redondos (círculos) | un agujero por centro, con picoteo si se quiere |
-| Grabado | aristas abiertas o cerradas | sigue la propia línea |
+| Perfilado exterior | un trazado cerrado | por fuera: la pieza queda |
+| Perfilado interior | un trazado cerrado (un agujero) | por dentro: el agujero sale |
+| Vaciado | un trazado cerrado, con los trazados de dentro como islas | vacía toda la zona hasta una profundidad |
+| Taladrado | círculos | un agujero por centro, con picoteo si se quiere |
+| Grabado | trazados abiertos o cerrados | sigue la propia línea |
 | Planeado | nada (todo el material) | aplana la cara superior |
-| Vaciado abierto | una cara que toca el borde del tablero | como un vaciado, pero saliendo por sus bordes abiertos: un rebaje, una muesca |
-| Mandrinado | agujeros redondos | un agujero redondo fresado con movimientos circulares, sin broca |
-| Ranura | un rectángulo alargado, o una arista recta | una ranura recta del ancho del rectángulo (o de la herramienta) |
-| Chaflán | una cara (su contorno y sus agujeros), aristas | un chaflán a 45° (o al ángulo de la fresa) en el borde superior, con fresa en V |
+| Vaciado abierto | un trazado cerrado que toca el borde del material | como un vaciado, pero saliendo por sus bordes abiertos: un rebaje, una muesca |
+| Mandrinado | círculos | un agujero redondo fresado con movimientos circulares, sin broca |
+| Ranura | un rectángulo alargado, o una línea recta | una ranura recta del ancho del rectángulo (o de la herramienta) |
+| Chaflán | trazados cerrados o abiertos | un chaflán a 45° (o al ángulo de la fresa) en el borde superior, con fresa en V |
 
 Cada operación tiene una herramienta, una profundidad y una **profundidad
 por pasada**. El resto de ajustes depende de la operación:
@@ -81,8 +87,6 @@ por pasada**. El resto de ajustes depende de la operación:
 - **Mandrinado.** Cualquier agujero redondo mayor que la fresa: baja en
   espiral una profundidad por pasada por vuelta y termina la pared con un
   círculo plano. Los agujeros anchos se vacían hasta el centro.
-  **Pieza → operaciones** usa un mandrinado para los agujeros redondos
-  que ninguna broca de la tabla iguala.
 - **Ranura.** Desde un rectángulo, la ranura es ese rectángulo, con el
   radio de la fresa en sus esquinas interiores. Desde una arista recta, es
   un canal del ancho de la herramienta, un radio más largo en cada extremo.
@@ -140,13 +144,13 @@ malla se hace más gruesa sola.
 La simulación muestra lo que hace la trayectoria. No sustituye al corte
 en vacío en la máquina.
 
-## El trabajo viaja con el modelo
+## Guardar y reutilizar un trabajo
 
-El trabajo se guarda en el `.igz` y cada cambio se puede deshacer. Si
-cambias el modelo después, pulsa **Actualizar desde la pieza** en la
-pestaña **Trabajo**. Las operaciones siguen al nuevo contorno y a los
-nuevos agujeros, y conservan sus ajustes. Una operación que ya no coincide
-conserva su geometría anterior, y CAM la nombra.
+Un trabajo es su propio archivo `.igcam`: la preparación, las herramientas,
+el dibujo y las operaciones. **Guardar** (o Archivo ▸ Guardar) lo escribe;
+**Trabajos recientes** en la página de inicio de CAM y Archivo ▸ Abrir lo
+vuelven a abrir. Todo cambio se puede deshacer. Cuando el dibujo cambia,
+la lista de trazados se vuelve a leer.
 
 ## Verificación
 

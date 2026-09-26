@@ -2570,6 +2570,9 @@ class SetPluginData(Command):
             data.pop(self.key, None)
         else:
             data[self.key] = copy.deepcopy(self.value)
+        # A change of the document like any other: the title's «*», the
+        # unsaved-changes prompt and autosave all key on the version.
+        scene.version += 1
 
     def undo(self, scene) -> None:
         import copy
@@ -2577,6 +2580,7 @@ class SetPluginData(Command):
             scene.plugin_data.pop(self.key, None)
         else:
             scene.plugin_data[self.key] = copy.deepcopy(self.before)
+        scene.version += 1
 
 
 class SnapshotImport(Command):

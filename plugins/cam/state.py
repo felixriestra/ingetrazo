@@ -114,6 +114,12 @@ class CamState:
     sourceGroup: str | None = None
     #: Where each operation's geometry came from: ``{op_id: {...}}``.
     sources: dict = field(default_factory=dict)
+    #: A CAM-mode job (an ``.igcam``): the stock is the drawing surface —
+    #: its top is the plane (w = 0), its front-left corner the plane's
+    #: origin — and it never moves to follow the geometry.
+    stockFixed: bool = False
+    #: The job setup was confirmed; until then only the setup is editable.
+    setupDone: bool = False
 
     @classmethod
     def new(cls, translate=None) -> "CamState":
@@ -143,6 +149,8 @@ class CamState:
             "stockAuto": self.stockAuto,
             "sourceGroup": self.sourceGroup,
             "sources": copy.deepcopy(self.sources),
+            "stockFixed": self.stockFixed,
+            "setupDone": self.setupDone,
         }
 
     @classmethod
@@ -155,6 +163,19 @@ class CamState:
         s.stockAuto = bool(d.get("stockAuto", True))
         s.sourceGroup = d.get("sourceGroup")
         s.sources = dict(d.get("sources") or {})
+        s.stockFixed = bool(d.get("stockFixed", False))
+        s.setupDone = bool(d.get("setupDone", False))
+        return s
+
+    @classmethod
+    def new_job(cls, name: str, translate=None) -> "CamState":
+        """A new CAM-mode job called ``name``: the stock is the drawing
+        surface, in plan view (see :attr:`stockFixed`)."""
+        s = cls.new(translate)
+        s.job.name = name
+        s.frame = Frame()
+        s.stockFixed = True
+        s.stockAuto = False
         return s
 
     # ---- stock and coordinates ------------------------------------------
@@ -170,7 +191,7 @@ class CamState:
             b = (min(b[0], self.bounds[0]), min(b[1], self.bounds[1]),
                  max(b[2], self.bounds[2]), max(b[3], self.bounds[3]))
         self.bounds = b
-        if self.stockAuto:
+        if self.stockAuto and not self.stockFixed:
             self.fit_stock()
 
     def fit_stock(self) -> None:
@@ -186,7 +207,7 @@ class CamState:
         """The stock's minimum corner in plane coordinates (mm). The stock
         is centred on the part bounds; without bounds it starts at 0."""
         st = self.job.stock
-        if self.bounds is None:
+        if self.bounds is None or self.stockFixed:
             return (0.0, 0.0)
         cu = (self.bounds[0] + self.bounds[2]) * 0.5
         cv = (self.bounds[1] + self.bounds[3]) * 0.5

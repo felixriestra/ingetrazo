@@ -125,3 +125,18 @@ def test_set_plugin_data_none_removes_the_entry():
     assert "cam" not in scene.plugin_data
     hist.undo()
     assert scene.plugin_data == {"cam": {"n": 1}}
+
+
+def test_plugin_data_edits_mark_the_document_modified():
+    """Found 2026-09-26: SetPluginData left the version alone, so a plugin's
+    edit (a CAM job's operation) never showed «*» nor asked to be saved."""
+    from core.history import History, SetPluginData
+    from core.scene import Scene
+    scene = Scene()
+    h = History(scene)
+    v0 = scene.version
+    h.execute(SetPluginData("x", {"a": 1}))
+    assert scene.version > v0
+    v1 = scene.version
+    h.undo()
+    assert scene.version > v1

@@ -1,8 +1,9 @@
 # CAM in IngeTrazo — user guide
 
-**Extensions ▸ CAM…** turns what you model into G-code for a router or mill
-running **GRBL** or **LinuxCNC**. It machines in 2.5D: outlines, holes and
-pockets cut in flat layers, straight down from the machining plane.
+**Extensions ▸ CAM…** turns a 2D drawing on the stock into G-code for a
+router or mill running **GRBL** or **LinuxCNC**. It machines in 2.5D:
+outlines, holes and pockets cut in flat layers, straight down from the
+stock top. Turning on a rotary axis is not supported yet.
 
 > **Experimental.** Toolpaths are checked before export, but no check
 > replaces your eyes. Run every new program as an **air cut** first, with
@@ -11,47 +12,48 @@ pockets cut in flat layers, straight down from the machining plane.
 
 ## Quick start: a board with holes
 
-1. Model the part as a solid: a board with its holes and pockets. Make it
-   a group, or split a component into parts.
-2. Select the part in the model or in the Parts tray.
-3. Open **Extensions ▸ CAM…**. On the **Job** tab, click
-   **Part → operations**. CAM adds every operation the part needs:
-   - a **pocket** for each blind hole, at its depth;
-   - **drilling** for each round through hole a drill in the tool table
-     fits;
-   - an **inside profile** for every other through hole;
-   - an **outside profile** around the outline, with four tabs.
+1. Open **Extensions ▸ CAM…** and click **New CAM job…**. Name the file
+   first: a CAM job is its own `.igcam` file, not part of the model. While
+   the job is open the model is put aside; it comes back untouched.
+2. **Set up the job** on the **Job** tab: the stock's width, depth,
+   thickness and material, the **controller**, the **units**, the machine
+   limits and the **work zero** (the point you will touch off on the
+   machine: one of nine points on the stock, at its top or its bottom).
+   Then click **Start the job**. Until then nothing else is available.
+3. **Draw on the stock** with the drawing tools: lines, rectangles,
+   circles, arcs, polygons, offset, move… The stock top is the ground, seen
+   from above. 3D tools (push/pull, follow me, the solid tools) are off in a
+   CAM job. To reuse a model, select its faces or part before opening CAM
+   and click **Import outlines from the model**.
 4. Check the tools on the **Tools** tab. Diameter, flute length, feeds and
    spindle speed are your cutter's, not the defaults.
-5. Choose the **controller**, the **units** and the **work zero** on the
-   **Job** tab. The work zero is the point you will touch off on the
-   machine: one of nine points on the stock, at its top or its bottom.
-6. Open **Output**. The job calculates by itself. The toolpaths appear in
-   the model. Verification must say **No problems found**.
-7. **Export G-code…**
+5. On **Operations**, choose paths and **Add operation** (see below).
+6. Open **Output**. The job calculates by itself and the toolpaths appear
+   on the drawing. Verification must say **No problems found**.
+7. **Export G-code…**, and **Save** the job (File ▸ Save saves it too).
+   **Back to the model** closes the job.
 
 ## Operations
 
-The **Operations** tab lists the **paths** of the drawing as soon as CAM
-opens: a rectangle, or a solid's top outline, is one closed path; lines that
-meet end to end are one path; a round hole is a circle. Choose paths in the
-list, or click any one of their edges in the model (the whole path is
-chosen and drawn in orange), then **Add operation**. With no path chosen,
-**Add operation** takes the selection in the model instead, such as a part
-from the Parts list.
+The **Operations** tab lists the **paths** of the drawing and follows every
+edit: a rectangle is one closed path; lines that meet end to end are one
+path; a round hole is a circle. Choose paths in the list, or click any one
+of their edges in the drawing (the whole path is chosen and drawn in
+orange), then **Add operation**. Closed paths inside another are its holes
+or islands.
 
 | Operation | From | Cuts |
 |---|---|---|
-| Outside profile | a face, a closed chain of edges, a part outline | around the outside: the part stays |
-| Inside profile | holes of a face, closed edges | around the inside: the hole is cut out |
-| Pocket | a face with its holes as islands, or closed edges | clears the whole area to a depth |
-| Drilling | round holes (circles) | one hole per centre, optionally with pecks |
-| Engraving | open or closed edges | follows the line itself |
+| Outside profile | a closed path | around the outside: the part stays |
+| Inside profile | a closed path (a hole) | around the inside: the hole is cut out |
+| Pocket | a closed path, with the paths inside it as islands | clears the whole area to a depth |
+| Drilling | circles | one hole per centre, optionally with pecks |
+| Engraving | open or closed paths | follows the line itself |
 | Facing | nothing (the whole stock) | flattens the stock top |
-| Open pocket | a face touching the board's edge | like a pocket, but out through its open edges: a rebate, a notch |
-| Bore | round holes | a round hole milled with circular moves, no drill needed |
-| Slot | a long rectangle, or a straight edge | a straight slot the width of the rectangle (or of the tool) |
-| Chamfer | a face (its outline and holes), edges | a 45° (or the bit's angle) chamfer on the top edge, with a V-bit |
+| Open pocket | a closed path touching the stock's edge | like a pocket, but out through its open edges: a rebate, a notch |
+| Bore | circles | a round hole milled with circular moves, no drill needed |
+| Slot | a long rectangle, or a straight line | a straight slot the width of the rectangle (or of the tool) |
+| Chamfer | closed or open paths | a 45° (or the bit's angle) chamfer on the top edge, with a V-bit |
 
 Each operation has a tool, a depth and a **step-down** (depth per pass). The
 remaining settings depend on the operation:
@@ -76,15 +78,14 @@ remaining settings depend on the operation:
   them. *Dwell* pauses at the bottom.
 - **Bore.** Any round hole larger than the cutter: it spirals down one
   step-down per turn and finishes the wall with a flat circle. Wide
-  bores are cleared to the centre. **Part → operations** uses a bore for
-  round holes no drill in the table matches.
+  bores are cleared to the centre.
 - **Slot.** From a rectangle, the slot is that rectangle, with the
   cutter's radius in its inside corners. From a straight edge, it is a
   groove as wide as the tool, one tool radius longer at each end.
 - **Chamfer.** Needs a **V-bit** (chamfer mill) in the tool table (new
   jobs have a 90° one). *Width* is how much of the edge is taken off. The
   depth for it depends on the bit's angle: with 90°, depth equals width.
-  A face gives a chamfer around its outline and one inside each hole;
+  A closed path with holes gives a chamfer around it and one inside each hole;
   *On a hole's edge* switches the side.
 - **Open pocket.** Edges on the board's outline are found and marked
   **open** automatically. The cutter runs right through them, and keeps
@@ -129,13 +130,12 @@ On a large sheet the grid is coarsened automatically.
 The simulation shows what the toolpath does. It is not a replacement for
 an air cut on the machine.
 
-## Keeping the job with the model
+## Saving and reusing a job
 
-The job is saved in the `.igz` and every change is undoable. If you change
-the model later, click **Refresh from the part** on the
-**Job** tab. Operations follow the new outline and holes and keep their
-settings. An operation that no longer matches keeps its old geometry, and
-CAM names it.
+A job is its own `.igcam` file: the setup, the tools, the drawing and the
+operations. **Save** (or File ▸ Save) writes it; **Recent jobs** on the CAM
+start page and File ▸ Open reopen it. Every change is undoable. When the
+drawing changes, the path list is read again.
 
 ## Verification
 

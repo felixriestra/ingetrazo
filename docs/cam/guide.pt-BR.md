@@ -1,9 +1,10 @@
 # CAM no IngeTrazo — guia de uso
 
-**Extensões ▸ CAM…** transforma o que você modela em código G para uma
-fresadora ou router com **GRBL** ou **LinuxCNC**. A usinagem é 2,5D:
-contornos, furos e rebaixos cortados em camadas planas, na vertical a
-partir do plano de usinagem.
+**Extensões ▸ CAM…** transforma um desenho 2D sobre o material bruto em
+código G para uma fresadora ou router com **GRBL** ou **LinuxCNC**. A
+usinagem é 2,5D: contornos, furos e rebaixos cortados em camadas planas, na
+vertical a partir da face superior do material. O torneamento com eixo
+rotativo ainda não é suportado.
 
 > **Experimental.** Os percursos são verificados antes da exportação, mas
 > nenhuma verificação substitui os seus olhos. Execute cada programa novo
@@ -12,50 +13,53 @@ partir do plano de usinagem.
 
 ## Início rápido: uma chapa com furos
 
-1. Modele a peça como um sólido: uma chapa com seus furos e rebaixos.
-   Transforme-a em grupo ou separe um componente em peças.
-2. Selecione a peça no modelo ou na bandeja Peças.
-3. Abra **Extensões ▸ CAM…**. Na aba **Trabalho**, clique em
-   **Peça → operações**. O CAM adiciona todas as operações de que a peça
-   precisa:
-   - um **rebaixo** para cada furo cego, na sua profundidade;
-   - **furação** para cada furo passante redondo que corresponda a uma
-     broca da tabela de ferramentas;
-   - um **perfil interno** para os demais furos passantes;
-   - um **perfil externo** em volta do contorno, com quatro pontes.
-4. Confira as ferramentas na aba **Ferramentas**. O diâmetro, o
-   comprimento de corte, os avanços e a rotação devem ser os da sua fresa,
-   não os de exemplo.
-5. Escolha o **controlador**, as **unidades** e o **zero peça** na aba
-   **Trabalho**. O zero peça é o ponto que você vai tocar na máquina: um
-   dos nove pontos do material, na face superior ou na base.
+1. Abra **Extensões ▸ CAM…** e clique em **Novo trabalho CAM…**. Primeiro
+   dá-se nome ao arquivo: um trabalho CAM é seu próprio arquivo `.igcam`,
+   não parte do modelo. Enquanto o trabalho está aberto o modelo fica de
+   lado, e volta intacto.
+2. **Prepare o trabalho** na aba **Trabalho**: largura, profundidade,
+   espessura e material do material bruto, o **controlador**, as
+   **unidades**, os limites da máquina e o **zero peça** (o ponto que você
+   vai tocar na máquina: um dos nove pontos do material, na face superior
+   ou na base). Depois clique em **Começar o trabalho**. Até lá nada mais
+   fica disponível.
+3. **Desenhe sobre o material** com as ferramentas de desenho: linhas,
+   retângulos, círculos, arcos, polígonos, deslocamento, mover… A face
+   superior do material é o chão, visto de cima. As ferramentas 3D
+   (empurrar/puxar, siga-me, as de sólidos) ficam desligadas num trabalho
+   CAM. Para aproveitar um modelo, selecione suas faces ou sua peça antes
+   de abrir o CAM e clique em **Importar contornos do modelo**.
+4. Confira as ferramentas na aba **Ferramentas**. Diâmetro, comprimento de
+   corte, avanços e rotação do fuso devem ser os da sua fresa, não os de
+   exemplo.
+5. Em **Operações**, escolha traçados e clique em **Adicionar operação**
+   (veja abaixo).
 6. Abra **Saída**. O trabalho é calculado sozinho e os percursos aparecem
-   no modelo. A verificação deve dizer **Nenhum problema encontrado**.
-7. Clique em **Exportar código G…**.
+   sobre o desenho. A verificação deve dizer **Nenhum problema encontrado**.
+7. Clique em **Exportar código G…** e **Salvar** o trabalho (Arquivo ▸
+   Salvar também salva). **Voltar ao modelo** fecha o trabalho.
 
 ## Operações
 
-A aba **Operações** mostra os **traçados** do desenho assim que o CAM
-abre: um retângulo, ou o contorno superior de um sólido, é um traçado
-fechado; linhas que se unem ponta com ponta são um só traçado; um furo
-redondo é um círculo. Escolha traçados na lista, ou clique em qualquer uma
-de suas arestas no modelo (o traçado inteiro é escolhido e desenhado em
-laranja), e use **Adicionar operação**. Sem nenhum traçado escolhido,
-**Adicionar operação** usa a seleção do modelo, por exemplo uma peça da
-lista de peças.
+A aba **Operações** mostra os **traçados** do desenho e acompanha cada
+alteração: um retângulo é um traçado fechado; linhas que se unem ponta com
+ponta são um só traçado; um furo redondo é um círculo. Escolha traçados na
+lista, ou clique em qualquer uma de suas arestas no desenho (o traçado
+inteiro é escolhido e desenhado em laranja), e use **Adicionar operação**.
+Traçados fechados dentro de outro são seus furos ou ilhas.
 
 | Operação | A partir de | Corta |
 |---|---|---|
-| Perfil externo | uma face, arestas fechadas, o contorno de uma peça | por fora: a peça fica |
-| Perfil interno | furos de uma face, arestas fechadas | por dentro: o furo sai |
-| Rebaixo | uma face com seus furos como ilhas, ou arestas fechadas | esvazia toda a área até uma profundidade |
-| Furação | furos redondos (círculos) | um furo por centro, com pica-pau se quiser |
-| Gravação | arestas abertas ou fechadas | segue a própria linha |
+| Perfil externo | um traçado fechado | por fora: a peça fica |
+| Perfil interno | um traçado fechado (um furo) | por dentro: o furo sai |
+| Rebaixo | um traçado fechado, com os traçados de dentro como ilhas | esvazia toda a área até uma profundidade |
+| Furação | círculos | um furo por centro, com pica-pau se quiser |
+| Gravação | traçados abertos ou fechados | segue a própria linha |
 | Faceamento | nada (todo o material) | aplaina a face superior |
-| Rebaixo aberto | uma face que toca a borda da chapa | como um rebaixo, mas saindo pelas bordas abertas: um rebaixo de borda, um entalhe |
-| Mandrilamento | furos redondos | um furo redondo fresado com movimentos circulares, sem broca |
-| Rasgo | um retângulo alongado, ou uma aresta reta | um rasgo reto da largura do retângulo (ou da ferramenta) |
-| Chanfro | uma face (seu contorno e seus furos), arestas | um chanfro a 45° (ou no ângulo da fresa) na borda superior, com fresa em V |
+| Rebaixo aberto | um traçado fechado que toca a borda do material | como um rebaixo, mas saindo pelas bordas abertas: um rebaixo de borda, um entalhe |
+| Mandrilamento | círculos | um furo redondo fresado com movimentos circulares, sem broca |
+| Rasgo | um retângulo alongado, ou uma linha reta | um rasgo reto da largura do retângulo (ou da ferramenta) |
+| Chanfro | traçados fechados ou abertos | um chanfro a 45° (ou no ângulo da fresa) na borda superior, com fresa em V |
 
 Cada operação tem uma ferramenta, uma profundidade e uma **profundidade
 por passada**. Os demais ajustes dependem da operação:
@@ -82,8 +86,6 @@ por passada**. Os demais ajustes dependem da operação:
 - **Mandrilamento.** Qualquer furo redondo maior que a fresa: desce em
   espiral uma profundidade por passada por volta e termina a parede com um
   círculo plano. Os furos largos são limpos até o centro.
-  **Peça → operações** usa um mandrilamento para os furos redondos que
-  nenhuma broca da tabela corresponde.
 - **Rasgo.** A partir de um retângulo, o rasgo é esse retângulo, com o
   raio da fresa nos cantos internos. A partir de uma aresta reta, é um
   canal da largura da ferramenta, um raio mais longo em cada ponta.
@@ -140,13 +142,13 @@ chapa grande, a malha fica mais grossa sozinha.
 A simulação mostra o que o percurso faz. Não substitui o corte no ar na
 máquina.
 
-## O trabalho acompanha o modelo
+## Salvar e reutilizar um trabalho
 
-O trabalho é salvo no `.igz` e toda alteração pode ser desfeita. Se você
-alterar o modelo depois, clique em **Atualizar a partir da peça** na aba
-**Trabalho**. As operações acompanham o novo contorno e os novos furos, e
-mantêm seus ajustes. Uma operação que não corresponde mais mantém a
-geometria anterior, e o CAM a nomeia.
+Um trabalho é seu próprio arquivo `.igcam`: a preparação, as ferramentas, o
+desenho e as operações. **Salvar** (ou Arquivo ▸ Salvar) grava o arquivo;
+**Trabalhos recentes** na página inicial do CAM e Arquivo ▸ Abrir o
+reabrem. Toda alteração pode ser desfeita. Quando o desenho muda, a lista
+de traçados é lida de novo.
 
 ## Verificação
 
