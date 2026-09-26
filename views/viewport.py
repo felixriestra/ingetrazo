@@ -6185,6 +6185,53 @@ class Viewport(QOpenGLWidget):
             return (cut, QVector3D(b)) if wa <= eps else (QVector3D(a), cut)
         return (QVector3D(a), QVector3D(b))
 
+    def _guide_snap_segment(
+        self, g, margin: float = 1.5
+    ) -> Optional[tuple[QVector3D, QVector3D]]:
+        """The span of guide line ``g`` the snap engine works on: the part
+        inside the view (widened by ``margin`` so the ends stay well off
+        screen), computed in double precision from the guide's own point
+        and direction.
+
+        The ±10 km segment of ``Guide.segment()`` is fine for drawing but not
+        for arithmetic: float32 rounds a coordinate of 10 000 m to ~1 mm, so
+        every crossing, 'on line' point and lock-line hit computed from those
+        endpoints was off by up to 2 mm — lines drawn from the X of two
+        diagonal guides visibly left the guides when zoomed in (#110).
+        Clipped to the view the endpoints are as large as what is on
+        screen, and the error scales with it (µm at a working zoom)."""
+        from core.guide import GUIDE_HALF_LEN
+        mvp = self.camera.projection_matrix() * self.camera.view_matrix()
+        p, u = g.point, g.direction
+        c0 = mvp.map(QVector4D(p.x(), p.y(), p.z(), 1.0))
+        c1 = mvp.map(QVector4D(u.x(), u.y(), u.z(), 0.0))
+        c0 = (c0.x(), c0.y(), c0.w())
+        c1 = (c1.x(), c1.y(), c1.w())
+        lo, hi = -GUIDE_HALF_LEN, GUIDE_HALF_LEN
+        # Clip coordinates are affine in s along the line: keep
+        # w >= eps and |x|, |y| <= margin * w (Liang–Barsky on four planes).
+        planes = ((c0[2] - 1e-3, c1[2]),
+                  (margin * c0[2] - c0[0], margin * c1[2] - c1[0]),
+                  (margin * c0[2] + c0[0], margin * c1[2] + c1[0]),
+                  (margin * c0[2] - c0[1], margin * c1[2] - c1[1]),
+                  (margin * c0[2] + c0[1], margin * c1[2] + c1[1]))
+        for f0, f1 in planes:           # need f0 + f1 * s >= 0
+            if abs(f1) < 1e-15:
+                if f0 < 0.0:
+                    return None
+                continue
+            s = -f0 / f1
+            if f1 > 0.0:
+                lo = max(lo, s)
+            else:
+                hi = min(hi, s)
+            if lo >= hi:
+                return None
+        px, py, pz = p.x(), p.y(), p.z()
+        ux, uy, uz = u.x(), u.y(), u.z()
+        return (QVector3D(px + ux * lo, py + uy * lo, pz + uz * lo),
+                QVector3D(px + ux * hi, py + uy * hi, pz + uz * hi))
+
     def _draw_scale_box(self, painter: QPainter) -> None:
         """SketchUp's scaling box: yellow edges, green grips, the grabbed grip
         and its anchor in red. Drawn from whatever the active tool reports via
@@ -8988,7 +9035,7 @@ class Viewport(QOpenGLWidget):
         lines = []
         for g in getattr(self.scene, "guides", None) or []:
             if g.is_line:
-                seg = self._clip_segment_front(*g.segment())
+                seg = self._guide_snap_segment(g)
                 if seg is not None:
                     lines.append(_SnapEdge(*seg, guide=True))
             else:

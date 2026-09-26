@@ -14,6 +14,11 @@ follow [SemVer](https://semver.org).
   Preferencias ya ofrece el portugués, que solo estaba en el menú.
 
 ### Corregido
+- **Las líneas guía se cruzan donde deben** (#110): el cruce de dos guías
+  diagonales, y lo que se dibujaba desde él, quedaba hasta 2 mm fuera de las
+  guías (se veía al acercar el zoom). Una guía «infinita» llegaba al cálculo
+  como un segmento de 10 km, demasiado largo para la precisión de los números;
+  ahora se recorta a lo que se ve.
 - **Modelos grandes con cotas o textos ya no van a tirones**: para saber qué
   parte de cada cota queda tapada, el visor lanzaba miles de rayos contra
   todo el modelo en cada cuadro (una casa de 284 000 triángulos con 25
