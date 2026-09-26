@@ -175,10 +175,17 @@ def test_a_damaged_library_without_backups_starts_fresh_and_keeps_the_old_file(t
     repo.close()
 
 
-def test_backups_rotate(repo):
+def test_backups_rotate_without_touching_2dcams(repo):
+    """A library shared with 2DCam: its backups sit in the same folder under
+    ``ToolLibrary-<time>.sqlite``; rotation must never delete them."""
+    folder = repo.path.parent / BACKUP_DIR
+    folder.mkdir(exist_ok=True)
+    theirs = folder / "ToolLibrary-2026-01-01T00:00:00Z.sqlite"
+    theirs.write_bytes(b"2DCam's")
     for _ in range(13):
         repo.rotating_backup(keep=10)
-    assert len(list((repo.path.parent / BACKUP_DIR).glob("ToolLibrary-*.sqlite"))) == 10
+    assert len(list(folder.glob("ToolLibrary-IngeTrazo-*.sqlite"))) == 10
+    assert theirs.exists()
 
 
 def test_a_version_1_library_is_migrated_without_losing_tools(tmp_path):

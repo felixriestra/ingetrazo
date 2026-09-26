@@ -32,10 +32,10 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDockWidget, QFileDialog,
-                               QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-                               QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox,
-                               QPushButton, QScrollArea, QSpinBox, QTabWidget,
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QDockWidget,
+                               QFileDialog, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout,
+                               QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu,
+                               QMessageBox, QPushButton, QScrollArea, QSpinBox, QTabWidget,
                                QToolButton, QVBoxLayout, QWidget)
 
 from views.tray import FlowLayout       # the host's wrapping row
@@ -46,7 +46,7 @@ from ..engine.issues import CamError, ERROR
 from ..engine.models import Tool, new_id
 from ..i18n import tr
 from ..state import PLUGIN_KEY, CamState
-from . import messages
+from . import library, messages
 from .op_forms import (CompactSpin, FeedSpin, LengthSpin, OperationForm, compact_combo,
                        kind_label, tool_kind_label)
 from .overlay import ToolpathOverlay
@@ -400,6 +400,22 @@ class CamDock(QDockWidget):
             b.clicked.connect(slot)
             row.addWidget(b)
         lay.addLayout(row)
+        # The shop's tool cabinet (ui/library.py): pick a cutter with its
+        # feeds resolved for this job's material, or keep one for later jobs.
+        lib_row = FlowLayout(spacing=4)
+        self.btn_from_library = QPushButton(tr("From the library…"))
+        self.btn_from_library.setToolTip(tr(
+            "Add a tool from your tool library, with speeds and feeds for this job's material "
+            "and machine."))
+        self.btn_from_library.clicked.connect(self._on_tool_from_library)
+        self.btn_to_library = QPushButton(tr("Save to the library"))
+        self.btn_to_library.setToolTip(tr(
+            "Keep this tool in your tool library, with its speeds and feeds as your own data "
+            "for this job's material."))
+        self.btn_to_library.clicked.connect(self._on_tool_to_library)
+        lib_row.addWidget(self.btn_from_library)
+        lib_row.addWidget(self.btn_to_library)
+        lay.addLayout(lib_row)
         form_w = QWidget()
         f = _form(form_w)
         self.t_number = CompactSpin()
@@ -1186,6 +1202,7 @@ class CamDock(QDockWidget):
     def _on_tool_selected(self, _row) -> None:
         t = self._current_tool()
         self.tool_form.setEnabled(t is not None)
+        self.btn_to_library.setEnabled(t is not None)
         if t is None:
             return
         was = self._loading
@@ -1249,6 +1266,32 @@ class CamDock(QDockWidget):
         self.state.job.tools.append(c)
         self._refresh_tools(select=self._sorted_tools().index(c))
         self._changed()
+
+    def _on_tool_from_library(self) -> None:
+        repo = library.shared_library(self)
+        if repo is None:
+            return
+        dlg = library.ToolLibraryDialog(repo, self.state.job, pick=True, parent=self)
+        if dlg.exec() != QDialog.Accepted or dlg.chosen is None:
+            return
+        self.state.job.tools.append(dlg.chosen)
+        self._refresh_tools(select=self._sorted_tools().index(dlg.chosen))
+        self._changed()
+
+    def _on_tool_to_library(self) -> None:
+        t = self._current_tool()
+        repo = library.shared_library(self) if t is not None else None
+        if repo is None:
+            return
+        cls = library.material_class_for(self.state.job)
+        library.save_job_tool(repo, t, cls)
+        if cls is None:
+            text = tr("«{name}» is now in your tool library, without speeds and feeds: this "
+                      "stock material has no class in the library.", name=t.name)
+        else:
+            text = tr("«{name}» is now in your tool library, with its speeds and feeds for "
+                      "{material}.", name=t.name, material=messages.material_class_label(cls))
+        QMessageBox.information(self, tr("Tool library"), text)
 
     def _on_tool_delete(self) -> None:
         t = self._current_tool()

@@ -26,7 +26,8 @@ stock top. Turning on a rotary axis is not supported yet.
    CAM job. To reuse a model, select its faces or part before opening CAM
    and click **Import outlines from the model**.
 4. Check the tools on the **Tools** tab. Diameter, flute length, feeds and
-   spindle speed are your cutter's, not the defaults.
+   spindle speed are your cutter's, not the defaults. **From the library…**
+   adds one of your own cutters with its feeds for this material.
 5. On **Operations**, choose paths and **Add operation** (see below).
 6. Open **Output**. The job calculates by itself and the toolpaths appear
    on the drawing. Verification must say **No problems found**.
@@ -141,6 +142,46 @@ automatically.
 
 The simulation shows what the toolpath does. It is not a replacement for
 an air cut on the machine.
+
+## The tool library
+
+The **Tools** tab holds the cutters of one job. The **tool library** is your
+tool cabinet, kept between jobs, with the speeds and feeds known for each
+cutter in each material.
+
+- **From the library…** opens the library. Pick a cutter and **Add to job**:
+  it joins the job's tool table with its speed, feed and plunge **for the
+  job's stock material and machine**. The job keeps a copy; changing the
+  library later does not change a saved job.
+- **Save to the library** keeps the selected job tool: its geometry, and its
+  speed and feeds as *your own data* for this material. Next time the
+  library gives your numbers back.
+
+**Where the numbers come from.** For each cutter the library uses the best
+data it has, and says which: your own data, the vendor's data or feed chart,
+or an **estimate** from a chip-load table. Estimates are marked **≈**; the
+built-in tables are general values, not tested data. The line under the
+list explains every adjustment: a plastic that melts above a certain
+speed, the spindle's range, the machine's feed limits. **Check an estimate
+with an air cut before cutting.** Steel has no data in the library: type its
+feeds yourself.
+
+A cutter with missing dimensions (cutting length, overall length…) is
+marked *incomplete* and cannot go into a job until you fill them in with
+**Edit…**. Deleted tools go to the **Trash…**, where they can be restored.
+
+**Vendor catalogues.** **Import catalogue…** reads a vendor's CSV sheet:
+Sorotec and CMT (general catalogue and series 193) are built in, and a
+*catalogue profile* (JSON) adds another vendor. Every row is checked
+first — an inch value in a millimetre column, a cutter six times its
+shank, a feed that cannot be right — and shown as new, changed, already
+there or rejected, with the reasons. Nothing is added until you press
+**Import**, and **Undo last import** takes it back. Values you corrected by
+hand are never overwritten by a later import.
+
+**Library file.** The library is one file in your user folder, backed up
+automatically (the latest ten copies). On a Mac with 2DCam, **Library
+file… ▸ Share 2DCam's library** makes both programs use the same one.
 
 ## Saving and reusing a job
 

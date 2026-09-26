@@ -125,6 +125,38 @@ They are worth fixing in 2DCam too. The case names refer to
     the same disc of cells around every sample of a move in one NumPy pass.
     The result is the same, and a final run of a small job takes seconds.
 
+## Tool library
+
+The library (`plugins/cam/toollib`) keeps 2DCam's schema, so one
+`ToolLibrary.sqlite` serves both apps, and its resolver, validator and CSV
+import match 2DCam's answers on the corpus in
+`tests/data/cam_toollib_fixtures` (`swift run export-toollib-fixtures`).
+Where it differs:
+
+18. **Form tools stay in the library.** They round-trip through a shared
+    file (profile points and scale mode included) but cannot go into a
+    job: the port's generators have no form-tool cutting.
+19. **Resolver notes are codes.** 2DCam's `clamped` strings are English
+    sentences; the port returns `Note(code, params)` and the UI translates
+    them. The numbers they carry are 2DCam's (for example the depth,
+    rounded the same way).
+20. **Validator issues carry parameters, not messages.** The codes, the
+    severities and the field names are 2DCam's (they are stored in a
+    shared file's `validation_issue` table, whose `message` column gets
+    the code).
+21. **Backups have their own prefix.** 2DCam writes
+    `Backups/ToolLibrary-<time>.sqlite`; the port writes
+    `ToolLibrary-IngeTrazo-<time>.sqlite` and rotates only its own, so a
+    shared library never loses 2DCam's backups. Recovery takes the newest
+    of either.
+22. **A job's material picks the class.** 2DCam's library window has its
+    own material picker. The port starts from the job's stock material
+    (light wood → softwood, dark wood → hardwood, plastic → acrylic…) and
+    lets the user change it; steel has no class, so nothing is guessed
+    for it.
+23. **Traits are not stored.** 2DCam's schema has `tool_trait`, but its
+    repository never reads or writes it; the port does the same.
+
 ## Additions that keep parity when unused
 
 - **Peck drilling and dwell** (`peckDepth`, `dwellSeconds`). 2DCam drills
@@ -137,5 +169,5 @@ They are worth fixing in 2DCam too. The case names refer to
 
 ## Not ported (v1 scope)
 
-Relief (image and STL), fixtures and clamps in the verifier, and the
-Mach3, Mach4 and Fanuc posts. See `docs/cam-plan.md`.
+Relief (image and STL), fixtures and clamps in the verifier, the
+Mach3, Mach4 and Fanuc posts, and form-tool cutting. See `docs/cam-plan.md`.

@@ -68,6 +68,17 @@ def test_every_engine_code_has_a_sentence():
     assert set(CODES) <= codes_with_messages(), set(CODES) - codes_with_messages()
 
 
+def test_every_tool_library_code_has_a_sentence():
+    """The library speaks in codes as the engine does: every resolver note
+    and every catalogue-row issue needs a sentence (ui/messages.py)."""
+    from plugins.cam.toollib.resolver import NOTE_CODES
+    from plugins.cam.toollib.validator import ISSUE_CODES
+    from plugins.cam.ui.messages import library_codes_with_messages
+    have = library_codes_with_messages()
+    assert set(NOTE_CODES) == have["notes"], set(NOTE_CODES) ^ have["notes"]
+    assert set(ISSUE_CODES) == have["issues"], set(ISSUE_CODES) ^ have["issues"]
+
+
 @pytest.mark.parametrize("lang", ["es", "pt-BR"])
 def test_gcode_comments_stay_ascii_in_every_language(lang, monkeypatch):
     import plugins.cam.i18n as cam_i18n

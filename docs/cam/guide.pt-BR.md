@@ -31,7 +31,8 @@ rotativo ainda não é suportado.
    de abrir o CAM e clique em **Importar contornos do modelo**.
 4. Confira as ferramentas na aba **Ferramentas**. Diâmetro, comprimento de
    corte, avanços e rotação do fuso devem ser os da sua fresa, não os de
-   exemplo.
+   exemplo. **Da biblioteca…** adiciona uma das suas fresas com os avanços
+   para este material.
 5. Em **Operações**, escolha traçados e clique em **Adicionar operação**
    (veja abaixo).
 6. Abra **Saída**. O trabalho é calculado sozinho e os percursos aparecem
@@ -155,6 +156,51 @@ marcada onde está. Numa chapa grande, a malha fica mais grossa sozinha.
 
 A simulação mostra o que o percurso faz. Não substitui o corte no ar na
 máquina.
+
+## A biblioteca de ferramentas
+
+A aba **Ferramentas** tem as fresas de um trabalho. A **biblioteca de
+ferramentas** é o seu armário de ferramentas, mantido entre trabalhos, com
+as rotações e avanços conhecidos de cada fresa em cada material.
+
+- **Da biblioteca…** abre a biblioteca. Escolha uma fresa e clique em
+  **Adicionar ao trabalho**: ela entra na tabela de ferramentas do trabalho
+  com sua rotação, avanço e mergulho **para o material e a máquina do
+  trabalho**. O trabalho guarda uma cópia; mudar a biblioteca depois não
+  muda um trabalho salvo.
+- **Salvar na biblioteca** guarda a ferramenta selecionada: sua geometria, e
+  sua rotação e avanços como *seus próprios dados* para este material. Da
+  próxima vez a biblioteca devolve os seus valores.
+
+**De onde vêm os valores.** Para cada fresa a biblioteca usa os melhores
+dados que tem, e diz quais: seus próprios dados, os dados ou a tabela de
+avanços do fabricante, ou uma **estimativa** a partir de uma tabela de
+avanço por dente. As estimativas são marcadas com **≈**; as tabelas
+incluídas são valores gerais, não dados testados. A linha abaixo da lista
+explica cada ajuste: um plástico que derrete acima de certa rotação, a
+faixa do fuso, os limites de avanço da máquina. **Confira uma estimativa
+com um corte no ar antes de cortar.** O aço não tem dados na biblioteca:
+digite você mesmo os avanços.
+
+Uma fresa sem algumas medidas (comprimento de corte, comprimento total…)
+aparece como *incompleta* e não pode entrar num trabalho até você
+preenchê-las com **Editar…**. As ferramentas excluídas vão para a
+**Lixeira…**, de onde podem ser restauradas.
+
+**Catálogos de fabricantes.** **Importar catálogo…** lê a planilha CSV de um
+fabricante: Sorotec e CMT (catálogo geral e série 193) vêm incluídos, e um
+*perfil de catálogo* (JSON) adiciona outro fabricante. Cada linha é
+conferida antes — um valor em polegadas numa coluna de milímetros, uma
+fresa seis vezes maior que a haste, um avanço impossível — e mostrada como
+nova, alterada, já existente ou rejeitada, com os motivos. Nada é
+adicionado até você clicar em **Importar**, e **Desfazer a última
+importação** retira tudo. Valores que você corrigiu à mão nunca são
+sobrescritos por uma importação posterior.
+
+**Arquivo da biblioteca.** A biblioteca é um arquivo na sua pasta de
+usuário, com backups automáticos (os dez últimos). Num Mac com o 2DCam,
+**Arquivo da biblioteca… ▸ Compartilhar a biblioteca do 2DCam** faz os dois
+programas usarem a mesma.
 
 ## Salvar e reutilizar um trabalho
 

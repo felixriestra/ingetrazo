@@ -35,7 +35,12 @@ from .resolver import (ChiploadRule, CuttingPreset, FeedCurve, MaterialClass, Ma
 
 FILE_NAME = "ToolLibrary.sqlite"
 BACKUP_DIR = "Backups"
-BACKUP_PREFIX = "ToolLibrary-"
+#: Every backup of a library file, whichever app took it (2DCam writes
+#: ``ToolLibrary-<time>.sqlite`` into the same folder).
+BACKUP_GLOB = "ToolLibrary-*.sqlite"
+#: This app's own backups. Rotation only ever deletes these: a library
+#: shared with 2DCam keeps 2DCam's backups whatever happens here.
+BACKUP_PREFIX = "ToolLibrary-IngeTrazo-"
 
 _TOOL_COLUMNS = """
     t.id, t.vendor_id, t.product_id, t.product_url, t.name, t.series, t.tool_type,
@@ -93,7 +98,10 @@ def open_library(path, seed_starter_tools: bool = True) -> tuple:
     if not healthy:
         if repo is not None:
             repo.close()
-        backups = sorted((path.parent / BACKUP_DIR).glob(BACKUP_PREFIX + "*.sqlite"), reverse=True)
+        # The newest snapshot from either app, by time (the two name them
+        # differently, so the names do not sort together).
+        backups = sorted((path.parent / BACKUP_DIR).glob(BACKUP_GLOB),
+                         key=lambda f: f.stat().st_mtime, reverse=True)
         for suffix in ("-wal", "-shm"):
             Path(str(path) + suffix).unlink(missing_ok=True)
         if path.exists():
@@ -205,8 +213,8 @@ class ToolLibraryRepository:
         self._run("VACUUM INTO ?", (str(target),))
 
     def rotating_backup(self, keep: int = 10) -> Path:
-        """A snapshot in ``Backups/`` next to the file, keeping the newest
-        ``keep``. Taken on open and after every import."""
+        """A snapshot in ``Backups/`` next to the file, keeping this app's
+        newest ``keep``. Taken on open and after every import."""
         folder = self.path.parent / BACKUP_DIR
         stamp = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H-%M-%S.%fZ")
         target = folder / f"{BACKUP_PREFIX}{stamp}.sqlite"

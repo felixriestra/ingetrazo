@@ -409,8 +409,10 @@ people work on it.
    in the viewport (`engine/simulate.py`, `ui/simview.py`).
 2. ~~Bore, slot, chamfer and open pocket~~ — **done** (see the deviations
    document for where they differ from 2DCam's).
-3. A persistent tool library with SQLite + CSV vendor import, and feeds
-   and speeds presets.
+3. ~~A persistent tool library with SQLite + CSV vendor import, and feeds
+   and speeds presets~~ — **done**: `plugins/cam/toollib` (2DCam's schema,
+   resolver, validator and importer, checked against 2DCam's answers) and
+   the library window (`ui/library.py`), reached from the Tools tab.
 4. A setup sheet PDF (QtPdf / `QPdfWriter`), translated like the UI.
 5. Nesting several parts onto one sheet (`LayoutEngine`), a strong fit
    with IngeTrazo's cut list.

@@ -64,3 +64,30 @@ first, then in `es.json` and `pt-BR.json`.
 | V-bit | Fresa en V | Fresa em V | |
 | Included angle | Ángulo de la punta | Ângulo da ponta | |
 | Set Z zero | Poner el cero en Z | Zerar o eixo Z | |
+
+### Tool library
+
+| en | es | pt-BR | Notes |
+|---|---|---|---|
+| Tool library | Biblioteca de herramientas | Biblioteca de ferramentas | The shop's cabinet, shared by all jobs |
+| Tool catalogue (vendor's sheet) | Catálogo de herramientas | Catálogo de ferramentas | |
+| Catalogue profile | Perfil de catálogo | Perfil de catálogo | How one vendor's columns map onto a tool |
+| Vendor | Fabricante | Fabricante | |
+| Product code | Código de producto | Código do produto | |
+| Chip load | Carga de viruta | Avanço por dente | mm per tooth |
+| Speeds and feeds | Velocidades y avances | Rotações e avanços | |
+| Cutting data | Datos de corte | Dados de corte | |
+| Material class | Tipo de material | Tipo de material | Softwood, MDF, acrylic… |
+| Cutting length | Longitud de corte | Comprimento de corte | Same term as flute length |
+| Shank diameter | Diámetro del mango | Diâmetro da haste | |
+| Corner radius | Radio de la esquina | Raio da ponta | |
+| End mill | Fresa plana | Fresa de topo reto | Library type; same as the job's flat end mill |
+| Bull nose | Fresa tórica | Fresa toroidal | |
+| Engraving cutter | Fresa de grabado | Fresa de gravação | A V with a flat tip |
+| Tapered ball nose | Fresa cónica esférica | Fresa cônica esférica | |
+| Surfacing cutter | Fresa de planear | Fresa de faceamento | |
+| Form tool | Fresa de perfil | Fresa de perfil | Moulding silhouette |
+| Drag knife | Cuchilla de arrastre | Faca de arrasto | |
+| Softwood / Hardwood | Madera blanda / Madera dura | Madeira macia / Madeira dura | |
+| Trash | Papelera | Lixeira | |
+| Estimate | Estimación | Estimativa | Never «dato» / «dado» |

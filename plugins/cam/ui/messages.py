@@ -166,3 +166,214 @@ def describe(issue, inch: bool = False) -> str:
 
 def codes_with_messages() -> set:
     return set(_templates())
+
+
+# ---- the tool library (plugins/cam/toollib) -----------------------------------
+#
+# The library speaks in codes too: resolver notes, catalogue-row issues,
+# refusals. Catalogue values are shown in millimetres, as catalogues are
+# written; feeds and depths the resolver chose are shown in the job's units.
+
+def tool_type_label(tool_type: str) -> str:
+    return {
+        "end_mill": tr("End mill"), "ball_nose": tr("Ball nose"), "bull_nose": tr("Bull nose"),
+        "v_bit": tr("V-bit"), "engraver": tr("Engraving cutter"),
+        "tapered_ball": tr("Tapered ball nose"), "drill": tr("Drill"),
+        "chamfer": tr("Chamfer mill"), "surfacing": tr("Surfacing cutter"),
+        "form": tr("Form tool"), "drag_knife": tr("Drag knife"),
+    }.get(tool_type, tool_type)
+
+
+def material_class_label(class_id: str) -> str:
+    """The seeded material classes by id; a class the user or a newer 2DCam
+    added keeps its stored name (the caller passes it as the fallback)."""
+    return {
+        "softwood": tr("Softwood"), "hardwood": tr("Hardwood"), "plywood": tr("Plywood"),
+        "mdf": tr("MDF / particleboard"), "acrylic": tr("Acrylic (PMMA)"),
+        "polycarb": tr("Polycarbonate"), "pvc": tr("PVC / foamed PVC"),
+        "hdpe": tr("HDPE / PE / PP"), "abs": tr("ABS"), "pom": tr("POM / acetal"),
+        "nylon": tr("Nylon / PA"), "foam": tr("Rigid foam / tooling board"),
+        "composite": tr("Composite / laminate"), "aluminium": tr("Aluminium"),
+    }.get(class_id, class_id)
+
+
+def missing_fields_text(codes) -> str:
+    names = {
+        "diameter": tr("diameter"), "flute_count": tr("flute count"),
+        "cutting_length": tr("cutting length"), "overall_length": tr("overall length"),
+        "included_angle": tr("included angle"), "corner_radius": tr("corner radius"),
+        "profile_shape": tr("profile shape"),
+    }
+    return ", ".join(names.get(c, c) for c in codes)
+
+
+def _note_templates() -> dict:
+    return {
+        "rpm_melt_cap": tr("Speed capped at {rpm} rpm: {material} melts at higher speeds."),
+        "rpm_spindle_max": tr("Speed limited to the spindle's maximum ({rpm} rpm)."),
+        "rpm_spindle_min": tr("Speed raised to the spindle's minimum ({rpm} rpm)."),
+        "chipload_derated": tr("Chip load reduced to {percent}% for the machine's rigidity."),
+        "feed_machine_max": tr("Feed limited to the machine's maximum ({feed})."),
+        "plunge_z_max": tr("Plunge limited to the Z maximum ({feed})."),
+        "plunge_reduced": tr("The plunge was faster than the cutting feed and was halved."),
+        "doc_recommended": tr(
+            "Feed shown for this tool's recommended depth of cut ({doc}); the operation "
+            "sets the final depth."),
+        "doc_outside_curve": tr(
+            "The depth {doc} is outside the vendor's chart ({lo} to {hi}); the feed is held "
+            "at the nearest published value."),
+        "feed_material_factor": tr("Feed ×{factor} for {material}."),
+        "feed_cross_grain": tr("Feed ×{factor} for cutting across the grain."),
+    }
+
+
+def library_note(note, inch: bool = False) -> str:
+    """A resolver note (:class:`..toollib.resolver.Note`) as a sentence."""
+    params = {}
+    for k, v in (note.params or {}).items():
+        if k == "feed":
+            params[k] = _format_feed(float(v), inch)
+        elif k in ("doc", "lo", "hi"):
+            params[k] = _format_length(float(v), inch)
+        elif k == "material":
+            params[k] = material_class_label(v)
+        elif k == "factor":
+            params[k] = f"{float(v):g}"
+        else:
+            params[k] = v
+    template = _note_templates().get(note.code)
+    if template is None:
+        return note.code
+    try:
+        return template.format(**params)
+    except (KeyError, IndexError, ValueError):
+        return template
+
+
+def cutting_data_source(resolved, vendors: dict | None = None) -> str:
+    """Where a resolved feed came from, in one line."""
+    vendor = (vendors or {}).get(resolved.vendor_id, resolved.vendor_id or "")
+    if resolved.source == "preset":
+        if resolved.preset_origin == "user":
+            return tr("Your own data: {name}", name=resolved.preset_name or "")
+        if resolved.preset_origin == "vendor":
+            return tr("Vendor data: {name}", name=resolved.preset_name or "")
+        return tr("Estimated preset: {name}", name=resolved.preset_name or "")
+    if resolved.source == "feed_curve":
+        return tr("Vendor feed chart ({vendor})", vendor=vendor)
+    if resolved.vendor_id:
+        return tr("Vendor chip-load table ({vendor})", vendor=vendor)
+    return tr("Generic chip-load estimate")
+
+
+def _issue_templates() -> dict:
+    return {
+        "MISSING_NAME": tr("The row has no name or description."),
+        "MISSING_TYPE": tr("The tool type could not be read from a column or the description."),
+        "MISSING_DIAMETER": tr("No cutting diameter: the tool cannot be used."),
+        "DIA_OUT_OF_RANGE": tr("Diameter {diameter} mm is outside {min}–{max} mm."),
+        "DIA_LARGE": tr("Diameter {diameter} mm is large for a {type}. Is it a surfacing cutter?"),
+        "UNIT_MISLABEL": tr(
+            "Diameter {diameter} looks like inches in a millimetre column ({as_mm} mm?). Fix "
+            "the column's unit in the catalogue profile before importing."),
+        "SHANK_NONSTANDARD": tr("Shank {shank} mm is not a standard size."),
+        "DIA_VS_SHANK": tr(
+            "The {diameter} mm cutting diameter is more than {factor}× the {shank} mm shank: "
+            "one of the two columns is wrong."),
+        "DIA_VS_SHANK/warning": tr(
+            "The {diameter} mm cutting diameter is unusually large for a {shank} mm shank."),
+        "FLUTES_RANGE": tr("{flutes} flutes is outside {min}–{max}."),
+        "FLUTES_HIGH": tr("{flutes} flutes is a lot for a router bit."),
+        "FLUTE_LEN_GT_OAL": tr(
+            "The cutting length {flute} mm is longer than the overall length {overall} mm."),
+        "FLUTE_LEN_RATIO": tr("The cutting length is {ratio}× the diameter. Check it."),
+        "BALL_RADIUS_MISMATCH": tr(
+            "A ball nose's radius is half its diameter ({half} mm), not {radius} mm; corrected."),
+        "MISSING_CORNER_RADIUS": tr("A {type} needs a corner radius."),
+        "CORNER_RADIUS_RANGE": tr(
+            "The corner radius {radius} mm must be more than 0 and at most {half} mm."),
+        "MISSING_ANGLE": tr("A {type} needs an included angle."),
+        "ANGLE_RANGE": tr("The included angle {angle}° is outside {min}–{max}°."),
+        "ANGLE_UNUSUAL": tr("The included angle {angle}° is not a usual value."),
+        "VBIT_HAS_FLAT": tr(
+            "A {tip} mm flat tip makes this an engraving cutter, not a true V-bit."),
+        "FORM_NO_PROFILE": tr(
+            "A form tool without its profile. It stays in the library but cannot cut here."),
+        "FLAT_HAS_RADIUS": tr("A flat cutter with a {radius} mm corner radius: is it a bull nose?"),
+        "RPM_RANGE": tr("{rpm} rpm is outside {min}–{max} rpm."),
+        "RPM_BELOW_SPINDLE": tr(
+            "{rpm} rpm is below the spindle's minimum ({limit} rpm); the feed will be derived "
+            "again."),
+        "RPM_ABOVE_SPINDLE": tr("{rpm} rpm is above the spindle's maximum ({limit} rpm)."),
+        "FEED_RANGE": tr("Feed {feed} mm/min is outside {min}–{max} mm/min."),
+        "PLUNGE_GT_FEED": tr("The plunge {plunge} mm/min is faster than the feed {feed} mm/min."),
+        "PLUNGE_HIGH": tr("The plunge is {percent}% of the cutting feed."),
+        "PLUNGE_LOW": tr("The plunge is only {percent}% of the cutting feed."),
+        "CHIPLOAD_RANGE": tr(
+            "A chip load of {chipload} mm per tooth is outside {min}–{max}: check the feed, "
+            "speed and flute columns."),
+        "CHIPLOAD_INCONSISTENT": tr(
+            "The stated chip load ({stated} mm per tooth) does not match the feed, speed and "
+            "flutes ({implied} mm per tooth)."),
+        "STEPDOWN_RANGE": tr("The step-down must be more than zero."),
+        "STEPDOWN_GT_FLUTE_LEN": tr(
+            "The step-down {stepdown} mm is deeper than the {flute} mm cutting length."),
+        "STEPDOWN_DEEP": tr("The step-down is {ratio}× the diameter."),
+        "STEPOVER_RANGE": tr(
+            "The stepover {stepover} mm must be more than 0 and at most the diameter "
+            "({diameter} mm)."),
+        "EXISTS_CHANGED": tr("Already in the library; {count} value(s) differ."),
+    }
+
+
+def _num(v) -> str:
+    if isinstance(v, float):
+        return f"{v:.4f}".rstrip("0").rstrip(".") if abs(v) < 1 else f"{v:.2f}".rstrip("0").rstrip(".")
+    return str(v)
+
+
+def library_issue(issue) -> str:
+    """A catalogue-row issue (:class:`..toollib.validator.ValidationIssue`)."""
+    params = {k: (tool_type_label(v) if k == "type" else _num(v))
+              for k, v in (issue.params or {}).items()}
+    templates = _issue_templates()
+    template = templates.get(f"{issue.code}/{issue.severity}") or templates.get(issue.code)
+    if template is None:
+        return issue.code
+    try:
+        return template.format(**params)
+    except (KeyError, IndexError, ValueError):
+        return template
+
+
+def library_error(code: str, **params) -> str:
+    """Refusals and file problems of the library, by code."""
+    templates = {
+        "incomplete": tr("{name} is missing: {fields}. Fill them in before using it in a job."),
+        "form_tool_unsupported": tr(
+            "{name} is a form tool. This version cannot cut with form tools."),
+        "no_cutting_data": tr(
+            "{name} has no cutting data for {material}, and not enough geometry to estimate "
+            "any."),
+        "unreadable": tr("The file could not be read as text (UTF-8, UTF-16 or Windows-1252)."),
+        "no_header_row": tr("The header row the catalogue profile expects is not in the file."),
+        "bad_profile": tr("This catalogue profile cannot be used: {detail}"),
+        "open": tr("The tool library could not be opened: {detail}"),
+        "sql": tr("The tool library could not do that: {detail}"),
+        "restored_backup": tr(
+            "The tool library file was damaged and has been restored from its latest backup."),
+        "restored_fresh": tr(
+            "The tool library file was damaged and there was no backup: a new library was "
+            "started. The damaged file was kept next to it."),
+    }
+    template = templates.get(code, code)
+    try:
+        return template.format(**params)
+    except (KeyError, IndexError, ValueError):
+        return template
+
+
+def library_codes_with_messages() -> dict:
+    """For the i18n test: every library code and whether it has a sentence."""
+    return {"notes": set(_note_templates()),
+            "issues": {k.split("/")[0] for k in _issue_templates()}}
