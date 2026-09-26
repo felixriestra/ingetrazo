@@ -63,7 +63,7 @@ if [ -f "$ROOT/resources/icons/ingetrazo.svg" ]; then
   cp "$ROOT/resources/icons/ingetrazo.svg" "$ICONS_HICOLOR/scalable/apps/ingetrazo.svg"
 fi
 
-# ── Document icons for .igz / .dae / .skp ───────────────────────────────────
+# ── Document icons for .igz / .dae / .skp / .igcam ──────────────────────────
 # Copy the hicolor mimetype PNGs and register the MIME package so the file
 # manager paints the branded icon on those files.
 HICOLOR_SRC="$ROOT/resources/icons/hicolor"

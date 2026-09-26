@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Marco Sumari Tellez and IngeTrazo contributors.
-"""Regenerate the *document* icons for IngeTrazo's file types (.igz/.dae/.skp).
+"""Regenerate the *document* icons for IngeTrazo's file types (.igz/.dae/.skp/.igcam).
 
 These are the icons the file manager shows on saved/opened files — a white
 document sheet with a dog-eared corner, a coloured title bar naming the format,
@@ -12,15 +12,24 @@ of the same product.
 Outputs (committed to the repo):
   * resources/icons/hicolor/<size>/mimetypes/<mime>.png   ← Linux icon theme
   * resources/icons/mimetypes/ingetrazo-<fmt>.ico         ← Windows DefaultIcon
+  * resources/icons/mimetypes/ingetrazo-<fmt>.icns        ← macOS document type
+    (for the formats listed in ICNS; needs ``iconutil``, i.e. macOS)
+
+The CAM job (.igcam, plugins/cam) keeps the family but trades the table rows
+for its own motif: a stock outline with a pocket's zig-zag toolpath and a
+drilled hole, so a job reads apart from a model at a glance.
 
 Freedesktop MIME icon names (``/`` → ``-``) each format resolves to:
   * .igz → application/x-ingetrazo         → application-x-ingetrazo
   * .dae → model/vnd.collada+xml           → model-vnd.collada+xml
   * .skp → application/vnd.sketchup.skp     → application-vnd.sketchup.skp
+  * .igcam → application/x-ingetrazo-cam   → application-x-ingetrazo-cam
 
-Needs Inkscape (SVG render) and ImageMagick (composite/resize/.ico) on PATH:
+Needs Inkscape (SVG render) and ImageMagick (composite/resize/.ico) on PATH
+(on macOS the Inkscape app bundle is found without it):
 
-    python scripts/gen_doc_icons.py
+    python scripts/gen_doc_icons.py            # every format
+    python scripts/gen_doc_icons.py igcam      # just these (others untouched)
 """
 from __future__ import annotations
 
@@ -44,10 +53,33 @@ FORMATS = {
     "igz": ("application-x-ingetrazo",         "IGZ", "#2f7fe6"),
     "dae": ("model-vnd.collada+xml",           "DAE", "#1f9e6e"),
     "skp": ("application-vnd.sketchup.skp",     "SKP", "#e0872a"),
+    "igcam": ("application-x-ingetrazo-cam",    "CAM", "#7a4fd0"),
 }
+#: The formats that also get a macOS .icns (a document type the bundle owns).
+ICNS = {"igcam"}
+
+#: The CAM job's motif, in place of the table rows: the stock seen from
+#: above, a pocket being cleared in zig-zag, a drilled hole — all left of
+#: the cube badge, which covers the sheet's lower-right corner.
+CAM_MOTIF = """
+  <rect x="74" y="132" width="62" height="62" rx="3" fill="#f3eee6"
+        stroke="#c9b99f" stroke-width="2.5"/>
+  <path d="M83 142 H106 V150 H83 V158 H106 V166 H83 V174 H106 V184 H83"
+        fill="none" stroke="{accent}" stroke-width="3.2" stroke-linejoin="round"
+        stroke-linecap="round"/>
+  <circle cx="123" cy="146" r="6.5" fill="#ffffff" stroke="{accent}" stroke-width="3"/>
+"""
+TABLE_ROWS = """
+  <g fill="#d9dbdf">
+    <rect x="78"  y="136" width="104" height="9" rx="4.5"/>
+    <rect x="78"  y="156" width="44"  height="9" rx="4.5"/>
+    <rect x="132" y="156" width="50"  height="9" rx="4.5"/>
+    <rect x="78"  y="176" width="104" height="9" rx="4.5"/>
+  </g>
+"""
 
 
-def _sheet_svg(label: str, accent: str) -> str:
+def _sheet_svg(label: str, accent: str, motif: str = TABLE_ROWS) -> str:
     """The document sheet (everything except the raster cube badge)."""
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
@@ -73,13 +105,8 @@ def _sheet_svg(label: str, accent: str) -> str:
         font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold"
         font-size="24" letter-spacing="2" fill="#ffffff">{label}</text>
 
-  <!-- Faint table rows (the modelling/data motif) -->
-  <g fill="#d9dbdf">
-    <rect x="78"  y="136" width="104" height="9" rx="4.5"/>
-    <rect x="78"  y="156" width="44"  height="9" rx="4.5"/>
-    <rect x="132" y="156" width="50"  height="9" rx="4.5"/>
-    <rect x="78"  y="176" width="104" height="9" rx="4.5"/>
-  </g>
+  <!-- The format's motif: faint table rows, or the CAM job's toolpath -->
+  {motif.format(accent=accent)}
 </svg>
 """
 
@@ -90,6 +117,9 @@ def _run(cmd: list[str]) -> None:
 
 def _inkscape() -> str:
     exe = shutil.which("inkscape")
+    mac = Path("/Applications/Inkscape.app/Contents/MacOS/inkscape")
+    if not exe and mac.is_file():
+        exe = str(mac)
     if not exe:
         sys.exit("Error: Inkscape not found on PATH (needed to render the SVG).")
     return exe
@@ -103,16 +133,40 @@ def _magick() -> list[str]:
     sys.exit("Error: ImageMagick (magick/convert) not found on PATH.")
 
 
-def build() -> None:
+def _icns(fmt: str, mime: str, tmp: Path) -> None:
+    """A macOS .icns from the hicolor PNGs (iconutil's iconset layout)."""
+    if not shutil.which("iconutil"):
+        print(f"  {fmt}: iconutil not found (not macOS) — .icns skipped")
+        return
+    iconset = tmp / f"{fmt}.iconset"
+    iconset.mkdir()
+    for size in (16, 32, 128, 256, 512):
+        shutil.copy(HICOLOR / f"{size}x{size}" / "mimetypes" / f"{mime}.png",
+                    iconset / f"icon_{size}x{size}.png")
+        double = size * 2
+        src = HICOLOR / f"{double}x{double}" / "mimetypes" / f"{mime}.png"
+        if src.exists():
+            shutil.copy(src, iconset / f"icon_{size}x{size}@2x.png")
+    _run(["iconutil", "-c", "icns", str(iconset), "-o",
+          str(MIME_DIR / f"ingetrazo-{fmt}.icns")])
+
+
+def build(only=None) -> None:
     if not BADGE.exists():
         sys.exit(f"Error: cube badge missing at {BADGE}")
     ink, mag = _inkscape(), _magick()
+    unknown = set(only or ()) - set(FORMATS)
+    if unknown:
+        sys.exit(f"Error: unknown format(s) {sorted(unknown)}; known: {sorted(FORMATS)}")
 
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         for fmt, (mime, label, accent) in FORMATS.items():
+            if only and fmt not in only:
+                continue
             svg = tmp / f"{fmt}.svg"
-            svg.write_text(_sheet_svg(label, accent), encoding="utf-8")
+            motif = CAM_MOTIF if fmt == "igcam" else TABLE_ROWS
+            svg.write_text(_sheet_svg(label, accent, motif), encoding="utf-8")
 
             # 1) Render the sheet at 512, then composite the cube badge into the
             #    lower-right corner (badge ≈ 40% of the canvas).
@@ -140,6 +194,8 @@ def build() -> None:
             srcs = [str(HICOLOR / f"{s}x{s}" / "mimetypes" / f"{mime}.png")
                     for s in ICO_SIZES]
             _run([*mag, *srcs, str(MIME_DIR / f"ingetrazo-{fmt}.ico")])
+            if fmt in ICNS:
+                _icns(fmt, mime, tmp)
 
             print(f"  {fmt}: {mime}  ✓  ({len(SIZES)} PNG sizes + .ico)")
 
@@ -147,4 +203,4 @@ def build() -> None:
 
 
 if __name__ == "__main__":
-    build()
+    build(sys.argv[1:] or None)

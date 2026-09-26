@@ -32,6 +32,9 @@ datas = [
     ('resources/icons/*.png',      'resources/icons'),
     ('resources/icons/*.ico',      'resources/icons'),
     ('resources/icons/mimetypes/*.ico', 'resources/icons/mimetypes'),
+    # macOS document-type icons: at the top of Contents/Resources, where
+    # CFBundleTypeIconFile names them (see the BUNDLE plist below).
+    ('resources/icons/mimetypes/*.icns', '.'),
     ('resources/mime/*.xml',       'resources/mime'),
     ('resources/colors/*.json',    'resources/colors'),
     ('resources/textures/*.png',   'resources/textures'),
@@ -369,6 +372,7 @@ if sys.platform == 'darwin':
                     # The CAM plugin's jobs (plugins/cam/jobfile.py).
                     'CFBundleTypeName': 'IngeTrazo CAM job',
                     'CFBundleTypeExtensions': ['igcam'],
+                    'CFBundleTypeIconFile': 'ingetrazo-igcam.icns',
                     'CFBundleTypeRole': 'Editor',
                     'LSHandlerRank': 'Owner',
                 },
