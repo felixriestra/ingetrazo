@@ -4,9 +4,9 @@
 # and the hicolor icon theme — setWindowIcon alone is not enough.
 #
 # It also registers branded *document* icons for the file types IngeTrazo
-# works with (.igz / .dae / .skp) via a freedesktop MIME package. This is
-# purely cosmetic: it makes the file manager show the icons, it does NOT
-# change which program opens those files.
+# works with (.igz / .igcam / .dae / .skp) via a freedesktop MIME package,
+# and makes IngeTrazo the default opener of .igz, .igcam and .skp (see the
+# end of this script); .dae only gets the icon and an "Open with" entry.
 #
 #   scripts/install_desktop.sh              install
 #   scripts/install_desktop.sh --uninstall  remove everything it installed
@@ -19,7 +19,8 @@ MIME_DIR="$HOME/.local/share/mime"
 MIME_PKG="$MIME_DIR/packages/ingetrazo.xml"
 APP_SIZES=(16 32 48 64 128 256 512)
 # freedesktop MIME icon names for each document type (see resources/mime).
-MIME_ICONS=(application-x-ingetrazo model-vnd.collada+xml application-vnd.sketchup.skp)
+MIME_ICONS=(application-x-ingetrazo application-x-ingetrazo-cam model-vnd.collada+xml
+            application-vnd.sketchup.skp)
 
 refresh_caches() {
   command -v update-desktop-database >/dev/null && \
@@ -76,8 +77,9 @@ fi
 refresh_caches
 
 # ── Default opener: double-click opens IngeTrazo ────────────────────────────
-# .igz is our own format; .skp now opens natively (openskp backend), so both
-# get IngeTrazo as the default handler. .dae stays "Open with" only — we do
+# .igz and .igcam (a CAM job, plugins/cam) are our own formats; .skp now
+# opens natively (openskp backend), so all three get IngeTrazo as the
+# default handler. .dae stays "Open with" only — we do
 # not steal it from Blender & friends.
 if command -v xdg-mime >/dev/null; then
   xdg-mime default ingetrazo.desktop application/x-ingetrazo 2>/dev/null || true
@@ -86,4 +88,4 @@ if command -v xdg-mime >/dev/null; then
 fi
 
 echo "IngeTrazo instalado en el lanzador. Búscalo como 'IngeTrazo'."
-echo "Doble clic en .igz y .skp abre IngeTrazo; .dae queda en 'Abrir con'."
+echo "Doble clic en .igz, .igcam y .skp abre IngeTrazo; .dae queda en 'Abrir con'."
