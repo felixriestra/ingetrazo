@@ -723,10 +723,14 @@ class CamDock(QDockWidget):
         if self._loading:
             return
         st = self.state.job.stock
+        resized = (abs(st.width - self.stock_w.mm()) > 1e-9
+                   or abs(st.depth - self.stock_d.mm()) > 1e-9)
         st.width, st.depth, st.height = self.stock_w.mm(), self.stock_d.mm(), self.stock_h.mm()
         st.material = self.material.currentData() or st.material
         st.align_origin_to_reference()
         self._changed()
+        if resized:
+            self.frame_stock()
 
     def _on_zero_edited(self, *_args) -> None:
         if self._loading:
@@ -913,14 +917,27 @@ class CamDock(QDockWidget):
         ws.mark_saved()                     # entering moved the version on
         remember_job(path)
         self.paths, self._path_frame = [], None
+        self._op_edges, self.link_status = {}, {}
         self._reload_from_document(force=True)
         self.refresh_paths()
         self.show_page()
+        self.frame_stock()
         self.tabs.setCurrentIndex(0 if not self.state.setupDone else 2)
         self.show()
         self.raise_()
         win._update_title()
         return True
+
+    def frame_stock(self) -> None:
+        """Look straight down on the whole stock (a job just opened, or its
+        stock was resized during the setup)."""
+        from .workspace import plan_camera
+        if not self.in_job():
+            return
+        vp = self.viewport
+        st = self.state.job.stock
+        aspect = vp.width() / max(1, vp.height())
+        self.viewport.window()._apply_camera_dict(plan_camera(st.width, st.depth, aspect))
 
     def save_job(self) -> bool:
         ws = self.workspace()
@@ -1058,7 +1075,9 @@ class CamDock(QDockWidget):
             item.setSelected(bool(before & p.edges))
         self.path_list.blockSignals(False)
         self.paths_label.setText(tr("Paths ({count})", count=len(self.paths)))
-        self._sel_key = None                # re-read the model's selection
+        # The choice survives the re-read (by edges, above). The model's
+        # selection is NOT applied again here: only a change of it counts,
+        # or every edit would wipe paths chosen in the list.
         self._on_paths_chosen()
         before_status = dict(self.link_status)
         if self._follow_paths():
