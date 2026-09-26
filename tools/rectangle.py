@@ -213,13 +213,17 @@ class RectangleTool(PlaneLock, Tool):
     def _span(self, cursor: QVector3D) -> tuple[QVector3D, QVector3D]:
         """The two opposite corners the cursor asks for: from the first
         click to the cursor, or — from the centre — the cursor and its
-        mirror through the first click. The square nudge is applied to
-        the span, so a centred square stays centred."""
-        if self._from_center:
-            mirror = self.start_point * 2.0 - cursor
-            far, _sq = self._square_corner(mirror, cursor)
-            return self.start_point * 2.0 - far, far
+        mirror through the first click.
+
+        The square nudge is applied to the CURSOR relative to the anchor
+        (the first click) first, and only then mirrored. Anchoring on the
+        centre is what keeps a centred square a true square: nudging the
+        mirror instead (holding it fixed while the cursor moved) grew the
+        wrong side, so a 4.00 x 4.10 m rectangle came out labelled
+        "Cuadrado"."""
         far, _sq = self._square_corner(self.start_point, cursor)
+        if self._from_center:
+            return self.start_point * 2.0 - far, far
         return self.start_point, far
 
     def _set_from_center(self, viewport, on: bool) -> None:

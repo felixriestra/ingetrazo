@@ -140,3 +140,46 @@ def test_picking_the_tool_up_again_starts_corner_wise():
     t.on_key(vp, Qt.Key_Control, Qt.NoModifier)
     t.on_activate(vp)
     assert t._from_center is False
+
+
+def test_square_from_the_centre_is_a_true_square():
+    # Regression: the square nudge used to hold the mirror fixed and move the
+    # cursor, growing the WRONG side. A near-square drag from the centre came
+    # out as 4.00 × 4.10 m yet was still labelled "Cuadrado".
+    t = RectangleTool()
+    t.on_activate(_Stub())
+    t._from_center = True
+    t.start_point = V(0, 0)
+    t.hover_point = V(2.0, 1.95)                   # within SQUARE_TOL
+    anchor, far = t._span(t.hover_point)
+    du, dv = t._dimensions(anchor, far)
+    assert abs(abs(du) - abs(dv)) < 1e-9           # a real square
+    assert abs(abs(du) - 4.0) < 1e-9               # grown to the longer side
+    assert ((anchor + far) * 0.5).length() < 1e-9  # still centred on the click
+    text, mid = t.value_label()
+    assert text.endswith("(Cuadrado)")
+    assert mid.length() < 1e-9
+
+
+def test_from_the_centre_shows_no_square_cue_when_it_is_not_square():
+    t = RectangleTool()
+    t.on_activate(_Stub())
+    t._from_center = True
+    t.start_point = V(0, 0)
+    t.hover_point = V(2.0, 1.5)
+    text, _ = t.value_label()
+    assert text == "4.00 × 3.00 m"
+    assert "Cuadrado" not in text
+
+
+def test_committing_a_square_from_the_centre_builds_real_square_corners():
+    t = RectangleTool()
+    t.on_activate(_Stub())
+    t._from_center = True
+    t.start_point = V(0, 0)
+    t.hover_point = V(2.0, 1.95)
+    anchor, far = t._span(t.hover_point)
+    corners = t._corners(anchor, far)
+    sides = [(corners[(i + 1) % 4] - corners[i]).length() for i in range(4)]
+    assert max(sides) - min(sides) < 1e-9
+    assert all(abs(s - 4.0) < 1e-9 for s in sides)
