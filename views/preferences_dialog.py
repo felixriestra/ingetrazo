@@ -34,9 +34,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.i18n import LANGUAGE_NAMES as _LANGUAGE_NAMES
 from core.i18n import available_languages, current_language, tr
 
-_LANGUAGE_NAMES = {"en": "English", "es": "Español"}
 
 #: The import dialogs' unit vocabularies (must match the dialogs in
 #: main_window — the setting is their preselected answer).

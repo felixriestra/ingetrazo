@@ -26,7 +26,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.i18n import available_languages, current_language, set_language, tr
+from core.i18n import (LANGUAGE_NAMES, available_languages, current_language,
+                       set_language, tr)
 from views.theme import style as theme_style
 from core.units import fmt_pair
 from views.filedialogs import file_dialogs
@@ -1098,8 +1099,7 @@ class MainWindow(QMainWindow):
         help_menu.addAction(about_action)
 
     # ---- Language -----------------------------------------------------------
-    _LANGUAGE_NAMES = {"en": "English", "es": "Español",
-                       "pt-BR": "Português (Brasil)"}
+    _LANGUAGE_NAMES = LANGUAGE_NAMES
 
     def _build_language_menu(self, parent_menu) -> None:
         lang_menu = parent_menu.addMenu(tr("Language"))

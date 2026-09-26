@@ -6,6 +6,13 @@ follow [SemVer](https://semver.org).
 
 ## [Sin publicar]
 
+### Añadido
+- **IngeTrazo en chino simplificado** (Idioma ▸ 简体中文), traducido por
+  @liujvnes (#123). Su archivo no cargaba por una coma y porque algunas
+  variables venían traducidas (`{名称}` en vez de `{name}`); ahora una prueba
+  revisa cada archivo de idioma para que eso no vuelva a pasar. De paso,
+  Preferencias ya ofrece el portugués, que solo estaba en el menú.
+
 ### Corregido
 - **Modelos grandes con cotas o textos ya no van a tirones**: para saber qué
   parte de cada cota queda tapada, el visor lanzaba miles de rayos contra
