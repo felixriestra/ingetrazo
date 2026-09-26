@@ -1,0 +1,7 @@
+# Amana export
+Amana Tool Company catalogue
+Tool #,Description,Type,D,CEL,OAL,Shank,Flutes,Angle,Feed (m/min),RPM
+46170,1/4 Spiral Upcut,Spiral,1/4,3/4,2-1/2,1/4,2,,2.5,18000
+46376,1/8 Ball,Ball,1/8,1/2,2,1/4,2,,,
+45770,60 deg V,V,1/2,,2,1/4,2,60,,
+46999,Odd size,Spiral,0.2,0.6,2,0.25,3,,,

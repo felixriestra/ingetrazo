@@ -1,0 +1,12 @@
+Stand: 2026-01
+Artikelnummer;Bezeichnung;Fräserdurchmesser;Schaft-Ø;Schneidenlänge;Gesamtlänge;Schneiden;Winkel;Drallrichtung;Schneidstoff;Werkstoff;Drehzahl;Vorschub;Eintauchvorschub;Lagerort
+SO-100;Einzahnfräser VHM 3 mm;3,0;3;12;38;Z1;;Rechtsdrall;VHM;MDF;22000;1800;600;A1
+SO-101;Zweischneider 6 mm;6,0;6;22;60;2;;Linksdrall;VHM;Hartholz;18000;2400;700;A2
+SO-102;"Kugelfräser; R3";6,0;6;20;60;2;;;VHM;;;;;B1
+SO-103;V-Nut Fräser 90°;12,0;6;;50;2;90°;;HM;;;;;B2
+SO-104;V-Nut ohne Winkel;12,0;6;;50;2;;;HM;;;;;B3
+SO-105;Schaftfräser Zoll-Fehler;0,25;6;10;50;2;;;VHM;;;;;C1
+SO-106;Zweischneider 8 mm;8,0;8;25;63;2;;;VHM;Acryl;16000;1000;1200;C2
+SO-107;Planfräser 25;25,0;8;6;60;2;;;WSP;;;;;C3
+;;;;;;;;;;;;;;
+Alle Angaben ohne Gewähr

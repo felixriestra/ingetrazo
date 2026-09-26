@@ -102,6 +102,17 @@ def test_the_self_check_reports_pyclipper(capsys):
     assert re.search(r"pyclipper\s*: found", out), out
 
 
+def test_the_spec_and_the_self_check_carry_sqlite_for_the_tool_library(capsys):
+    spec = (ROOT / "ingetrazo.spec").read_text(encoding="utf-8")
+    assert "hiddenimports += ['sqlite3']" in spec
+    import main
+
+    main._self_check()
+    out = capsys.readouterr().out
+    assert re.search(r"sqlite3\s*: found", out), out
+    assert re.search(r"CAM tool data\s*: found", out), out
+
+
 def test_the_self_check_reports_the_cam_plugin(capsys):
     import main
 
@@ -116,5 +127,7 @@ def test_the_cam_plugin_is_bundled_whole():
              for src, dst in bundled_package_files(ROOT / "plugins")}
     for need in ("plugins/cam/__init__.py", "plugins/cam/engine/compiler.py",
                  "plugins/cam/engine/post/grbl.py", "plugins/cam/ui/dock.py",
-                 "plugins/cam/i18n/es.json", "plugins/cam/i18n/pt-BR.json"):
+                 "plugins/cam/i18n/es.json", "plugins/cam/i18n/pt-BR.json",
+                 "plugins/cam/toollib/repository.py",
+                 "plugins/cam/toollib/catalogs/sorotec-cnc-2026.json"):
         assert need in files, need

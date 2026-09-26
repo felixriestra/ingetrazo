@@ -1,0 +1,110 @@
+{
+  "id": "cmt-193-helical",
+  "vendorID": "v-cmt",
+  "vendorName": "CMT Orange Tools",
+  "catalogName": "CMT — 193 helical (Ø12–20)",
+  "nativeUnits": "mm",
+  "delimiter": ";",
+  "decimalSeparator": ",",
+  "encoding": null,
+  "headerRow": 0,
+  "skipRowsMatching": [
+    "^\\s*[;\\s]*$",
+    "^#",
+    "^\\s*Rotaci",
+    "^\\s*pag\\."
+  ],
+  "note": "CMT series 193 helical upcut, Z3 solid carbide. Geometry only; the feed comes from the series-193 Vf/H feed curve. Import scope is Ø>=12 mm — the 8 and 10 mm sizes are intended for plastics/laminates and are left out on purpose.",
+  "columns": [
+    {
+      "headers": [
+        "CÓDIGO",
+        "CODIGO",
+        "Codice",
+        "Code",
+        "Cod.",
+        "Order No",
+        "Artikelnummer"
+      ],
+      "field": "productID",
+      "unit": "text",
+      "required": true
+    },
+    {
+      "headers": [
+        "Cut Diameter",
+        "Cutting Diameter",
+        "Diameter",
+        "Diametro",
+        "D",
+        "Ø D",
+        "Ø"
+      ],
+      "field": "diameter",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "Ø"
+      ]
+    },
+    {
+      "headers": [
+        "Cut length",
+        "Cutting Length",
+        "Lunghezza taglio",
+        "I",
+        "B"
+      ],
+      "field": "fluteLength",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Total length",
+        "Overall Length",
+        "Lunghezza totale",
+        "L"
+      ],
+      "field": "overallLength",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Shank",
+        "Gambo",
+        "Schaft",
+        "S",
+        "d"
+      ],
+      "field": "shankDiameter",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "Ø"
+      ]
+    },
+    {
+      "headers": [
+        "Descrizione",
+        "Description",
+        "Bezeichnung"
+      ],
+      "field": "name",
+      "unit": "text"
+    }
+  ],
+  "constants": {
+    "toolType": "end_mill",
+    "series": "193",
+    "fluteCount": "3",
+    "substrate": "solid_carbide",
+    "chipDirection": "up"
+  },
+  "typeKeywords": []
+}

@@ -124,6 +124,10 @@ hiddenimports += ['formats.clip']
 # __init__ — the mapbox_earcut shape of failure if it goes missing, so it
 # is named here and ``main.py --check`` asserts it imports.
 hiddenimports += collect_submodules('pyclipper')
+# The CAM tool library (plugins/cam/toollib) keeps its data in SQLite. Nothing
+# else imports sqlite3, and the plugin is loaded by path, so without this
+# the frozen builds would ship without it and the library could not open.
+hiddenimports += ['sqlite3']
 hiddenimports += [
     # The bundled plugins import these at RUN time, so static analysis never
     # sees them and they were left out: the AI assistant died on load with

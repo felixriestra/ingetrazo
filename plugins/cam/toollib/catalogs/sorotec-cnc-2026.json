@@ -1,0 +1,414 @@
+{
+  "id": "sorotec-cnc-2026",
+  "vendorID": "v-sorotec",
+  "vendorName": "Sorotec",
+  "catalogName": "Sorotec — CNC cutters",
+  "nativeUnits": "mm",
+  "delimiter": ";",
+  "decimalSeparator": ",",
+  "encoding": null,
+  "headerRow": 0,
+  "skipRowsMatching": [
+    "^\\s*[;\\s]*$",
+    "^#",
+    "^\\s*Stand:",
+    "^\\s*Alle Angaben ohne"
+  ],
+  "note": "Rows carrying Drehzahl/Vorschub become vendor presets; rows without become geometry-only tools resolved through chipload_rule.",
+  "columns": [
+    {
+      "headers": [
+        "Artikelnummer",
+        "Artikel-Nr.",
+        "Art.-Nr.",
+        "ArtNr",
+        "Bestellnummer",
+        "SKU"
+      ],
+      "field": "productID",
+      "unit": "text",
+      "required": true
+    },
+    {
+      "headers": [
+        "Bezeichnung",
+        "Beschreibung",
+        "Artikelbezeichnung",
+        "Produkt"
+      ],
+      "field": "name",
+      "unit": "text",
+      "required": true
+    },
+    {
+      "headers": [
+        "Serie",
+        "Baureihe",
+        "Typ"
+      ],
+      "field": "series",
+      "unit": "text"
+    },
+    {
+      "headers": [
+        "Fräserdurchmesser",
+        "Schneiddurchmesser",
+        "Durchmesser",
+        "D",
+        "Ø",
+        "Ø D"
+      ],
+      "field": "diameter",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "Ø"
+      ]
+    },
+    {
+      "headers": [
+        "Schaftdurchmesser",
+        "Schaft",
+        "Schaft-Ø",
+        "S",
+        "d"
+      ],
+      "field": "shankDiameter",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "Ø"
+      ]
+    },
+    {
+      "headers": [
+        "Schneidenlänge",
+        "Schnittlänge",
+        "Nutzlänge",
+        "L2",
+        "I"
+      ],
+      "field": "fluteLength",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Gesamtlänge",
+        "Länge",
+        "L1",
+        "L"
+      ],
+      "field": "overallLength",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Schneiden",
+        "Schneidenzahl",
+        "Zähne",
+        "Z",
+        "Anzahl Schneiden"
+      ],
+      "field": "fluteCount",
+      "unit": "count",
+      "strip": [
+        "Z",
+        "-fach",
+        "fach"
+      ]
+    },
+    {
+      "headers": [
+        "Radius",
+        "Eckenradius",
+        "R"
+      ],
+      "field": "cornerRadius",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "R"
+      ]
+    },
+    {
+      "headers": [
+        "Winkel",
+        "Spitzenwinkel",
+        "Gravurwinkel"
+      ],
+      "field": "includedAngle",
+      "unit": "degrees",
+      "strip": [
+        "°",
+        "Grad"
+      ]
+    },
+    {
+      "headers": [
+        "Spitzendurchmesser",
+        "Spitze",
+        "Stirndurchmesser",
+        "T"
+      ],
+      "field": "tipDiameter",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Drallrichtung",
+        "Schnittrichtung",
+        "Drall"
+      ],
+      "field": "chipDirection",
+      "unit": "text",
+      "map": {
+        "Rechtsdrall": "up",
+        "Linksdrall": "down",
+        "Aufwärts": "up",
+        "Abwärts": "down",
+        "up-cut": "up",
+        "down-cut": "down",
+        "Kompression": "compression",
+        "gerade": "straight",
+        "geradverzahnt": "straight"
+      }
+    },
+    {
+      "headers": [
+        "Schneidstoff",
+        "Material",
+        "Werkstoff Schneide"
+      ],
+      "field": "substrate",
+      "unit": "text",
+      "map": {
+        "VHM": "solid_carbide",
+        "Vollhartmetall": "solid_carbide",
+        "HM": "carbide_tipped",
+        "HSS": "hss",
+        "Diamant": "diamond",
+        "DP": "diamond",
+        "WSP": "insert"
+      }
+    },
+    {
+      "headers": [
+        "Beschichtung",
+        "Coating"
+      ],
+      "field": "coating",
+      "unit": "text"
+    },
+    {
+      "headers": [
+        "Werkstoff",
+        "Material Werkstück",
+        "Bearbeitungsmaterial"
+      ],
+      "field": "materialClass",
+      "unit": "text",
+      "map": {
+        "Weichholz": "softwood",
+        "Nadelholz": "softwood",
+        "Hartholz": "hardwood",
+        "Laubholz": "hardwood",
+        "Sperrholz": "plywood",
+        "Multiplex": "plywood",
+        "MDF": "mdf",
+        "Spanplatte": "mdf",
+        "Acryl": "acrylic",
+        "PMMA": "acrylic",
+        "Plexiglas": "acrylic",
+        "Polycarbonat": "polycarb",
+        "PC": "polycarb",
+        "PVC": "pvc",
+        "Hart-PVC": "pvc",
+        "HDPE": "hdpe",
+        "PE": "hdpe",
+        "PP": "hdpe",
+        "ABS": "abs",
+        "POM": "pom",
+        "Nylon": "nylon",
+        "PA": "nylon",
+        "Aluminium": "aluminium",
+        "Alu": "aluminium",
+        "Hartschaum": "foam",
+        "Schaum": "foam"
+      }
+    },
+    {
+      "headers": [
+        "Drehzahl",
+        "n",
+        "U/min",
+        "Umdrehungen"
+      ],
+      "field": "spindleRPM",
+      "unit": "rpm",
+      "strip": [
+        "U/min",
+        "1/min",
+        "rpm"
+      ]
+    },
+    {
+      "headers": [
+        "Vorschub",
+        "Vf",
+        "Vorschub XY",
+        "Bahnvorschub"
+      ],
+      "field": "feedXY",
+      "unit": "mm_min",
+      "strip": [
+        "mm/min"
+      ]
+    },
+    {
+      "headers": [
+        "Eintauchvorschub",
+        "Z-Vorschub",
+        "Vorschub Z",
+        "Vz"
+      ],
+      "field": "feedZ",
+      "unit": "mm_min",
+      "strip": [
+        "mm/min"
+      ]
+    },
+    {
+      "headers": [
+        "Zahnvorschub",
+        "fz",
+        "Spanabnahme pro Zahn"
+      ],
+      "field": "chipload",
+      "unit": "mm_tooth",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Zustellung",
+        "Zustellung Z",
+        "ap",
+        "Frästiefe"
+      ],
+      "field": "stepdown",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Seitliche Zustellung",
+        "ae",
+        "Überlappung"
+      ],
+      "field": "stepover",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Bemerkung",
+        "Hinweis",
+        "Notiz"
+      ],
+      "field": "notes",
+      "unit": "text"
+    }
+  ],
+  "constants": {
+    "substrate": "solid_carbide"
+  },
+  "typeKeywords": [
+    {
+      "contains": [
+        "Kugelfräser",
+        "Radiusfräser Vollradius",
+        "ball nose",
+        "Kugelkopf"
+      ],
+      "toolType": "ball_nose"
+    },
+    {
+      "contains": [
+        "Torusfräser",
+        "Eckradiusfräser",
+        "bull nose"
+      ],
+      "toolType": "bull_nose"
+    },
+    {
+      "contains": [
+        "Gravierstichel",
+        "Gravierfräser",
+        "Stichel",
+        "engraving"
+      ],
+      "toolType": "engraver",
+      "requiresAngle": true
+    },
+    {
+      "contains": [
+        "V-Nut",
+        "Vnut",
+        "Fasenfräser",
+        "V-Fräser",
+        "Schriftenfräser"
+      ],
+      "toolType": "v_bit",
+      "requiresAngle": true
+    },
+    {
+      "contains": [
+        "Kegelkugelfräser",
+        "konischer Kugelfräser",
+        "tapered ball"
+      ],
+      "toolType": "tapered_ball"
+    },
+    {
+      "contains": [
+        "Bohrer",
+        "drill"
+      ],
+      "toolType": "drill"
+    },
+    {
+      "contains": [
+        "Planfräser",
+        "Messerkopf",
+        "surfacing",
+        "spoilboard"
+      ],
+      "toolType": "surfacing"
+    },
+    {
+      "contains": [
+        "Schaftfräser",
+        "Fräser",
+        "Einzahnfräser",
+        "Zweischneider",
+        "Dreischneider",
+        "end mill"
+      ],
+      "toolType": "end_mill"
+    }
+  ]
+}

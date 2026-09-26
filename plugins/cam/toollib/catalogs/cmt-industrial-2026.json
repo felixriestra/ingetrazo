@@ -1,0 +1,303 @@
+{
+  "id": "cmt-industrial-2026",
+  "vendorID": "v-cmt",
+  "vendorName": "CMT Orange Tools",
+  "catalogName": "CMT — general catalogue",
+  "nativeUnits": "mm",
+  "delimiter": ";",
+  "decimalSeparator": ",",
+  "encoding": null,
+  "headerRow": 0,
+  "skipRowsMatching": [
+    "^\\s*[;\\s]*$",
+    "^\\s*Serie\\s*$",
+    "^\\s*pag\\.",
+    "^#"
+  ],
+  "note": "Geometry per part number (D, I, L, S, Z) but no per-tool cutting data. Expect zero presets: these tools resolve through chipload_rule until you tune them.",
+  "columns": [
+    {
+      "headers": [
+        "Codice",
+        "Cod.",
+        "Code",
+        "Order No",
+        "Item",
+        "Artikelnummer",
+        "Referencia"
+      ],
+      "field": "productID",
+      "unit": "text",
+      "required": true
+    },
+    {
+      "headers": [
+        "Descrizione",
+        "Description",
+        "Bezeichnung",
+        "Descripción",
+        "Denominazione"
+      ],
+      "field": "name",
+      "unit": "text",
+      "required": true
+    },
+    {
+      "headers": [
+        "Serie",
+        "Series"
+      ],
+      "field": "series",
+      "unit": "text"
+    },
+    {
+      "headers": [
+        "D",
+        "D1",
+        "Ø D",
+        "Diametro",
+        "Diameter",
+        "Cutting Diameter"
+      ],
+      "field": "diameter",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "Ø"
+      ]
+    },
+    {
+      "headers": [
+        "I",
+        "B",
+        "Lunghezza taglio",
+        "Cutting Length",
+        "Schnittlänge"
+      ],
+      "field": "fluteLength",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "L",
+        "Lunghezza totale",
+        "Overall Length",
+        "Gesamtlänge"
+      ],
+      "field": "overallLength",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "S",
+        "d",
+        "Gambo",
+        "Shank",
+        "Schaft"
+      ],
+      "field": "shankDiameter",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "Ø"
+      ]
+    },
+    {
+      "headers": [
+        "Z",
+        "Taglienti",
+        "Flutes",
+        "Schneiden",
+        "No. of Flutes"
+      ],
+      "field": "fluteCount",
+      "unit": "count",
+      "strip": [
+        "Z"
+      ]
+    },
+    {
+      "headers": [
+        "R",
+        "Raggio",
+        "Radius",
+        "Corner Radius"
+      ],
+      "field": "cornerRadius",
+      "unit": "mm",
+      "strip": [
+        "mm",
+        "R"
+      ]
+    },
+    {
+      "headers": [
+        "A",
+        "Angolo",
+        "Angle",
+        "Winkel"
+      ],
+      "field": "includedAngle",
+      "unit": "degrees",
+      "strip": [
+        "°"
+      ]
+    },
+    {
+      "headers": [
+        "T",
+        "Punta",
+        "Tip",
+        "Tip Diameter"
+      ],
+      "field": "tipDiameter",
+      "unit": "mm",
+      "strip": [
+        "mm"
+      ]
+    },
+    {
+      "headers": [
+        "Rotazione",
+        "Rotation",
+        "RH/LH",
+        "Elica",
+        "Helix"
+      ],
+      "field": "chipDirection",
+      "unit": "text",
+      "map": {
+        "positiva": "up",
+        "positive": "up",
+        "up-cut": "up",
+        "DX": "up",
+        "negativa": "down",
+        "negative": "down",
+        "down-cut": "down",
+        "SX": "down",
+        "compression": "compression",
+        "compressione": "compression",
+        "diritta": "straight",
+        "straight": "straight"
+      }
+    },
+    {
+      "headers": [
+        "Materiale",
+        "Material",
+        "Werkstoff",
+        "HW/HS"
+      ],
+      "field": "substrate",
+      "unit": "text",
+      "map": {
+        "HW": "carbide_tipped",
+        "HM": "carbide_tipped",
+        "MD": "solid_carbide",
+        "VHM": "solid_carbide",
+        "Solid Carbide": "solid_carbide",
+        "HS": "hss",
+        "HSS": "hss",
+        "DP": "diamond",
+        "Diamond": "diamond"
+      }
+    },
+    {
+      "headers": [
+        "Rivestimento",
+        "Coating",
+        "Beschichtung"
+      ],
+      "field": "coating",
+      "unit": "text"
+    },
+    {
+      "headers": [
+        "Note",
+        "Notes",
+        "Bemerkung"
+      ],
+      "field": "notes",
+      "unit": "text"
+    }
+  ],
+  "constants": {},
+  "typeKeywords": [
+    {
+      "contains": [
+        "sferica",
+        "ball nose",
+        "raggio pieno",
+        "round nose"
+      ],
+      "toolType": "ball_nose"
+    },
+    {
+      "contains": [
+        "raggio",
+        "corner radius",
+        "torica",
+        "bowl",
+        "tray"
+      ],
+      "toolType": "bull_nose"
+    },
+    {
+      "contains": [
+        "incisione",
+        "engraving",
+        "signmaking"
+      ],
+      "toolType": "engraver",
+      "requiresAngle": true
+    },
+    {
+      "contains": [
+        "V-groove",
+        "a V",
+        "vee groove",
+        "conica",
+        "chamfer",
+        "smusso"
+      ],
+      "toolType": "v_bit",
+      "requiresAngle": true
+    },
+    {
+      "contains": [
+        "punta",
+        "drill",
+        "foratura",
+        "boring"
+      ],
+      "toolType": "drill"
+    },
+    {
+      "contains": [
+        "spianatura",
+        "surfacing",
+        "planing",
+        "spoilboard"
+      ],
+      "toolType": "surfacing"
+    },
+    {
+      "contains": [
+        "elicoidale",
+        "spiral",
+        "fresa",
+        "router bit",
+        "straight bit",
+        "end mill",
+        "compression"
+      ],
+      "toolType": "end_mill"
+    }
+  ]
+}

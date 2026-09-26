@@ -1,0 +1,27 @@
+{
+  "id": "test-amana-inch",
+  "vendorID": "v-amana",
+  "vendorName": "Amana Tool",
+  "nativeUnits": "inch",
+  "delimiter": null,
+  "decimalSeparator": null,
+  "encoding": null,
+  "headerRow": 1,
+  "skipRowsMatching": ["^#"],
+  "columns": [
+    { "headers": ["Tool #", "Part"], "field": "productID", "unit": "text" },
+    { "headers": ["Description"], "field": "name", "unit": "text" },
+    { "headers": ["Type"], "field": "toolType", "unit": "text",
+      "map": { "Spiral": "end_mill", "Ball": "ball_nose", "V": "v_bit" } },
+    { "headers": ["D"], "field": "diameter", "unit": "frac_inch" },
+    { "headers": ["CEL"], "field": "fluteLength", "unit": "auto" },
+    { "headers": ["OAL"], "field": "overallLength", "unit": "auto" },
+    { "headers": ["Shank"], "field": "shankDiameter", "unit": "auto" },
+    { "headers": ["Flutes"], "field": "fluteCount", "unit": "count" },
+    { "headers": ["Angle"], "field": "includedAngle", "unit": "degrees" },
+    { "headers": ["Feed (m/min)"], "field": "feedXY", "unit": "m_min" },
+    { "headers": ["RPM"], "field": "spindleRPM", "unit": "rpm" }
+  ],
+  "constants": { "substrate": "solid_carbide" },
+  "typeKeywords": []
+}

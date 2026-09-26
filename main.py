@@ -238,11 +238,25 @@ def _self_check() -> int:
     if not ok:
         problems.append("pyclipper")
 
+    # The CAM tool library's store (plugins/cam/toollib). Standard library,
+    # but nothing else in the app imports it, so a frozen build only has it
+    # because the spec names it — and without it the library cannot open.
+    try:
+        import sqlite3
+        ok, where = True, f"SQLite {sqlite3.sqlite_version}"
+    except Exception as exc:  # noqa: BLE001
+        ok, where = False, f"({exc})"
+    print(f"  sqlite3        : {'found' if ok else 'MISSING'}  {where}")
+    if not ok:
+        problems.append("sqlite3")
+
     # The CAM plugin is a PACKAGE plugin: before H1 the bundles carried
     # plugins/*.py only, and a package plugin was simply absent. Its engine
     # and both catalogues are what it cannot run without.
     for label, path in (
         ("CAM plugin", root / "plugins" / "cam" / "engine" / "compiler.py"),
+        ("CAM tool data",
+         root / "plugins" / "cam" / "toollib" / "catalogs" / "sorotec-cnc-2026.json"),
         ("CAM catalogues", root / "plugins" / "cam" / "i18n" / "pt-BR.json"),
     ):
         ok = path.is_file()
