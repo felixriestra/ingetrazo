@@ -60,6 +60,9 @@ follow [SemVer](https://semver.org).
   núcleo.
 
 ### Cambiado
+- **La bandeja lateral recuerda qué secciones dejaste plegadas** (Info de
+  entidad, Capas, Escenas, Materiales, Componentes…): al volver a abrir
+  IngeTrazo aparecen como las dejaste (pedido de un usuario de Brasil).
 - **Asistente IA: LM Studio además de Ollama.** El proveedor local ya hablaba
   la API compatible con OpenAI que usa LM Studio; ahora la interfaz lo dice:
   «Local: Ollama / LM Studio», con la URL de cada uno en la ayuda

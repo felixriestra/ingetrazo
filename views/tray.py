@@ -108,10 +108,22 @@ class _Section(QWidget):
         self._content = content
         lay.addWidget(self._btn)
         lay.addWidget(content)
+        # Open or folded, as the user left it last time (a user in Brazil,
+        # 25-09: «sempre que eu abro o software ele vem aberta… deve vir como
+        # eu deixei»). Keyed by the panel's class, not its title: the title
+        # changes with the language.
+        self._key = f"tray/collapsed/{type(content).__name__}"
+        from PySide6.QtCore import QSettings
+        if str(QSettings().value(self._key, "0")) == "1":
+            self._btn.setChecked(False)
 
     def _on_toggle(self, on: bool) -> None:
         self._content.setVisible(on)
         self._btn.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+        key = getattr(self, "_key", None)
+        if key is not None:
+            from PySide6.QtCore import QSettings
+            QSettings().setValue(key, "0" if on else "1")
 
 
 def style_slider(slider) -> None:
