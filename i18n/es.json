@@ -1124,6 +1124,8 @@
  "Select the geometry for the component first": "Seleccioná primero la geometría del componente",
  "Select the geometry to flip first": "Seleccioná primero la geometría a voltear",
  "Selected everything ({n} entities)": "Todo seleccionado ({n} entidades)",
+ "Invert Selection": "Invertir selección",
+ "Selection inverted ({n} entities)": "Selección invertida ({n} entidades)",
  "Selection": "Selección",
  "Send": "Enviar",
  "Send to back": "Enviar al fondo",

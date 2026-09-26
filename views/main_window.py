@@ -777,6 +777,12 @@ class MainWindow(QMainWindow):
         select_all_action.triggered.connect(self._on_select_all)
         edit_menu.addAction(select_all_action)
 
+        # SketchUp's Edit ▸ Invert Selection, same shortcut.
+        invert_action = QAction(tr("Invert Selection"), self)
+        invert_action.setShortcut(QKeySequence("Ctrl+Shift+I"))
+        invert_action.triggered.connect(self._on_invert_selection)
+        edit_menu.addAction(invert_action)
+
         edit_menu.addSeparator()
 
         group_action = QAction(tr("Make Group"), self)
@@ -3218,6 +3224,14 @@ class MainWindow(QMainWindow):
         self.viewport.notify_scene_changed()
         self.statusBar().showMessage(
             tr("Selected everything ({n} entities)", n=len(sel)), 2500)
+
+    def _on_invert_selection(self) -> None:
+        """Select what is not selected, drop what is (Ctrl+Shift+I) — see
+        ``Scene.invert_selection`` for what counts."""
+        n = self.viewport.scene.invert_selection()
+        self.viewport.notify_scene_changed()
+        self.statusBar().showMessage(
+            tr("Selection inverted ({n} entities)", n=n), 2500)
 
     # ---- Undo / redo --------------------------------------------------------
     def _on_undo(self) -> None:

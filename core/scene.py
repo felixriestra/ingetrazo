@@ -492,6 +492,30 @@ class Scene:
             self.selection.clear()
             self.version += 1
 
+    def invert_selection(self) -> int:
+        """SketchUp's Edit ▸ Invert Selection (Ctrl+Shift+I): select every
+        entity of the open context that is NOT selected now, and drop what
+        is. The universe is Select All's — the loose edges and faces, the
+        context's groups (the model's, or the open group's children) and the
+        dimensions — minus what a click or a box could not pick either:
+        hidden objects and faces, hidden or locked layers, and hidden edges
+        (a smoothed surface's inner edges) while the hidden-geometry view is
+        off. Returns the size of the new selection."""
+        ctx = self.edit_group
+        groups = self.groups if ctx is None else (getattr(ctx, "children", None) or [])
+        show_hidden = bool(self.show_hidden_geometry)
+        universe = [e for e in self.edges
+                    if self.entity_selectable(e)
+                    and (show_hidden or not getattr(e, "hidden", False))]
+        universe += [f for f in self.faces if self.entity_selectable(f)]
+        universe += [g for g in groups if self.entity_selectable(g)]
+        universe += [d for d in self.dimensions if self.entity_selectable(d)]
+        new = [ent for ent in universe if ent not in self.selection]
+        self.selection.clear()
+        self.selection.update(new)
+        self.version += 1            # the GL colour caches are keyed on it
+        return len(new)
+
     def delete_selection(self) -> None:
         if not self.selection:
             return
