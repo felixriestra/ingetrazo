@@ -72,6 +72,8 @@ def _dot(a, b) -> float:
 
 #: English names of the starter tools (translated by the UI).
 STARTER_TOOL_NAMES = ("{d} mm flat end mill", "{d} mm drill", "{a}° V-bit, {d} mm")
+#: A new job's name, in English; ``CamState.new`` translates it.
+DEFAULT_JOB_NAME = "Untitled Part"
 
 
 def default_tools(translate=None) -> list:
@@ -116,6 +118,7 @@ class CamState:
     @classmethod
     def new(cls, translate=None) -> "CamState":
         s = cls()
+        s.job.name = (translate or (lambda t: t))(DEFAULT_JOB_NAME)
         s.job.tools = default_tools(translate)
         s.job.setup.safeHeight = 10.0
         s.job.setup.clearanceHeight = 3.0

@@ -200,7 +200,36 @@ def extract_faces(faces, frame: Frame | None = None, m=None) -> Extraction:
     for outer, holes in worlds:
         _check_parallel(frame, newell(outer))
         ex.regions.append((_loop(frame, outer), [_loop(frame, h) for h in holes if len(h) >= 3]))
+    if m is None:
+        ex.thickness = solid_depth(faces, frame)
     return ex
+
+
+def solid_depth(faces, frame):
+    """How far the solid the ``faces`` belong to reaches below their plane,
+    in mm — a board's thickness when its top face is selected — or None
+    for a lone flat face. Everything connected to the faces through edges
+    counts; the faces' mesh is already in world coordinates (the loose
+    mesh, or an open group)."""
+    seen, todo = set(), []
+    for f in faces:
+        for v in f.loop:
+            if id(v) not in seen:
+                seen.add(id(v))
+                todo.append(v)
+    lowest = 0.0
+    top = max(frame.to_plane(_v(v.position))[2] for f in faces for v in f.loop)
+    while todo:
+        v = todo.pop()
+        w = frame.to_plane(_v(v.position))[2]
+        lowest = min(lowest, w - top)
+        for e in v.edges:
+            o = e.other(v)
+            if id(o) not in seen:
+                seen.add(id(o))
+                todo.append(o)
+    depth = -lowest
+    return depth if depth > 0.01 else None
 
 
 def _area3(pts) -> float:
