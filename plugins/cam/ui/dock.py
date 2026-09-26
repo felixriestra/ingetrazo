@@ -202,8 +202,9 @@ class CamDock(QDockWidget):
         self.btn_open_job = QPushButton(tr("Open CAM job…"))
         self.btn_open_job.clicked.connect(lambda: self.open_job())
         self.btn_template = QPushButton(tr("New from a stock template…"))
-        self.btn_template.setEnabled(False)
-        self.btn_template.setToolTip(tr("Stock templates are not available yet."))
+        self.btn_template.setToolTip(tr("Start with a saved setup: stock, material, "
+                                        "machine and tools."))
+        self.btn_template.clicked.connect(lambda: self.new_from_template())
         for b in (self.btn_new_job, self.btn_open_job, self.btn_template):
             lay.addWidget(b)
         lay.addWidget(QLabel(tr("Recent jobs")))
@@ -239,7 +240,13 @@ class CamDock(QDockWidget):
         self.btn_leave = QPushButton(tr("Back to the model"))
         self.btn_leave.setToolTip(tr("Close the CAM job and show the model again."))
         self.btn_leave.clicked.connect(self.leave_job)
+        self.btn_sim_header = QPushButton(tr("Simulate…"))
+        self.btn_sim_header.setToolTip(tr("Play the job back and watch the stock being cut "
+                                          "in 3D."))
+        self.btn_sim_header.clicked.connect(self.simulate)
+        self.btn_sim_header.setEnabled(False)
         row.addWidget(self.btn_save_job)
+        row.addWidget(self.btn_sim_header)
         row.addWidget(self.btn_leave)
         lay.addLayout(row)
         return w
@@ -360,6 +367,11 @@ class CamDock(QDockWidget):
         rotary.setWordWrap(True)
         rotary.setEnabled(False)
         lay.addWidget(rotary)
+        self.btn_save_template = QPushButton(tr("Save setup as template…"))
+        self.btn_save_template.setToolTip(tr("Keep this stock, material, machine and tool "
+                                             "table to start new jobs from."))
+        self.btn_save_template.clicked.connect(lambda: self.save_template())
+        lay.addWidget(self.btn_save_template)
         self.btn_start = QPushButton(tr("Start the job"))
         self.btn_start.setToolTip(tr("Confirm the setup: the drawing tools and the other "
                                      "tabs become available."))
@@ -589,7 +601,7 @@ class CamDock(QDockWidget):
         self._persist_timer.start(PERSIST_MS)
         self._result_stale = True
         self.btn_export.setEnabled(False)
-        self.btn_sim.setEnabled(False)
+        self._set_sim_enabled(False)
         self.overlay.set_stock(self.state)
         self.viewport.update()
         if recalc:
@@ -854,7 +866,48 @@ class CamDock(QDockWidget):
             self._refresh_recent()
             self.pages.setCurrentIndex(0)
 
-    def new_job(self, path=None) -> bool:
+    #: Where the user's stock templates live (tests point it elsewhere).
+    template_folder = None
+
+    def templates_dir(self):
+        if self.template_folder is not None:
+            return Path(self.template_folder)
+        from PySide6.QtCore import QStandardPaths
+        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        return Path(base or Path.home() / ".ingetrazo") / "cam-templates"
+
+    def new_from_template(self, template=None, path=None) -> bool:
+        """A new job with a template's setup (``template`` given: no
+        chooser; ``path`` given: no file dialog)."""
+        if template is None:
+            from .template_dialog import TemplateDialog
+            dlg = TemplateDialog(self.templates_dir(), self)
+            if dlg.exec() != TemplateDialog.Accepted or dlg.chosen() is None:
+                return False
+            template = dlg.chosen()
+        return self.new_job(path, template=template)
+
+    def save_template(self, name=None):
+        """Save this job's setup as a template (``name`` given: no
+        prompt); returns the file, or None."""
+        from ..templates import save_template
+        if name is None:
+            from PySide6.QtWidgets import QInputDialog
+            name, ok = QInputDialog.getText(self, tr("Save setup as template"),
+                                            tr("Template name"), text=self.state.job.name)
+            if not ok or not name.strip():
+                return None
+        self.flush()
+        try:
+            path = save_template(self.state, name.strip(), self.templates_dir())
+        except (OSError, JobFileError) as exc:
+            self._set_status(tr("The template could not be saved: {error}", error=str(exc)),
+                             error=True)
+            return None
+        self._set_status(tr("Template «{name}» saved.", name=name.strip()))
+        return path
+
+    def new_job(self, path=None, template=None) -> bool:
         """Start a CAM job. The file comes first — the job is named after
         it — then the setup (``path`` given: no dialog)."""
         if path is None:
@@ -870,7 +923,11 @@ class CamDock(QDockWidget):
             return False
         from core.scene import Scene
         scene = Scene()
-        state = CamState.new_job(path.stem, translate=tr)
+        if template is not None:
+            from ..templates import job_from_template
+            state = job_from_template(template, path.stem)
+        else:
+            state = CamState.new_job(path.stem, translate=tr)
         scene.plugin_data = {PLUGIN_KEY: state.to_dict()}
         try:
             save_job(scene, path)
@@ -1315,13 +1372,13 @@ class CamDock(QDockWidget):
         if out is None:
             self.stats.setText("")
             self.btn_export.setEnabled(False)
-            self.btn_sim.setEnabled(False)
+            self._set_sim_enabled(False)
             return
         if not out.ok:
             self._set_status(messages.describe(out.error, inch), error=True)
             self.stats.setText("")
             self.btn_export.setEnabled(False)
-            self.btn_sim.setEnabled(False)
+            self._set_sim_enabled(False)
             return
         tp = out.compiled.toolpath
         st = tp.statistics()
@@ -1346,7 +1403,7 @@ class CamDock(QDockWidget):
             self.issue_list.addItem("✓ " + tr("No problems found."))
             self._set_status(tr("Ready to export."))
         self.btn_export.setEnabled(not errors)
-        self.btn_sim.setEnabled(True)
+        self._set_sim_enabled(True)
         if self._sim is not None and self._sim.isVisible():
             self._sim.load(self.state.work_job(), out.compiled)
 
@@ -1365,6 +1422,10 @@ class CamDock(QDockWidget):
         self.viewport.update()
 
     # ==== simulation ===========================================================
+    def _set_sim_enabled(self, on: bool) -> None:
+        self.btn_sim.setEnabled(on)
+        self.btn_sim_header.setEnabled(on)
+
     def simulate(self):
         """Open (or bring forward) the stock simulation of the current
         result; returns the window."""
@@ -1374,7 +1435,15 @@ class CamDock(QDockWidget):
         if self._sim is None:
             self._sim = SimulationWindow(self)
             self._sim.playhead.connect(self._on_playhead)
-        self._sim.load(self.state.work_job(), self._result.compiled)
+        job = self.state.work_job()
+        listing = None
+        try:
+            from ..engine.post import listing as post_listing, post_job
+            res = post_job(job, self._result.compiled.toolpath, translate=tr)
+            listing = post_listing(res, _safe_name(job.name))
+        except CamError:
+            pass                          # the simulation still runs; the panel stays empty
+        self._sim.load(job, self._result.compiled, listing)
         self._sim.show()
         self._sim.raise_()
         self._sim.activateWindow()

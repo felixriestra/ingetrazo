@@ -70,7 +70,8 @@ def post(job, toolpath, translate=None) -> PostResult:
         suffix = (f"_{seq:02d}_T{tool_number}_{slug(tool.name if tool else 'tool')}"
                   if multi else "")
         result.files.append(ProgramFile(suffix, w.extension, w.text(),
-                                        [tool_number] if tool_number is not None else []))
+                                        [tool_number] if tool_number is not None else [],
+                                        w.command_lines))
         result.files[-1].expected = w.expected
     return result
 
@@ -136,6 +137,7 @@ def _program(w: GrblWriter, job, tool_number, cmds, translate) -> None:
                     w.linear(s.to, s.feed)
                 elif isinstance(s, Dwell):
                     w.dwell(s.seconds)
+        w.done()
     if spindle_on:
         w.emit("M5")
     if job.post.coolant:

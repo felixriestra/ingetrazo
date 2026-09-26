@@ -407,6 +407,8 @@ class ParsedMotion:
     to: tuple                         # mm; an axis never set yet is None
     center: tuple | None = None       # mm, offset from start
     feed: float | None = None         # mm/min
+    #: The program line (1-based) it came from; not part of the comparison.
+    line: int = field(default=0, compare=False)
 
 
 @dataclass
@@ -414,6 +416,9 @@ class ParsedProgram:
     units: str | None = None          # millimeters|inches
     motions: list = field(default_factory=list)
     violations: list = field(default_factory=list)    # (line, rule)
+    #: ``(motion index, tool number)`` at every ``M6``: the tool in the
+    #: spindle from that motion on.
+    tool_changes: list = field(default_factory=list)
 
 
 #: What a GRBL 1.1 file must never contain: no tool changer (M6), no tool
@@ -450,7 +455,11 @@ def parse_gcode(text: str, dialect: str = "linuxcnc") -> ParsedProgram:
     retract_mode = "G98"
     arc_incremental = True
     cycle = None                   # (code, r, z, q, p)
+    mark, last_n, tool_word = 0, 0, None
     for n, raw in enumerate(text.splitlines(), 1):
+        for m in prog.motions[mark:]:            # the motions the last line made
+            m.line = last_n
+        mark, last_n = len(prog.motions), n
         if any(ord(ch) > 127 for ch in raw):
             prog.violations.append((n, "non_ascii"))
         if "," in _strip_comments(raw):
@@ -465,8 +474,13 @@ def parse_gcode(text: str, dialect: str = "linuxcnc") -> ParsedProgram:
                 if (l, int(v)) in GRBL_FORBIDDEN and float(v).is_integer():
                     prog.violations.append((n, f"{l}{int(v)}"))
         gs = [v for l, v in codes if l == "G"]
+        for l, v in words:
+            if l == "T":
+                tool_word = int(v)
         if ("M", 6.0) in codes:
             pos = [None, None, None]          # the changer leaves the spindle anywhere
+            if tool_word is not None:
+                prog.tool_changes.append((len(prog.motions), tool_word))
         if 91 in gs:
             prog.violations.append((n, "incremental"))
         if 20 in gs:
@@ -529,6 +543,8 @@ def parse_gcode(text: str, dialect: str = "linuxcnc") -> ParsedProgram:
             prog.motions.append(ParsedMotion("arcCW" if motion_mode == 2 else "arcCCW",
                                              tuple(new), (i_, j_, k_), feed))
         pos = new
+    for m in prog.motions[mark:]:
+        m.line = last_n
     return prog
 
 

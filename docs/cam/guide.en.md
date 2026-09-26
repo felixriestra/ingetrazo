@@ -116,16 +116,28 @@ plain ASCII.
 
 ## Simulation
 
-**Output ▸ Simulate…** opens the job on a 3D block of stock and plays it
-back in machine time. The clock follows the time estimate, including
-tool changes and spindle ramps. Play, pause, drag the slider to any
-moment, or jump to the end. The speed goes up to 500×.
+**Simulate…** (in the job's header, or on **Output**) opens the job on a 3D
+block of stock and plays it back in machine time. The clock follows the
+time estimate, including tool changes and spindle ramps.
+
+- **Transport:** back to the start, play/pause, **step forward** one
+  command, jump to the end, or drag the slider to any moment. Speeds from
+  0.25× to 2000×.
+- **The G-code** of the job runs beside the view, the line being executed
+  highlighted. Click a line to run the job up to it.
+- Under the view: the **phase** (roughing, finishing, rapid, lead-in…),
+  the tool tip's **X Y Z**, the operation, the removed volume and the tool.
+- **Quality:** *Preview* keeps playback smooth; *High quality* uses finer
+  cells to look at the finished surface. The cell size is shown beside it.
+  **Final simulation** runs the whole job at high quality.
+- **Open G-code…** plays any program (from another CAM, or edited by hand)
+  on this job's stock; **Job program** goes back.
 
 Material comes off as the cutter passes. Through cuts become holes,
-tabs stay standing, and the removed volume is counted. In the model
-window, the toolpaths already cut stay bright, the rest fade, and the
-cutter is marked where it is. **Resolution** trades detail for speed.
-On a large sheet the grid is coarsened automatically.
+tabs stay standing, and the removed volume is counted. In the drawing,
+the toolpaths already cut stay bright, the rest fade, and the cutter is
+marked where it is. On a large sheet the grid is coarsened
+automatically.
 
 The simulation shows what the toolpath does. It is not a replacement for
 an air cut on the machine.
@@ -133,7 +145,13 @@ an air cut on the machine.
 ## Saving and reusing a job
 
 A job is its own `.igcam` file: the setup, the tools, the drawing and the
-operations. **Save** (or File ▸ Save) writes it; **Recent jobs** on the CAM
+operations.
+
+**Stock templates.** **Save setup as template…** on the **Job** tab keeps
+the stock, its material, the machine, the controller, the units and the tool
+table under a name. **New from a stock template…** on the CAM start page
+starts a job from one: a few common sheets and plates come built in, next
+to your own. A template has no drawing and no operations. **Save** (or File ▸ Save) writes it; **Recent jobs** on the CAM
 start page and File ▸ Open reopen it. Every change is undoable.
 
 **Change the drawing, and the operations follow.** Move, stretch or offset a

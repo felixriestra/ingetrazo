@@ -89,6 +89,7 @@ def post(job, toolpath, translate=None) -> PostResult:
         elif isinstance(c, DrillCycle):
             _check_feed(c.feed)
             _drill(w, c)
+        w.done()
     if not isinstance(next((c for c in reversed(toolpath.commands)
                             if isinstance(c, (SpindleStart, SpindleStop))), None), SpindleStop):
         w.emit("M5")
@@ -96,7 +97,7 @@ def post(job, toolpath, translate=None) -> PostResult:
     w.emit("M2")
     w.emit("%")
     result = PostResult()
-    result.files.append(ProgramFile("", w.extension, w.text(), tools_used))
+    result.files.append(ProgramFile("", w.extension, w.text(), tools_used, w.command_lines))
     result.files[-1].expected = w.expected
     result.tool_table = tool_table(job, tools_used)
     return result

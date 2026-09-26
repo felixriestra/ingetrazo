@@ -127,17 +127,31 @@ ASCII.
 
 ## Simulação
 
-**Saída ▸ Simular…** abre o trabalho sobre um bloco de material em 3D e
-o reproduz em tempo de máquina. O relógio segue a estimativa de tempo,
-com as trocas de ferramenta e a partida do fuso. Reproduza, pause,
-arraste a barra para qualquer momento ou pule para o fim. A velocidade
-vai até 500×.
+**Simular…** (no cabeçalho do trabalho, ou em **Saída**) abre o trabalho
+sobre um bloco de material em 3D e o reproduz em tempo de máquina. O
+relógio segue a estimativa de tempo, com as trocas de ferramenta e a
+partida do fuso.
+
+- **Reprodução:** voltar ao início, reproduzir/pausar, **avançar** um
+  comando, pular para o fim ou arrastar a barra para qualquer momento.
+  Velocidades de 0,25× a 2000×.
+- **O código G** do trabalho corre ao lado da vista, com a linha em
+  execução destacada. Clique numa linha para levar o trabalho até ela.
+- Sob a vista: a **fase** (desbaste, acabamento, rápido, entrada…), as
+  coordenadas **X Y Z** da ponta da ferramenta, a operação, o volume
+  removido e a ferramenta.
+- **Qualidade:** *Prévia* mantém a reprodução fluida; *Alta qualidade* usa
+  células mais finas para examinar a superfície acabada. O tamanho da
+  célula aparece ao lado. **Simulação final** simula o trabalho inteiro em
+  alta qualidade.
+- **Abrir código G…** reproduz qualquer programa (de outro CAM, ou
+  editado à mão) sobre o material deste trabalho; **Programa do trabalho**
+  volta ao dele.
 
 O material sai conforme a fresa passa. Os cortes passantes viram furos,
-as pontes ficam de pé e o volume removido é contado. Na janela do modelo,
-os percursos já cortados ficam fortes, os demais esmaecem e a fresa é
-marcada onde está. **Resolução** equilibra detalhe e velocidade. Numa
-chapa grande, a malha fica mais grossa sozinha.
+as pontes ficam de pé e o volume removido é contado. No desenho, os
+percursos já cortados ficam fortes, os demais esmaecem e a fresa é
+marcada onde está. Numa chapa grande, a malha fica mais grossa sozinha.
 
 A simulação mostra o que o percurso faz. Não substitui o corte no ar na
 máquina.
@@ -145,7 +159,14 @@ máquina.
 ## Salvar e reutilizar um trabalho
 
 Um trabalho é seu próprio arquivo `.igcam`: a preparação, as ferramentas, o
-desenho e as operações. **Salvar** (ou Arquivo ▸ Salvar) grava o arquivo;
+desenho e as operações.
+
+**Modelos de material.** **Salvar a preparação como modelo…** na aba
+**Trabalho** guarda com um nome o material bruto, seu tipo, a máquina, o
+controlador, as unidades e a tabela de ferramentas. **Novo a partir de um
+modelo de material…** na página inicial do CAM começa um trabalho com um
+deles: junto com os seus vêm incluídos algumas chapas e placas comuns. Um
+modelo não tem desenho nem operações. **Salvar** (ou Arquivo ▸ Salvar) grava o arquivo;
 **Trabalhos recentes** na página inicial do CAM e Arquivo ▸ Abrir o
 reabrem. Toda alteração pode ser desfeita.
 

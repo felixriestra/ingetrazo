@@ -39,6 +39,8 @@ def source_strings() -> set:
     keys |= set(POINT_NAMES.values()) | set(ZERO_NAMES.values()) | set(KIND_NAMES.values())
     from plugins.cam.state import DEFAULT_JOB_NAME, STARTER_TOOL_NAMES
     keys |= set(STARTER_TOOL_NAMES) | {DEFAULT_JOB_NAME}
+    from plugins.cam.templates import BUILTIN
+    keys |= {name for _k, name, *_rest in BUILTIN}
     return keys
 
 

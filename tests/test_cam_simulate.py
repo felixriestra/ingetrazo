@@ -109,11 +109,14 @@ def test_the_tool_position_follows_time():
 
 
 def test_a_huge_sheet_is_simulated_at_a_coarser_grid():
-    from plugins.cam.ui.simview import MAX_CELLS
-    st = Stock(width=2440, depth=1220, height=18)
-    cell = max(0.5, math.sqrt(st.width * st.depth / MAX_CELLS))
-    f = HeightField(st, cell)
-    assert f.rows * f.cols <= MAX_CELLS * 1.01
+    from plugins.cam.engine.simulate import cell_size
+    from plugins.cam.ui.simview import SimulationWindow
+    job = Job(stock=Stock(width=2440, depth=1220, height=18),
+              tools=[Tool(number=1, diameter=6.0)])
+    for mode, cap in (("live", SimulationWindow.LIVE_CELLS),
+                      ("final", SimulationWindow.FINAL_CELLS)):
+        f = HeightField(job.stock, cell_size(job, mode, cap))
+        assert f.rows * f.cols <= cap * 1.01
 
 
 def test_the_simulation_window_drives_the_viewport_playhead(tmp_path, monkeypatch):
@@ -138,6 +141,121 @@ def test_the_simulation_window_drives_the_viewport_playhead(tmp_path, monkeypatc
     sim.seek(sim.pb.total * 0.5)
     assert dock.overlay.play_index is not None and dock.overlay.play_tool is not None
     assert "cm³" in sim.info.text()
+    # 2DCam's controls: the posted G-code beside the view, the running line
+    # highlighted; one command at a time; a phase; the tool's coordinates.
+    assert sim.code.count() > 20 and sim.code.item(0).text().strip().startswith("1")
+    sim.seek(0.0)
+    sim.step()
+    first = sim.pb.command_index
+    sim.step()
+    assert sim.pb.command_index > first or sim.pb.time > 0
+    row = sim.code.currentRow()
+    assert sim.lines[row].split()[0][:1] in "GMTSF("
+    assert sim.coords.text().startswith("X ")
+    sim.seek(sim.pb.total * 0.5)
+    assert sim.phase.text()
+    assert "/" in sim.code_title.text()
+    # Clicking a line runs the job up to it.
+    target = sim.command_line[len(sim.command_line) // 2]
+    sim._on_code_clicked(sim.code.item(target))
+    assert sim.command_line[sim.pb.command_index] >= target
+    # High quality, and the final run.
+    assert "cells" in sim.cells.text()
+    sim.run_final()
+    assert sim.quality.currentData() == "final" and sim.pb.time == pytest.approx(sim.pb.total)
+    # Any G-code file plays on the job's stock.
+    nc = tmp_path / "other.nc"
+    nc.write_text("G21 G90\nG0 Z5\nG0 X50 Y50\nG1 Z-2 F300\nG1 X120 Y60 F800\nG0 Z5\nM30\n")
+    assert sim.open_gcode(nc)
+    assert sim.btn_job.isVisible() or not sim.isVisible()
+    sim.seek(sim.pb.total)
+    assert sim.pb.field.removed_volume > 0
+    assert "other.nc" in sim.info.text()
+    sim.show_job_program()
+    assert sim.source_name is None
     sim.close()
     assert dock.overlay.play_index is None
     _close(win, dock)
+
+
+# ---- 2DCam's simulation logic around the height field --------------------
+
+def _fixture_job(case, controller="grbl"):
+    job = io.job_from_dict(json.loads((FIX / case / "job.json").read_text()))
+    job.post.controller = controller
+    return job
+
+
+@pytest.mark.parametrize("controller", ["grbl", "linuxcnc"])
+def test_every_command_knows_its_gcode_line(controller):
+    """The G-code panel follows playback: each toolpath command maps to
+    the line it ends on, across GRBL's per-tool files too."""
+    from plugins.cam.engine.post import listing, post_job
+    from plugins.cam.engine.toolpath import Linear, Rapid
+    job = _fixture_job("job_multi_operation", controller)
+    tp = compiler.compile_job(job).toolpath
+    res = post_job(job, tp)
+    lines, command_line = listing(res, "job")
+    assert len(command_line) == len(tp.commands)
+    assert command_line == sorted(command_line)               # in program order
+    for i, (c, k) in enumerate(zip(tp.commands, command_line)):
+        if i and k == command_line[i - 1]:
+            continue                      # wrote nothing (a move to where it stood)
+        if isinstance(c, Linear):
+            assert lines[k].startswith(("G1", "G2", "G3")), (c, lines[k])
+        elif isinstance(c, Rapid):
+            assert lines[k].startswith("G0") or lines[k].startswith("G1"), (c, lines[k])
+    if controller == "grbl":
+        assert sum(ln.startswith("(=== job_") for ln in lines) == len(res.files)
+
+
+def test_2dcams_cell_sizes():
+    """Live: a twentieth of the smallest tool, 0.1–1 mm, 1 M cells at most;
+    final: a fortieth, from 0.05 mm, 6 M cells at most."""
+    from plugins.cam.engine.simulate import cell_size
+    job = _fixture_job("job_multi_operation")
+    dmin = min(t.diameter for t in job.tools)
+    area = job.stock.width * job.stock.depth
+    live = cell_size(job, "live")
+    assert live == pytest.approx(max(0.1, min(1.0, dmin * 0.05), math.sqrt(area / 1e6)))
+    final = cell_size(job, "final")
+    assert final == pytest.approx(max(0.05, dmin * 0.025, math.sqrt(area / 6e6)))
+    job.stock.width, job.stock.depth = 2440.0, 1220.0          # a full sheet
+    assert cell_size(job, "live") == pytest.approx(math.sqrt(2440 * 1220 / 1e6))
+    assert cell_size(job, "live", max_cells=250_000) == pytest.approx(
+        math.sqrt(2440 * 1220 / 250_000))
+
+
+def test_step_forward_and_the_phase():
+    job = _fixture_job("job_multi_operation")
+    tp = compiler.compile_job(job).toolpath
+    pb = Playback(job, tp, 1.0)
+    seen = set()
+    last = -1.0
+    for _ in range(len(tp.commands) + 5):
+        pb.step()
+        assert pb.time >= last
+        last = pb.time
+        seen.add(pb.phase)
+    assert pb.time == pytest.approx(pb.total)
+    assert {"rapid"} <= seen and seen & {"roughing", "finishing", "cutting"}
+
+
+@pytest.mark.parametrize("controller", ["grbl", "linuxcnc"])
+def test_a_gcode_file_simulates_like_its_toolpath(controller):
+    """2DCam also plays back G-code from elsewhere. Our own posted program,
+    read back, must remove the same stock as the toolpath it came from."""
+    from plugins.cam.engine.post import post_job
+    from plugins.cam.engine.simulate import toolpath_from_gcode
+    job = _fixture_job("pocket_island", controller)
+    tp = compiler.compile_job(job).toolpath
+    direct = Playback(job, tp, 1.0)
+    direct.run_to_end()
+    text = post_job(job, tp).files[0].text
+    imported, lines = toolpath_from_gcode(text, job, controller)
+    assert len(lines) == len(imported.commands)
+    via_gcode = Playback(job, imported, 1.0)
+    via_gcode.run_to_end()
+    assert via_gcode.field.removed_volume == pytest.approx(direct.field.removed_volume,
+                                                           rel=0.01)
+    assert text.splitlines()[lines[-1]].startswith(("G0", "G1", "G2", "G3"))

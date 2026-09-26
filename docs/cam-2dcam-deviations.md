@@ -105,6 +105,26 @@ They are worth fixing in 2DCam too. The case names refer to
 14. **Depth passes.** `ceil(depth / step)` gets a 1e-9 epsilon, so 1.0 /
     0.1 makes 10 passes, not an 11th pass at the same depth.
 
+## Simulation
+
+15. **Cell budgets.** 2DCam's playback resolutions are ported as they are
+    (a twentieth of the smallest tool, 0.1–1 mm, for *Preview*; a fortieth,
+    from 0.05 mm, for *High quality*), but the budgets that coarsen the grid
+    on a big stock are 250 000 cells while playing and 1 500 000 for a final
+    run, where 2DCam allows 1 M and 6 M. The 3D view is re-meshed in Python
+    on every frame, about 60 ms per million cells. A 2440 × 1220 sheet
+    therefore plays at about 3.4 mm cells, where 2DCam would use 1.7 mm.
+16. **What is simulated.** 2DCam posts the program, reads it back and
+    simulates the reconstruction. The port simulates the canonical toolpath
+    and shows the posted program beside it, line by line. Every export
+    already checks that the posted file reads back as that toolpath within
+    0.001 mm (`verify.round_trip`), so the two are the same motion.
+    *Open G-code…* simulates a program from elsewhere through the same
+    reader, as 2DCam's imported G-code does.
+17. **Sweeps.** 2DCam stamps the cutter sample by sample; the port stamps
+    the same disc of cells around every sample of a move in one NumPy pass.
+    The result is the same, and a final run of a small job takes seconds.
+
 ## Additions that keep parity when unused
 
 - **Peck drilling and dwell** (`peckDepth`, `dwellSeconds`). 2DCam drills

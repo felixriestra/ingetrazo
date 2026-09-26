@@ -14,6 +14,8 @@ first, then in `es.json` and `pt-BR.json`.
 | Toolpath | Trayectoria de herramienta | Percurso da ferramenta | The UI uses the short form "Trayectorias" / "Percursos" |
 | Stock | Material en bruto | Material bruto | "Tablero" / "Chapa" appear only in examples |
 | Job | Trabajo | Trabalho | |
+| Stock template | Plantilla de material | Modelo de material | A saved job setup to start new jobs from |
+| Preview / High quality (simulation) | Vista previa / Alta calidad | Prévia / Alta qualidade | 2DCam's live / final resolutions |
 | Operation | Operación | Operação | |
 | Outside profile | Perfilado exterior | Perfil externo | |
 | Inside profile | Perfilado interior | Perfil interno | |

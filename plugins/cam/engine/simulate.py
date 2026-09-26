@@ -36,6 +36,74 @@ from .toolpath import (Arc, DrillCycle, Dwell, Linear, Rapid, RetractZ, ToolChan
 #: 2DCam's quality presets: the largest cell size, in mm.
 QUALITY_CELL_MM = {"preview": 2.0, "standard": 1.0, "fine": 0.5}
 
+#: 2DCam's two playback resolutions (``SimulationPlaybackModel``): «live»
+#: for responsive playback, «final» for inspecting the finished surface.
+#: Per mode: the smallest cell (mm), the cell as a fraction of the
+#: smallest tool, and the cell budget over the whole stock.
+RESOLUTION = {
+    "live": {"min_cell": 0.1, "tool_fraction": 0.05, "max_cell": 1.0, "cells": 1_000_000},
+    "final": {"min_cell": 0.05, "tool_fraction": 0.025, "max_cell": None, "cells": 6_000_000},
+}
+
+
+def cell_size(job, mode: str = "live", max_cells: int | None = None) -> float:
+    """2DCam's cell size for ``mode``: a twentieth (live) or a fortieth
+    (final) of the smallest tool, never under 0.1 / 0.05 mm (live also
+    never over 1 mm), and coarse enough that the stock stays within the
+    mode's cell budget — or ``max_cells``, when the caller must draw the
+    field and cannot afford 2DCam's budget."""
+    r = RESOLUTION[mode]
+    ds = [t.diameter for t in job.tools if math.isfinite(t.diameter) and t.diameter > 0]
+    dmin = min(ds) if ds else 1.0
+    cell = dmin * r["tool_fraction"]
+    if r["max_cell"] is not None:
+        cell = min(r["max_cell"], cell)
+    cell = max(r["min_cell"], cell)
+    budget = r["cells"] if max_cells is None else min(r["cells"], max_cells)
+    area = job.stock.width * job.stock.depth
+    if math.isfinite(area) and area > 0:
+        cell = max(cell, math.sqrt(area / budget))
+    return cell
+
+
+def toolpath_from_gcode(text: str, job, dialect: str = "linuxcnc"):
+    """Any G-code program as a toolpath to simulate on ``job``'s stock (2DCam's
+    «simulate imported G-code»): ``(toolpath, command_lines)`` where
+    ``command_lines[i]`` is the 0-based line of command ``i``. The tool is
+    the one an ``M6`` asks for, or else the job's first; unknown feeds are
+    the machine's maximum. Coordinates are the program's, in the work
+    frame, converted to millimetres."""
+    from .toolpath import Toolpath
+    from .verify import parse_gcode
+    prog = parse_gcode(text, dialect)
+    changes = dict(prog.tool_changes)
+    tools = sorted(job.tools, key=lambda t: t.number)
+    cmds, lines = [], []
+    if 0 not in changes and tools:
+        cmds.append(ToolChange(tools[0].number))
+        lines.append(0)
+    cur = [None, None, None]
+    feed_max = job.machine.maximumFeed
+    for k, m in enumerate(prog.motions):
+        line = max(0, m.line - 1)
+        if k in changes:
+            cmds.append(ToolChange(changes[k]))
+            lines.append(line)
+        to = tuple(m.to[i] if m.to[i] is not None else cur[i] for i in range(3))
+        cur = list(to)
+        if None in to:
+            continue                      # nowhere yet: the first moves set one axis at a time
+        feed = m.feed if m.feed and m.feed > 0 else feed_max
+        if m.kind == "rapid":
+            cmds.append(Rapid(to))
+        elif m.kind == "linear":
+            cmds.append(Linear(to, feed))
+        else:
+            c = m.center or (0.0, 0.0, 0.0)
+            cmds.append(Arc(to, (c[0], c[1]), feed, m.kind == "arcCW"))
+        lines.append(line)
+    return Toolpath(cmds), lines
+
 
 class HeightField:
     """The stock as heights over a grid of ``rows × cols`` cells."""
@@ -82,23 +150,33 @@ class HeightField:
         points = points[points[:, 2] < top]
         if len(points) == 0:
             return
-        c0 = self._col(points[:, 0].min() - r)
-        c1 = self._col(points[:, 0].max() + r)
-        r0 = self._row(points[:, 1].min() - r)
-        r1 = self._row(points[:, 1].max() + r)
-        xs = self.x[c0:c1 + 1]
-        ys = self.y[r0:r1 + 1]
-        window = self.heights[r0:r1 + 1, c0:c1 + 1]
-        # Chunk so (samples × window cells) stays in memory.
-        per = max(1, int(2_000_000 // max(1, window.size)))
+        # The cells a cutter can touch around one sample, as offsets from
+        # the sample's own cell (2DCam stamps exactly this disc per sample;
+        # here every sample of the move is stamped in one pass).
+        nx = int(math.ceil(r / self.cell_w)) + 1
+        ny = int(math.ceil(r / self.cell_d)) + 1
+        oy, ox = np.mgrid[-ny:ny + 1, -nx:nx + 1]
+        ox, oy = ox.ravel(), oy.ravel()
+        ox0, oy0 = self.stock.origin[0], self.stock.origin[1]
+        flat = self.heights.reshape(-1)
+        per = max(1, 3_000_000 // len(ox))
         for s in range(0, len(points), per):
             p = points[s:s + per]
-            dx = xs[None, None, :] - p[:, 0, None, None]
-            dy = ys[None, :, None] - p[:, 1, None, None]
-            d = np.sqrt(dx * dx + dy * dy)                   # (n, rows, cols)
-            surface = p[:, 2, None, None] + cutter_rise(tool, d)
-            surface = np.where(d <= r, surface, np.inf)
-            np.minimum(window, np.maximum(self.bottom, surface.min(axis=0)), out=window)
+            ci = np.floor((p[:, 0] - ox0) / self.cell_w).astype(np.int64)
+            ri = np.floor((p[:, 1] - oy0) / self.cell_d).astype(np.int64)
+            cols = ci[:, None] + ox[None, :]
+            rows = ri[:, None] + oy[None, :]
+            inside = (cols >= 0) & (cols < self.cols) & (rows >= 0) & (rows < self.rows)
+            cc = np.clip(cols, 0, self.cols - 1)
+            rr = np.clip(rows, 0, self.rows - 1)
+            dx = self.x[cc] - p[:, 0, None]
+            dy = self.y[rr] - p[:, 1, None]
+            d = np.sqrt(dx * dx + dy * dy)
+            hit = inside & (d <= r)
+            if not hit.any():
+                continue
+            surface = np.maximum(self.bottom, p[:, 2, None] + cutter_rise(tool, d))
+            np.minimum.at(flat, (rr * self.cols + cc)[hit], surface[hit])
 
 
 def cutter_rise(tool, d):
@@ -261,6 +339,28 @@ class Playback:
 
     def run_to_end(self) -> None:
         self.seek(self.total)
+
+    def step(self) -> None:
+        """To the end of the command under way, or of the next one when
+        this one is done (2DCam's Step Forward)."""
+        if not self.times:
+            return
+        i = self.command_index
+        t = self.times[i]
+        while t <= self.time + 1e-9 and i + 1 < len(self.times):
+            i += 1
+            t = self.times[i]
+        self.seek(t)
+
+    @property
+    def phase(self) -> str | None:
+        """The kind of the toolpath section under way: roughing,
+        finishing, rapid, leadIn, leadOut, linking, cutting, auxiliary."""
+        i = self.command_index
+        for sec in self.toolpath.sections or ():
+            if sec.start <= i < sec.stop:
+                return sec.kind
+        return None
 
     @property
     def command_index(self) -> int:
