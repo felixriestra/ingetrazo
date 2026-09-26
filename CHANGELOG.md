@@ -14,6 +14,13 @@ follow [SemVer](https://semver.org).
   Preferencias ya ofrece el portugués, que solo estaba en el menú.
 
 ### Corregido
+- **Compositor: una vista movida engancha donde está** (#122, PR #124 de
+  @pacaeiro): tras mover una vista (con el ratón, las flechas o deshacer),
+  la cota y todo lo que engancha seguían buscando los vértices donde estaba
+  antes.
+- **Rectángulo desde el centro: el «Cuadrado» es un cuadrado** (#119, PR #126
+  de @pacaeiro): con Ctrl, el aviso de cuadrado salía con lados distintos
+  (4,00 × 4,10 m).
 - **Las unidades se recuerdan para los documentos nuevos** (#121): elegir
   milímetros en Preferencias ▸ Unidades solo valía para el documento abierto
   y cada archivo nuevo (o cada arranque) volvía a metros. Ahora la casilla
