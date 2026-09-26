@@ -557,3 +557,18 @@ def test_paths_say_what_is_wrong_with_them(settings_file, tmp_path):
     tips = " ".join(dock.path_list.item(i).toolTip() for i in range(dock.path_list.count()))
     assert "crosses itself" in tips and "partly outside the stock" in tips
     _close(win, dock)
+
+
+def test_paths_chosen_in_the_list_survive_an_edit(settings_file, tmp_path):
+    """Found in the visual check, 2026-09-26: after any edit the poll of
+    the model's (empty) selection wiped the paths chosen in the list."""
+    win, dock, _model = _job(settings_file, tmp_path)
+    _draw(win, _rect(10, 10, 60, 40))
+    dock.refresh_paths()
+    dock._sync_paths_from_model()
+    dock.choose_paths({0})
+    _draw(win, _rect(100, 10, 150, 40))                 # an edit elsewhere
+    dock.refresh_paths()
+    dock._sync_paths_from_model()
+    assert len(dock.chosen_paths()) == 1 and len(dock.overlay.chosen_a) == 4
+    _close(win, dock)

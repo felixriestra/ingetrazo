@@ -63,7 +63,11 @@ def plan_camera(stock_width_mm: float, stock_depth_mm: float, aspect: float = 1.
     cam.perspective = False
     cam.aspect = aspect
     w, d = stock_width_mm / 1000.0, stock_depth_mm / 1000.0
-    cam.fit_to(QVector3D(0.0, 0.0, 0.0), QVector3D(w, d, 0.0))
+    # Straight down, so the stock's width against the view's width and its
+    # depth against the height decide; 15 % to spare around it.
+    cam.target = QVector3D(w * 0.5, d * 0.5, 0.0)
+    half_h = max(d * 0.5, w * 0.5 / max(aspect, 1e-3)) * 1.15
+    cam.distance = half_h / math.tan(math.radians(cam.fov_deg) / 2.0)
     t = cam.target
     out = {"target": [float(t.x()), float(t.y()), float(t.z())]}
     for k in ("distance", "yaw", "pitch", "fov_deg", "perspective", "two_point"):
