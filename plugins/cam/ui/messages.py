@@ -16,7 +16,7 @@ from ..i18n import tr
 #: Parameters that are lengths (mm) or feeds (mm/min) in the engine.
 LENGTH_KEYS = {"diameter", "depth", "height", "step_down", "allowance", "inset", "x", "y", "z",
                "peck", "flute", "bottom", "start_radius", "end_radius", "spread", "safe",
-               "delta", "bore", "width", "reach"}
+               "delta", "bore", "width", "reach", "size", "travel"}
 FEED_KEYS = {"feed", "limit_feed"}
 
 
@@ -117,6 +117,16 @@ def _templates() -> dict:
             "The G-code does not read back as the toolpath ({reason}). Do not run it."),
         "post_dialect_violation": tr(
             "The G-code contains something the controller rejects ({rule}, line {line})."),
+        "sheet_operation_without_tool": tr("Operation {number} ({name}) has no tool."),
+        "sheet_no_operations": tr("The job has no operations."),
+        "sheet_all_disabled": tr("Every operation is turned off."),
+        "sheet_stock_exceeds_x": tr(
+            "The stock ({size}) is longer than the machine's X travel ({travel})."),
+        "sheet_stock_exceeds_y": tr(
+            "The stock ({size}) is wider than the machine's Y travel ({travel})."),
+        "sheet_stock_exceeds_z": tr(
+            "The stock ({size}) is thicker than the machine's Z travel ({travel})."),
+        "sheet_travel_invalid": tr("The machine's travel limits are not valid."),
     }
 
 

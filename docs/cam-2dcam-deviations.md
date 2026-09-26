@@ -157,6 +157,23 @@ Where it differs:
 23. **Traits are not stored.** 2DCam's schema has `tool_trait`, but its
     repository never reads or writes it; the port does the same.
 
+## Setup sheet
+
+`engine/sheet.py` gathers 2DCam's `SetupSheet` content; `ui/setup_sheet.py`
+draws 2DCam's A4 layout and pagination on `QPdfWriter`.
+
+24. **Each operation is compiled on its own.** 2DCam compiles the job once,
+    so one failing operation leaves the sheet without times or plan view.
+    The port names the failing operation and keeps the others' times and
+    their place in the plan; the total is withheld, since it would leave an
+    operation out.
+25. **Program files.** The sheet lists the files export writes, in run
+    order — on GRBL one per tool, with the reminder to load the tool and
+    set Z zero before each; on LinuxCNC the program and its `.tbl`.
+26. **Not on the sheet:** fixtures (the port has none in the verifier),
+    job sides and job notes (the port's job has neither). Warnings are
+    engine codes (`sheet_*`), worded by the UI.
+
 ## Additions that keep parity when unused
 
 - **Peck drilling and dwell** (`peckDepth`, `dwellSeconds`). 2DCam drills

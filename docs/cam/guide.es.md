@@ -206,6 +206,20 @@ usuario, con copias de seguridad automáticas (las diez últimas). En un Mac
 con 2DCam, **Archivo de la biblioteca… ▸ Compartir la biblioteca de 2DCam**
 hace que los dos programas usen la misma.
 
+## La hoja de preparación
+
+**Hoja de preparación (PDF)…**, en la pestaña **Salida**, escribe la página
+para tener junto a la máquina, y la abre: el material y su tipo, dónde poner
+el cero X/Y y el cero Z, la máquina, los **archivos del programa en el orden
+de ejecución** (en GRBL uno por herramienta, con el recordatorio de colocar
+la herramienta y volver a poner el cero en Z antes de cada uno), una vista en
+planta de todas las trayectorias con un color por operación, las
+herramientas con sus velocidades y avances, y las operaciones con sus
+profundidades y tiempos. Lo que hay que mirar antes —una operación sin
+herramienta o que no se puede calcular, un material más grande que el
+recorrido de la máquina— aparece en **Comprueba antes de mecanizar**. La hoja
+sale en el idioma de IngeTrazo.
+
 ## Guardar y reutilizar un trabajo
 
 Un trabajo es su propio archivo `.igcam`: la preparación, las herramientas,

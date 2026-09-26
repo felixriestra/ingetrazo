@@ -133,4 +133,12 @@ CODES: dict[str, str] = {
     "post_arc_too_small": WARNING,
     "post_round_trip_failed": ERROR,
     "post_dialect_violation": ERROR,
+    # --- the setup sheet (engine/sheet.py) --------------------------------
+    "sheet_operation_without_tool": WARNING,
+    "sheet_no_operations": WARNING,
+    "sheet_all_disabled": WARNING,
+    "sheet_stock_exceeds_x": WARNING,
+    "sheet_stock_exceeds_y": WARNING,
+    "sheet_stock_exceeds_z": WARNING,
+    "sheet_travel_invalid": WARNING,
 }

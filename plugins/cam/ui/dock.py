@@ -555,6 +555,14 @@ class CamDock(QDockWidget):
         self.btn_export.clicked.connect(self.export)
         self.btn_export.setEnabled(False)
         lay.addWidget(self.btn_export)
+        # The page for the machine (ui/setup_sheet.py): stock, work zero,
+        # tools and feeds, operations with times, files, a top view.
+        self.btn_sheet = QPushButton(tr("Setup sheet (PDF)…"))
+        self.btn_sheet.setToolTip(tr(
+            "A printable page for the machine: the stock, the work zero, the tools with "
+            "their speeds and feeds, the operations with their times and the files to run."))
+        self.btn_sheet.clicked.connect(self.setup_sheet)
+        lay.addWidget(self.btn_sheet)
         return w
 
     # ==== keyboard focus =========================================================
@@ -1551,6 +1559,37 @@ class CamDock(QDockWidget):
         self._set_status(tr("Saved {count} file(s): {names}", count=len(written),
                             names=", ".join(Path(p).name for p in written)))
         return written
+
+    def setup_sheet(self, path: str | None = None) -> str | None:
+        """Write the job's setup sheet as a PDF (asking where, unless
+        ``path``) and open it. Returns the written path."""
+        from .setup_sheet import write_pdf
+        self.flush()
+        job = self.state.work_job()
+        if path is None:
+            start = str(Path.home() / (_safe_name(job.name) + "-setup-sheet.pdf"))
+            path, _ = QFileDialog.getSaveFileName(self, tr("Setup sheet"), start,
+                                                  tr("PDF (*.pdf)"))
+            if not path:
+                return None
+            open_after = True
+        else:
+            open_after = False
+        if not path.lower().endswith(".pdf"):
+            path += ".pdf"
+        try:
+            pages = write_pdf(job, path, _safe_name(job.name))
+        except OSError as exc:
+            self._set_status(tr("The setup sheet could not be saved: {reason}",
+                                reason=str(exc)), error=True)
+            return None
+        self._set_status(tr("Saved the setup sheet ({pages} page(s)): {name}", pages=pages,
+                            name=Path(path).name))
+        if open_after:
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+        return path
 
     # ==== helpers ============================================================
     def _set_status(self, text: str, error: bool = False) -> None:

@@ -91,3 +91,13 @@ first, then in `es.json` and `pt-BR.json`.
 | Softwood / Hardwood | Madera blanda / Madera dura | Madeira macia / Madeira dura | |
 | Trash | Papelera | Lixeira | |
 | Estimate | Estimación | Estimativa | Never «dato» / «dado» |
+
+### Setup sheet
+
+| en | es | pt-BR | Notes |
+|---|---|---|---|
+| Setup sheet | Hoja de preparación | Ficha de preparação | The printed page for the machine |
+| Program files | Archivos del programa | Arquivos do programa | |
+| Plan view | Vista en planta | Vista em planta | Toolpaths seen from above |
+| Work offset | Decalaje de trabajo | Deslocamento de trabalho | G54… |
+| Travel limits | Límites de recorrido | Limites de curso | |

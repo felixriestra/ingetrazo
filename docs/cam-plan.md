@@ -413,7 +413,9 @@ people work on it.
    and speeds presets~~ — **done**: `plugins/cam/toollib` (2DCam's schema,
    resolver, validator and importer, checked against 2DCam's answers) and
    the library window (`ui/library.py`), reached from the Tools tab.
-4. A setup sheet PDF (QtPdf / `QPdfWriter`), translated like the UI.
+4. ~~A setup sheet PDF (QtPdf / `QPdfWriter`), translated like the UI~~ —
+   **done**: `engine/sheet.py` (content) and `ui/setup_sheet.py` (A4 PDF),
+   from the Output tab.
 5. Nesting several parts onto one sheet (`LayoutEngine`), a strong fit
    with IngeTrazo's cut list.
 6. Bitmap tracing (`vtracer`), if users ask for it.

@@ -183,6 +183,18 @@ hand are never overwritten by a later import.
 automatically (the latest ten copies). On a Mac with 2DCam, **Library
 file… ▸ Share 2DCam's library** makes both programs use the same one.
 
+## The setup sheet
+
+**Setup sheet (PDF)…** on the **Output** tab writes the page to keep next to
+the machine, and opens it: the stock and its material, where to set X/Y and
+Z zero, the machine, the **program files to run in order** (on GRBL one per
+tool, with the reminder to load the tool and set Z zero before each), a top
+view of every toolpath coloured by operation, the tools with their speeds
+and feeds, and the operations with their depths and times. Anything that
+needs a look first — an operation without a tool or that cannot be
+calculated, a stock bigger than the machine's travel — is listed under
+**Check before machining**. The sheet is in the language IngeTrazo is in.
+
 ## Saving and reusing a job
 
 A job is its own `.igcam` file: the setup, the tools, the drawing and the

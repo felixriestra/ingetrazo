@@ -202,6 +202,19 @@ usuário, com backups automáticos (os dez últimos). Num Mac com o 2DCam,
 **Arquivo da biblioteca… ▸ Compartilhar a biblioteca do 2DCam** faz os dois
 programas usarem a mesma.
 
+## A ficha de preparação
+
+**Ficha de preparação (PDF)…**, na aba **Saída**, grava a página para deixar
+junto à máquina, e a abre: o material e seu tipo, onde fazer o zero X/Y e o
+zero Z, a máquina, os **arquivos do programa na ordem de execução** (no GRBL
+um por ferramenta, com o lembrete de colocar a ferramenta e zerar o eixo Z
+antes de cada um), uma vista em planta de todos os percursos com uma cor por
+operação, as ferramentas com suas rotações e avanços, e as operações com
+suas profundidades e tempos. O que precisa ser olhado antes — uma operação
+sem ferramenta ou que não pode ser calculada, um material maior que o curso
+da máquina — aparece em **Confira antes de usinar**. A ficha sai no idioma do
+IngeTrazo.
+
 ## Salvar e reutilizar um trabalho
 
 Um trabalho é seu próprio arquivo `.igcam`: a preparação, as ferramentas, o
