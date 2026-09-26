@@ -677,7 +677,7 @@ PROVIDER_INFO = {
                "https://aistudio.google.com/app/apikey"),
     "openrouter": ("OpenRouter", "https://openrouter.ai/keys"),
     "deepseek": ("DeepSeek", "https://platform.deepseek.com/api_keys"),
-    "ollama": ("Ollama (local)", "https://ollama.com/download"),
+    "ollama": ("Local: Ollama / LM Studio", "https://ollama.com/download"),
 }
 
 

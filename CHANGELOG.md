@@ -58,6 +58,10 @@ follow [SemVer](https://semver.org).
   necesitan vive en una extensión, no en el núcleo.
 
 ### Cambiado
+- **Asistente IA: LM Studio además de Ollama.** El proveedor local ya hablaba
+  la API compatible con OpenAI que usa LM Studio; ahora la interfaz lo dice:
+  «Local: Ollama / LM Studio», con la URL de cada uno en la ayuda
+  (`http://localhost:1234` para LM Studio).
 - **Icono de Zoom a extensión** (#112): ahora es la lupa con tres flechas
   hacia las esquinas, como en SketchUp, para que quien viene de allí lo
   reconozca; antes eran cuatro esquinas que pocos identificaban.

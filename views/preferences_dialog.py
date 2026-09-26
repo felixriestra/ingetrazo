@@ -263,7 +263,7 @@ class PreferencesDialog(QDialog):
 
         self._api_key = QLineEdit(str(st.value("ia/api_key", "") or ""))
         self._api_key.setEchoMode(QLineEdit.Password)
-        self._api_key.setPlaceholderText(tr("empty = local Ollama"))
+        self._api_key.setPlaceholderText(tr("empty = local AI (Ollama, LM Studio)"))
         form.addRow(tr("API key:"), self._api_key)
 
         self._model = QLineEdit(str(st.value("ia/modelo", "") or ""))
@@ -272,7 +272,7 @@ class PreferencesDialog(QDialog):
 
         self._ollama = QLineEdit(str(st.value("ia/ollama_url",
                                               "http://localhost:11434") or ""))
-        form.addRow(tr("Ollama URL:"), self._ollama)
+        form.addRow(tr("Local AI URL:"), self._ollama)
 
         self._shots = QCheckBox(tr("Send viewport screenshots to the model"))
         self._shots.setChecked(str(st.value("ia/capturas", "1")) != "0")

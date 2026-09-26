@@ -146,7 +146,7 @@ class AsistenteDialog(QDialog):
         row.addWidget(QLabel(tr("API key:")))
         self._key = QLineEdit()
         self._key.setEchoMode(QLineEdit.Password)
-        self._key.setPlaceholderText(tr("empty = local Ollama"))
+        self._key.setPlaceholderText(tr("empty = local AI (Ollama, LM Studio)"))
         self._key.textChanged.connect(self._on_key_changed)
         row.addWidget(self._key, 1)
         layout.addLayout(row)
@@ -162,7 +162,7 @@ class AsistenteDialog(QDialog):
         row2.addStretch()
         self._ollama = QLineEdit("http://localhost:11434")
         self._ollama.setMaximumWidth(220)
-        self._ollama.setToolTip(tr("Ollama URL (key left empty)"))
+        self._ollama.setToolTip(tr("Local AI server — Ollama: http://localhost:11434, LM Studio: http://localhost:1234 (key left empty)"))
         row2.addWidget(self._ollama)
         layout.addLayout(row2)
 
