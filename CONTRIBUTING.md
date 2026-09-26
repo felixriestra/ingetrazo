@@ -18,8 +18,8 @@ Requires Python 3.12+.
 ## Tests and CI
 
 ```bash
-python -m pytest -m "not slow"     # the fast suite (~40 s, what CI runs)
-python -m pytest                   # everything, including the slow fuzz sweeps
+python -m pytest -m "not slow"     # the fast suite (~3,100 tests, ~5 min; what CI runs)
+python -m pytest                   # everything (~3,900), including the slow fuzz sweeps
 ```
 
 **Every pull request runs the fast suite automatically** — your PR gets a
