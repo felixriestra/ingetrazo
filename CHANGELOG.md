@@ -59,6 +59,11 @@ follow [SemVer](https://semver.org).
   ejemplo**. Lo que solo algunos necesitan vive en una extensión, no en el
   núcleo.
 
+- **Edición ▸ Invertir selección** (Ctrl+Mayús+I, PR #113, Gabriel
+  Rodríguez), como en SketchUp: selecciona lo que no estaba seleccionado en
+  el contexto abierto, sin tocar lo oculto ni lo que está en capas ocultas o
+  bloqueadas.
+
 ### Cambiado
 - **La bandeja lateral recuerda qué secciones dejaste plegadas** (Info de
   entidad, Capas, Escenas, Materiales, Componentes…): al volver a abrir
@@ -72,6 +77,10 @@ follow [SemVer](https://semver.org).
   reconozca; antes eran cuatro esquinas que pocos identificaban.
 
 ### Corregido
+- **Láminas: una vista redimensionada ya no se estira** (PR #116, Pedro
+  Caeiro, #80): como en LayOut, el dibujo conserva su escala, el borde nuevo
+  se ve como papel y la vista se vuelve a renderizar sola al soltar (con
+  Autorenderizar), sin bloquear la ventana.
 - **Una imagen de referencia ya no queda tapada por lo que está detrás**:
   un triángulo trazado sobre una foto en el suelo y empujado hacia abajo
   pintaba sus caras sobre la foto vista desde arriba. Lo que se traza encima
