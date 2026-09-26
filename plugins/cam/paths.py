@@ -172,7 +172,10 @@ def _closed(frame, pts, ids, uid):
     if max(ws) - min(ws) > PLANE_TOL_MM:
         return None
     uv = [(p[0], p[1]) for p in uvw]
-    if abs(geo.signed_area(uv)) < 1e-6:
+    # A loop enclosing nothing is no path — unless it crosses itself: a
+    # bow tie's two halves cancel to zero area, and it must be listed (and
+    # flagged), not dropped without a word.
+    if abs(geo.signed_area(uv)) < 1e-6 and not _self_intersects(uv):
         return None
     return CamPath(uv, True, sum(ws) / len(ws), circle_of(uv), set(ids), [], uid)
 
@@ -223,6 +226,90 @@ def _dedupe(paths: list) -> list:
     # Largest first: outlines before the holes and details inside them.
     kept.sort(key=lambda p: (not p.closed, -p.area if p.closed else -p.length))
     return kept
+
+
+def signature(p: CamPath) -> dict:
+    """What an operation remembers of a path it was made from: enough to
+    find the path again after the job is reopened (the edges are new
+    objects then), and to tell whether an edit changed it."""
+    area = abs(geo.signed_area(p.points)) if p.closed else 0.0
+    return {"closed": p.closed, "circle": p.circle is not None,
+            "centroid": list(_centroid(p.points)), "area": area, "length": p.length}
+
+
+def same_shape(a: dict, b: dict, tol: float = 1e-3) -> bool:
+    """The two signatures describe the same path, unmoved."""
+    return (a["closed"] == b["closed"] and math.dist(a["centroid"], b["centroid"]) <= tol
+            and abs(a["area"] - b["area"]) <= tol * max(1.0, a["area"]) * 1e-2
+            and abs(a["length"] - b["length"]) <= tol)
+
+
+def find_again(sig: dict, paths: list, taken: set, edges: set | None = None,
+               reach_mm: float = 0.05) -> int | None:
+    """Index of the path ``sig`` was made from, or None.
+
+    In the session the edges tell: an edited rectangle keeps its edge
+    objects, so the path sharing the most edges with the old one is it,
+    wherever it moved. After reopening only the shape can tell, and then
+    only an unmoved path (within ``reach_mm``) is taken for it."""
+    best, best_n = None, 0
+    if edges:
+        for i, p in enumerate(paths):
+            if i in taken or p.closed != sig["closed"]:
+                continue
+            n = len(p.edges & edges)
+            if n > best_n:
+                best, best_n = i, n
+        if best is not None:
+            return best
+    for i, p in enumerate(paths):
+        if i in taken or p.closed != sig["closed"]:
+            continue
+        if same_shape(sig, signature(p), tol=reach_mm):
+            return i
+    return None
+
+
+def problems(p: CamPath, stock_w: float, stock_d: float) -> list:
+    """What is wrong with a path before any tool touches it: codes
+    ``crosses_itself``, ``outside_stock``, ``partly_outside_stock``."""
+    out = []
+    if p.closed and _self_intersects(p.points):
+        out.append("crosses_itself")
+    inside = [(-1e-6 <= u <= stock_w + 1e-6) and (-1e-6 <= v <= stock_d + 1e-6)
+              for u, v in p.points]
+    if not any(inside):
+        out.append("outside_stock")
+    elif not all(inside):
+        out.append("partly_outside_stock")
+    return out
+
+
+def _self_intersects(pts) -> bool:
+    """A closed polygon crossing itself (segments that are not neighbours
+    intersect). Bounding boxes first; the drawings here are small."""
+    n = len(pts)
+    segs = [(pts[i], pts[(i + 1) % n]) for i in range(n)]
+    boxes = [(min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
+             for a, b in segs]
+    for i in range(n):
+        for j in range(i + 2, n):
+            if i == 0 and j == n - 1:
+                continue                      # neighbours through the closing edge
+            bi, bj = boxes[i], boxes[j]
+            if bi[2] < bj[0] or bj[2] < bi[0] or bi[3] < bj[1] or bj[3] < bi[1]:
+                continue
+            if _cross(*segs[i], *segs[j]):
+                return True
+    return False
+
+
+def _cross(a, b, c, d) -> bool:
+    def orient(p, q, r):
+        v = (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+        return 0 if abs(v) < 1e-12 else (1 if v > 0 else -1)
+    o1, o2, o3, o4 = orient(a, b, c), orient(a, b, d), orient(c, d, a), orient(c, d, b)
+    return o1 * o2 < 0 and o3 * o4 < 0
 
 
 def paths_for_edges(paths: list, edge_ids: set) -> list:

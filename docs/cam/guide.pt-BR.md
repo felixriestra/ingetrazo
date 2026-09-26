@@ -147,8 +147,18 @@ máquina.
 Um trabalho é seu próprio arquivo `.igcam`: a preparação, as ferramentas, o
 desenho e as operações. **Salvar** (ou Arquivo ▸ Salvar) grava o arquivo;
 **Trabalhos recentes** na página inicial do CAM e Arquivo ▸ Abrir o
-reabrem. Toda alteração pode ser desfeita. Quando o desenho muda, a lista
-de traçados é lida de novo.
+reabrem. Toda alteração pode ser desfeita.
+
+**Mude o desenho e as operações acompanham.** Mova, estique ou desloque um
+traçado e cada operação feita com ele é refeita com o traçado novo e
+recalculada, mantendo todos os seus ajustes. Desfazer traz os dois de
+volta. Uma operação cujo traçado foi apagado, ou mudou tanto que já não dá
+a mesma operação, é marcada com **⚠** e mantém sua última geometria até
+você excluí-la ou adicioná-la de novo.
+
+**Os traçados são verificados enquanto você desenha.** Um traçado que
+cruza a si mesmo, ou que fica em parte ou todo fora do material, é marcado
+com **⚠** na lista; a dica diz por quê.
 
 ## Verificação
 

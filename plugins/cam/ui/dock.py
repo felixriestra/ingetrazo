@@ -31,6 +31,7 @@ import copy
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDockWidget, QFileDialog,
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox,
@@ -131,6 +132,12 @@ class CamDock(QDockWidget):
         self.paths: list = []
         self._path_frame = None
         self._sel_key = None
+        #: Per operation: the model edges of each path it was made from, so
+        #: an edited path is found again however far it moved (this
+        #: session only; after reopening, the shape finds it).
+        self._op_edges: dict = {}
+        #: Per operation: why it could not follow its paths (None: it did).
+        self.link_status: dict = {}
         self._paths_timer = QTimer(self)
         self._paths_timer.setSingleShot(True)
         self._paths_timer.timeout.connect(self.refresh_paths)
@@ -669,7 +676,10 @@ class CamDock(QDockWidget):
         self.op_list.blockSignals(True)
         self.op_list.clear()
         for op in self.state.job.operations:
-            it = QListWidgetItem(_op_label(op))
+            status = self.link_status.get(op.id)
+            it = QListWidgetItem(("⚠ " if status else "") + _op_label(op))
+            if status:
+                it.setToolTip(link_status_text(status))
             it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
             it.setCheckState(Qt.Checked if op.isEnabled else Qt.Unchecked)
             self.op_list.addItem(it)
@@ -739,13 +749,76 @@ class CamDock(QDockWidget):
         return extraction(chosen, self._path_frame)
 
     def _on_add(self, kind: str) -> None:
+        chosen = [] if kind == "facing" else self.chosen_paths()
         try:
             ex = None if kind == "facing" else self._extract()
             ops = build.add_operations(self.state, kind, ex)
         except CamError as exc:
             self._report_error(exc.issue)
             return
+        self._link(ops, chosen, kind)
         self._after_add(ops)
+
+    # ==== operations follow their paths =======================================
+    def _link(self, ops, chosen, kind) -> None:
+        """Remember which paths ``ops`` were made from, and in which order
+        one Add made them, so they can be made again when the paths
+        change (:meth:`_follow_paths`)."""
+        from ..paths import signature
+        if not chosen:
+            return
+        sigs = [signature(p) for p in chosen]
+        for i, op in enumerate(ops):
+            self.state.sources[op.id] = {"kind": "paths", "opKind": kind, "paths": sigs,
+                                         "index": i, "count": len(ops)}
+            self._op_edges[op.id] = [set(p.edges) for p in chosen]
+            self.link_status[op.id] = None
+
+    def _follow_paths(self) -> bool:
+        """After the drawing changed: find each operation's paths again and
+        rebuild its geometry from them, keeping every setting. Nothing is
+        written to the undo stack — the drawing edit is the undo step, and
+        undoing it brings the paths, and so the operations, back. An
+        operation whose paths are gone, or no longer give the operation it
+        was, keeps its last geometry and is flagged. True when any
+        operation changed."""
+        from ..paths import extraction, find_again, same_shape, signature
+        changed = False
+        for op in self.state.job.operations:
+            src = self.state.sources.get(op.id) or {}
+            if src.get("kind") != "paths":
+                continue
+            taken, found = set(), []
+            edges = self._op_edges.get(op.id) or [None] * len(src["paths"])
+            for sig, eds in zip(src["paths"], edges):
+                i = find_again(sig, self.paths, taken, eds)
+                if i is None:
+                    break
+                taken.add(i)
+                found.append(self.paths[i])
+            if len(found) != len(src["paths"]):
+                self.link_status[op.id] = "path_missing"
+                continue
+            self._op_edges[op.id] = [set(p.edges) for p in found]
+            new_sigs = [signature(p) for p in found]
+            if all(same_shape(a, b) for a, b in zip(src["paths"], new_sigs)):
+                self.link_status[op.id] = None
+                continue
+            probe = CamState.from_dict(self.state.to_dict())
+            probe.job.operations = []
+            try:
+                made = build.add_operations(probe, src.get("opKind", op.kind),
+                                            extraction(found, self._path_frame))
+            except CamError:
+                made = []
+            if len(made) != src.get("count", 1) or made[src.get("index", 0)].kind != op.kind:
+                self.link_status[op.id] = "path_changed"
+                continue
+            build.copy_geometry(op, made[src.get("index", 0)])
+            src["paths"] = new_sigs
+            self.link_status[op.id] = None
+            changed = True
+        return changed
 
     def _after_add(self, ops) -> None:
         self._refresh_all()
@@ -972,15 +1045,28 @@ class CamDock(QDockWidget):
         inch = self.state.job.is_inch
         self.path_list.blockSignals(True)
         self.path_list.clear()
+        from ..paths import problems
+        st = self.state.job.stock
         for n, p in enumerate(self.paths, 1):
-            item = QListWidgetItem(_path_label(p, n, inch))
-            item.setToolTip(item.text())
+            bad = problems(p, st.width, st.depth)
+            text = _path_label(p, n, inch)
+            item = QListWidgetItem(("⚠ " + text) if bad else text)
+            item.setToolTip("\n".join([text] + [path_problem_text(c) for c in bad]))
+            if bad:
+                item.setForeground(QColor(210, 120, 0))
             self.path_list.addItem(item)
             item.setSelected(bool(before & p.edges))
         self.path_list.blockSignals(False)
         self.paths_label.setText(tr("Paths ({count})", count=len(self.paths)))
         self._sel_key = None                # re-read the model's selection
         self._on_paths_chosen()
+        before_status = dict(self.link_status)
+        if self._follow_paths():
+            self._result_stale = True
+            self.overlay.set_outline(self.state, self._current_op())
+            self._schedule_recalc()
+        if self.link_status != before_status:
+            self._refresh_operations()      # only then: never under the user's typing
 
     def chosen_paths(self) -> list:
         rows = sorted(i.row() for i in self.path_list.selectedIndexes())
@@ -1404,6 +1490,23 @@ def _style_enabled(item, enabled: bool) -> None:
     font.setStrikeOut(not enabled)
     item.setFont(font)
     item.setForeground(item.listWidget().palette().text() if enabled else Qt.gray)
+
+
+def path_problem_text(code: str) -> str:
+    return {
+        "crosses_itself": tr("The path crosses itself."),
+        "outside_stock": tr("The path is outside the stock."),
+        "partly_outside_stock": tr("The path is partly outside the stock."),
+    }.get(code, code)
+
+
+def link_status_text(code: str) -> str:
+    return {
+        "path_missing": tr("Its path is no longer in the drawing. The operation keeps its "
+                           "last geometry."),
+        "path_changed": tr("Its path changed too much to make the same operation. The "
+                           "operation keeps its last geometry."),
+    }.get(code, code)
 
 
 def material_label(key: str) -> str:

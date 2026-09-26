@@ -149,8 +149,18 @@ en vacío en la máquina.
 Un trabajo es su propio archivo `.igcam`: la preparación, las herramientas,
 el dibujo y las operaciones. **Guardar** (o Archivo ▸ Guardar) lo escribe;
 **Trabajos recientes** en la página de inicio de CAM y Archivo ▸ Abrir lo
-vuelven a abrir. Todo cambio se puede deshacer. Cuando el dibujo cambia,
-la lista de trazados se vuelve a leer.
+vuelven a abrir. Todo cambio se puede deshacer.
+
+**Cambia el dibujo y las operaciones lo siguen.** Mueve, estira o desplaza
+un trazado y cada operación hecha con él se reconstruye con el trazado
+nuevo y se recalcula, conservando todos sus ajustes. Deshacer devuelve
+ambos. Una operación cuyo trazado se borró, o cambió tanto que ya no da la
+misma operación, se marca con **⚠** y conserva su última geometría hasta
+que la borres o la añadas de nuevo.
+
+**Los trazados se revisan mientras dibujas.** Un trazado que se cruza
+consigo mismo, o que queda en parte o del todo fuera del material, se
+marca con **⚠** en la lista; su descripción emergente dice por qué.
 
 ## Verificación
 

@@ -134,8 +134,18 @@ an air cut on the machine.
 
 A job is its own `.igcam` file: the setup, the tools, the drawing and the
 operations. **Save** (or File ▸ Save) writes it; **Recent jobs** on the CAM
-start page and File ▸ Open reopen it. Every change is undoable. When the
-drawing changes, the path list is read again.
+start page and File ▸ Open reopen it. Every change is undoable.
+
+**Change the drawing, and the operations follow.** Move, stretch or offset a
+path and every operation made from it is rebuilt from the new path and
+recalculated, with all its settings kept. Undo brings both back. An
+operation whose path was erased, or changed so much it no longer gives the
+same operation, is marked **⚠** and keeps its last geometry until you
+delete it or add it again.
+
+**Paths are checked as you draw.** A path that crosses itself, or lies
+partly or wholly outside the stock, is marked **⚠** in the list; its
+tooltip says why.
 
 ## Verification
 

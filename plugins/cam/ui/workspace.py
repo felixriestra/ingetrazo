@@ -108,7 +108,10 @@ class CamWorkspace:
         if self.path is None:
             return self.save_as()
         try:
-            save_job(self.scene, self.path)
+            # The dock's state, not the last one written to the undo stack:
+            # operations that followed an edited path carry their new
+            # geometry only there (see CamDock._follow_paths).
+            save_job(self.scene, self.path, state=self.dock.state.to_dict())
         except (OSError, JobFileError) as exc:
             QMessageBox.critical(self.dock, tr("CAM"),
                                  tr("The job could not be saved: {error}", error=str(exc)))

@@ -294,5 +294,10 @@
   "The job could not be saved: {error}": "Não foi possível salvar o trabalho: {error}",
   "Untitled CAM job": "Trabalho CAM sem título",
   "{count} outline(s) imported from the model.": "{count} contorno(s) importado(s) do modelo.",
-  "{name} is not a CAM job this version can open ({error}).": "{name} não é um trabalho CAM que esta versão consiga abrir ({error})."
+  "{name} is not a CAM job this version can open ({error}).": "{name} não é um trabalho CAM que esta versão consiga abrir ({error}).",
+  "The path crosses itself.": "O traçado cruza a si mesmo.",
+  "The path is outside the stock.": "O traçado está fora do material.",
+  "The path is partly outside the stock.": "O traçado está em parte fora do material.",
+  "Its path is no longer in the drawing. The operation keeps its last geometry.": "Seu traçado não está mais no desenho. A operação mantém sua última geometria.",
+  "Its path changed too much to make the same operation. The operation keeps its last geometry.": "Seu traçado mudou demais para fazer a mesma operação. A operação mantém sua última geometria."
 }
