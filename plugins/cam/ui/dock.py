@@ -28,7 +28,7 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDockWidget, QFileDialog,
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox,
-                               QPushButton, QRadioButton, QScrollArea, QSpinBox, QTabWidget,
+                               QPushButton, QScrollArea, QSpinBox, QTabWidget,
                                QToolButton, QVBoxLayout, QWidget)
 
 from .. import build
@@ -37,7 +37,8 @@ from ..engine.models import Tool, new_id
 from ..i18n import tr
 from ..state import PLUGIN_KEY, CamState
 from . import messages
-from .op_forms import FeedSpin, LengthSpin, OperationForm, kind_label, tool_kind_label
+from .op_forms import (CompactSpin, FeedSpin, LengthSpin, OperationForm, compact_combo,
+                       kind_label, tool_kind_label)
 from .overlay import ToolpathOverlay
 from .worker import Calculation
 
@@ -61,7 +62,17 @@ def show_dock(viewport) -> "CamDock":
         dock = win.add_plugin_dock(dock)
     else:                                   # a host without H2: float it
         dock.show()
+    dock.give_focus_to_model()
     return dock
+
+
+def _form(parent) -> QFormLayout:
+    """A form that puts a field under its label when the dock is narrow,
+    instead of demanding the width of the longest label plus field."""
+    f = QFormLayout(parent)
+    f.setRowWrapPolicy(QFormLayout.WrapLongRows)
+    f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+    return f
 
 
 def _scroll(widget: QWidget) -> QScrollArea:
@@ -100,6 +111,7 @@ class CamDock(QDockWidget):
         self._recalc_timer.timeout.connect(self.calculate)
 
         self._build()
+        self._hand_back_on_enter()
         viewport.overlay_painters.append(self.overlay)
         viewport.sceneVersionChanged.connect(self._on_scene_changed)
         self.visibilityChanged.connect(self._on_visibility)
@@ -118,7 +130,6 @@ class CamDock(QDockWidget):
     def _build_job(self) -> QWidget:
         w = QWidget()
         lay = QVBoxLayout(w)
-        row = QHBoxLayout()
         self.btn_setup = QPushButton(tr("Set up from selection"))
         self.btn_setup.setToolTip(tr("Use the selected faces, edges or part to place the "
                                      "machining plane and size the stock."))
@@ -127,9 +138,8 @@ class CamDock(QDockWidget):
         self.btn_part.setToolTip(tr("Add every operation the selected part needs: pockets, "
                                     "holes and the cut-out with tabs."))
         self.btn_part.clicked.connect(self._on_part_operations)
-        row.addWidget(self.btn_setup)
-        row.addWidget(self.btn_part)
-        lay.addLayout(row)
+        lay.addWidget(self.btn_setup)
+        lay.addWidget(self.btn_part)
         self.btn_refresh = QPushButton(tr("Refresh from the part"))
         self.btn_refresh.setToolTip(tr("Read the part's outline and holes again after "
                                        "changing the model. Parameters are kept."))
@@ -137,16 +147,16 @@ class CamDock(QDockWidget):
         lay.addWidget(self.btn_refresh)
 
         box = QGroupBox(tr("Job"))
-        f = QFormLayout(box)
+        f = _form(box)
         self.job_name = QLineEdit()
         self.job_name.editingFinished.connect(self._on_job_edited)
         f.addRow(tr("Name"), self.job_name)
-        self.controller = QComboBox()
+        self.controller = compact_combo()
         self.controller.addItem("GRBL", "grbl")
         self.controller.addItem("LinuxCNC", "linuxcnc")
         self.controller.currentIndexChanged.connect(self._on_job_edited)
         f.addRow(tr("Controller"), self.controller)
-        self.units = QComboBox()
+        self.units = compact_combo()
         self.units.addItem(tr("Millimetres"), "millimeters")
         self.units.addItem(tr("Inches"), "inches")
         self.units.currentIndexChanged.connect(self._on_units_changed)
@@ -154,7 +164,7 @@ class CamDock(QDockWidget):
         lay.addWidget(box)
 
         box = QGroupBox(tr("Stock"))
-        f = QFormLayout(box)
+        f = _form(box)
         self.stock_w, self.stock_d, self.stock_h = LengthSpin(), LengthSpin(), LengthSpin()
         self.margin = LengthSpin(1000.0)
         for spin, label in ((self.stock_w, tr("Width")), (self.stock_d, tr("Depth")),
@@ -168,38 +178,51 @@ class CamDock(QDockWidget):
 
         box = QGroupBox(tr("Work zero"))
         v = QVBoxLayout(box)
-        grid = QGridLayout()
+        pad = QWidget()
+        pad.setObjectName("cam_zero_pad")
+        grid = QGridLayout(pad)
+        grid.setContentsMargins(6, 6, 6, 6)
+        grid.setSpacing(18)
         self.zero_group = QButtonGroup(self)
+        self.zero_group.setExclusive(True)
         self.zero_buttons = {}
         for r, names in enumerate(ZERO_GRID):
             for c, name in enumerate(names):
-                b = QRadioButton()
+                b = QToolButton()
+                b.setCheckable(True)
+                b.setFixedSize(18, 18)
                 b.setToolTip(self._zero_tooltip(name))
                 self.zero_group.addButton(b)
                 self.zero_buttons[name] = b
                 grid.addWidget(b, r, c, Qt.AlignCenter)
+        _style_zero_pad(pad)
         self.zero_group.buttonToggled.connect(self._on_zero_edited)
-        v.addLayout(grid)
-        self.zero_z = QComboBox()
-        self.zero_z.addItem(tr("Z zero on the stock top"), "materialSurface")
-        self.zero_z.addItem(tr("Z zero on the machine bed"), "machineBed")
+        row = QHBoxLayout()
+        row.addWidget(pad)
+        row.addStretch(1)
+        v.addLayout(row)
+        self.zero_z = compact_combo()
+        self.zero_z.addItem(tr("Z0 on the stock top"), "materialSurface")
+        self.zero_z.addItem(tr("Z0 on the machine bed"), "machineBed")
         self.zero_z.currentIndexChanged.connect(self._on_zero_edited)
         v.addWidget(self.zero_z)
         lay.addWidget(box)
 
         box = QGroupBox(tr("Heights"))
-        f = QFormLayout(box)
+        f = _form(box)
         self.safe = LengthSpin(500.0)
         self.clearance = LengthSpin(500.0)
         self.safe.valueChanged.connect(self._on_job_edited)
         self.clearance.valueChanged.connect(self._on_job_edited)
-        f.addRow(tr("Safe height above the stock"), self.safe)
-        f.addRow(tr("Clearance height for drilling"), self.clearance)
+        self.safe.setToolTip(tr("Height above the stock top for moves between cuts."))
+        self.clearance.setToolTip(tr("Height above the stock top where drilling starts to feed."))
+        f.addRow(tr("Safe height"), self.safe)
+        f.addRow(tr("Drill clearance"), self.clearance)
         lay.addWidget(box)
 
         box = QGroupBox(tr("Machine"))
-        f = QFormLayout(box)
-        self.max_rpm, self.min_rpm = QSpinBox(), QSpinBox()
+        f = _form(box)
+        self.max_rpm, self.min_rpm = CompactSpin(), CompactSpin()
         for s in (self.max_rpm, self.min_rpm):
             s.setRange(0, 100_000)
             s.setSingleStep(1000)
@@ -208,14 +231,18 @@ class CamDock(QDockWidget):
         self.max_feed, self.max_plunge, self.rapid = FeedSpin(), FeedSpin(), FeedSpin()
         for s in (self.max_feed, self.max_plunge, self.rapid):
             s.valueChanged.connect(self._on_job_edited)
-        f.addRow(tr("Maximum spindle speed"), self.max_rpm)
-        f.addRow(tr("Minimum spindle speed"), self.min_rpm)
-        f.addRow(tr("Maximum feed"), self.max_feed)
-        f.addRow(tr("Maximum plunge feed (0 = same)"), self.max_plunge)
-        f.addRow(tr("Rapid feed (for the time estimate)"), self.rapid)
-        self.coolant = QCheckBox(tr("The machine has coolant (M8/M9)"))
-        self.spindle_dwell = QCheckBox(tr("Wait for the spindle to reach speed"))
-        self.flatten = QCheckBox(tr("Write arcs as straight segments (LinuxCNC)"))
+        self.max_plunge.setToolTip(tr("0: no separate limit for plunging."))
+        self.rapid.setToolTip(tr("Used for the time estimate only."))
+        f.addRow(tr("Max spindle"), self.max_rpm)
+        f.addRow(tr("Min spindle"), self.min_rpm)
+        f.addRow(tr("Max feed"), self.max_feed)
+        f.addRow(tr("Max plunge"), self.max_plunge)
+        f.addRow(tr("Rapid feed"), self.rapid)
+        self.coolant = QCheckBox(tr("Coolant (M8/M9)"))
+        self.spindle_dwell = QCheckBox(tr("Spindle warm-up pause"))
+        self.spindle_dwell.setToolTip(tr("Wait for the spindle to reach speed (G4)."))
+        self.flatten = QCheckBox(tr("Arcs as lines"))
+        self.flatten.setToolTip(tr("Write arcs as straight segments (LinuxCNC)."))
         for c in (self.coolant, self.spindle_dwell, self.flatten):
             c.toggled.connect(self._on_job_edited)
             f.addRow("", c)
@@ -247,25 +274,25 @@ class CamDock(QDockWidget):
             row.addWidget(b)
         lay.addLayout(row)
         form_w = QWidget()
-        f = QFormLayout(form_w)
-        self.t_number = QSpinBox()
+        f = _form(form_w)
+        self.t_number = CompactSpin()
         self.t_number.setRange(1, 999)
         self.t_name = QLineEdit()
-        self.t_kind = QComboBox()
+        self.t_kind = compact_combo()
         for k in ("flatEndMill", "ballEndMill", "bullNoseEndMill", "chamferMill", "drill",
                   "spotDrill"):
             self.t_kind.addItem(tool_kind_label(k), k)
         self.t_diameter = LengthSpin(200.0)
         self.t_flute = LengthSpin(300.0)
         self.t_length = LengthSpin(500.0)
-        self.t_flutes = QSpinBox()
+        self.t_flutes = CompactSpin()
         self.t_flutes.setRange(1, 12)
-        self.t_rpm = QSpinBox()
+        self.t_rpm = CompactSpin()
         self.t_rpm.setRange(1, 100_000)
         self.t_rpm.setSingleStep(500)
         self.t_rpm.setSuffix(" rpm")
         self.t_feed, self.t_plunge = FeedSpin(), FeedSpin()
-        self.t_angle = QSpinBox()
+        self.t_angle = CompactSpin()
         self.t_angle.setRange(10, 170)
         self.t_angle.setSuffix("°")
         self.t_tip = LengthSpin(50.0)
@@ -305,11 +332,15 @@ class CamDock(QDockWidget):
         menu.addAction(tr("Every operation for the selected part"), self._on_part_operations)
         self.btn_add.setMenu(menu)
         row.addWidget(self.btn_add)
-        for label, slot in (("↑", self._on_op_up), ("↓", self._on_op_down),
-                            (tr("Delete"), self._on_op_delete)):
-            b = QPushButton(label)
+        for label, slot, tip in (("↑", self._on_op_up, tr("Move up")),
+                                 ("↓", self._on_op_down, tr("Move down")),
+                                 ("✕", self._on_op_delete, tr("Delete"))):
+            b = QToolButton()
+            b.setText(label)
+            b.setToolTip(tip)
             b.clicked.connect(slot)
             row.addWidget(b)
+        row.addStretch(1)
         lay.addLayout(row)
         self.op_list = QListWidget()
         self.op_list.currentRowChanged.connect(self._on_op_selected)
@@ -364,6 +395,23 @@ class CamDock(QDockWidget):
         self.btn_export.setEnabled(False)
         lay.addWidget(self.btn_export)
         return w
+
+    # ==== keyboard focus =========================================================
+    def give_focus_to_model(self) -> None:
+        """Hand the keyboard back to the model. IngeTrazo's tool keys (Space
+        for Select, and the rest) are window shortcuts, and a CAM field that
+        keeps the focus swallows them: Space typed a blank into the field
+        and the tool never changed (reported 2026-09-26)."""
+        self.viewport.setFocus(Qt.OtherFocusReason)
+
+    def _hand_back_on_enter(self) -> None:
+        """Enter in any CAM field commits it and gives the keyboard back."""
+        from PySide6.QtWidgets import QAbstractSpinBox
+        for w in self.findChildren(QLineEdit):
+            w.returnPressed.connect(self.give_focus_to_model)
+        for w in self.findChildren(QAbstractSpinBox):
+            if w.lineEdit() is not None:
+                w.lineEdit().returnPressed.connect(self.give_focus_to_model)
 
     # ==== document ⇄ dock =====================================================
     def _document_data(self):
@@ -590,6 +638,7 @@ class CamDock(QDockWidget):
         self._refresh_all()
         self._changed()
         self._set_status(tr("Machining plane and stock set from the selection."))
+        self.give_focus_to_model()
 
     def _find_group(self, uid):
         from core.group import iter_placements
@@ -622,6 +671,7 @@ class CamDock(QDockWidget):
         else:
             self._set_status(tr("Refreshed {count} operation(s) from the part.",
                                 count=len(updated)))
+        self.give_focus_to_model()
 
     def _on_part_operations(self) -> None:
         try:
@@ -648,6 +698,7 @@ class CamDock(QDockWidget):
             self.op_list.setCurrentRow(self.state.job.operations.index(ops[-1]))
         self._set_status(tr("{count} operation(s) added.", count=len(ops)))
         self._changed()
+        self.give_focus_to_model()
 
     # ==== tools ===============================================================
     def _current_tool(self):
@@ -992,6 +1043,27 @@ class CamDock(QDockWidget):
             self.viewport.sceneVersionChanged.disconnect(self._on_scene_changed)
         except (RuntimeError, TypeError):
             pass
+
+
+def _style_zero_pad(pad: QWidget) -> None:
+    """The 9-point work-zero picker, drawn as the stock seen from above: a
+    framed rectangle with a small square at each point, the chosen one
+    filled with the highlight colour.
+
+    Palette ROLES, not colours, so IngeTrazo's theme switch re-resolves
+    them (views/theme.py re-sets every stylesheet). Outlines use the
+    placeholder-text grey: in the dark palette the usual ``mid`` role is
+    within a shade of the window colour, which is why the unlabelled
+    radio buttons this replaced read as black on black (reported
+    2026-09-26)."""
+    pad.setStyleSheet(
+        "#cam_zero_pad { border: 2px solid palette(placeholder-text); border-radius: 4px;"
+        " background: palette(base); }"
+        "#cam_zero_pad QToolButton { border: 1px solid palette(placeholder-text);"
+        " border-radius: 3px; background: palette(window); }"
+        "#cam_zero_pad QToolButton:hover { border: 1px solid palette(highlight); }"
+        "#cam_zero_pad QToolButton:checked { background: palette(highlight);"
+        " border: 2px solid palette(text); }")
 
 
 class _EmptyResult:

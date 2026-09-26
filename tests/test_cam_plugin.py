@@ -294,3 +294,67 @@ def test_bore_and_chamfer_from_the_top_face_through_the_dock(settings_file):
     assert not [i for i in dock._result.issues if i.is_error], \
         [(i.code, i.params) for i in dock._result.issues]
     dock.dispose()
+
+
+def _pulled_up_rectangle(scene, w=0.1, d=0.06, h=0.02):
+    """A rectangle pulled up 20 mm, as loose geometry (Rectangle + Push/Pull)."""
+    m = scene.mesh
+    v = QVector3D
+    b = [v(0, 0, 0), v(w, 0, 0), v(w, d, 0), v(0, d, 0)]
+    t = [v(0, 0, h), v(w, 0, h), v(w, d, h), v(0, d, h)]
+    m.add_face(list(reversed(b)))
+    top = m.add_face(t)
+    for i in range(4):
+        j = (i + 1) % 4
+        m.add_face([b[i], b[j], t[j], t[i]])
+    return top
+
+
+def test_stock_from_a_top_face_sits_on_the_ground(settings_file):
+    """Reported 2026-09-26: a rectangle pulled up 20 mm, set up from its
+    top face, got the 18 mm default stock — its box floated 2 mm up."""
+    from plugins.cam.ui.dock import show_dock
+    from views.main_window import MainWindow
+    win = MainWindow()
+    win.show()
+    scene = win.viewport.scene
+    _pulled_up_rectangle(scene)
+    top = max(scene.loose_mesh.faces, key=lambda f: (round(f.normal().z(), 3), f.area()))
+    scene.selection.clear()
+    scene.selection.add(top)
+    dock = show_dock(win.viewport)
+    dock._on_setup_from_selection()
+    assert dock.state.job.stock.height == pytest.approx(20.0, abs=1e-3)
+    zs = dock.overlay.stock_edges[:, :, 2]
+    assert zs.min() == pytest.approx(0.0, abs=1e-6)
+    assert zs.max() == pytest.approx(0.02, abs=1e-6)
+    dock.dispose()
+
+
+def test_no_stock_box_before_the_job_has_a_plane(settings_file):
+    from plugins.cam.ui.dock import show_dock
+    from views.main_window import MainWindow
+    win = MainWindow()
+    dock = show_dock(win.viewport)
+    assert len(dock.overlay.stock_edges) == 0
+    dock.dispose()
+
+
+def test_cam_hands_the_keyboard_back_to_the_model(settings_file):
+    """Space is IngeTrazo's Select key, a window shortcut: a CAM field that
+    keeps the focus swallows it. Opening CAM, acting in it, or pressing
+    Enter in a field must leave the keyboard with the model."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from plugins.cam.ui.dock import show_dock
+    win, _g = _window_with_board(settings_file)
+    win.activateWindow()
+    dock = show_dock(win.viewport)
+    dock.tabs.setCurrentIndex(0)
+    dock.job_name.setFocus()
+    QTest.keyClick(dock.job_name, Qt.Key_Return)
+    assert not dock.job_name.hasFocus()
+    dock.safe.setFocus()
+    QTest.keyClick(dock.safe.lineEdit(), Qt.Key_Enter)
+    assert not dock.safe.hasFocus()
+    dock.dispose()

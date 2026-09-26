@@ -62,6 +62,10 @@ class ToolpathOverlay:
 
     # ---- data ----------------------------------------------------------------
     def set_stock(self, state) -> None:
+        if state.frame is None:
+            # No machining plane yet: there is nowhere true to draw it.
+            self.stock_edges = np.empty((0, 2, 3))
+            return
         st = state.job.stock
         ox, oy, oz = st.origin
         xs, ys, zs = (ox, ox + st.width), (oy, oy + st.depth), (oz, oz + st.height)

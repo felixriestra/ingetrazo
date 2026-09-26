@@ -48,7 +48,36 @@ def kind_label(kind: str) -> str:
     }.get(kind, kind)
 
 
-class LengthSpin(QDoubleSpinBox):
+#: Width a number box asks for. Qt sizes a spin box to fit its LARGEST
+#: value with suffix ("10000.000 mm"), which made every form in the dock
+#: wide; real values are short, and the box still grows with the dock.
+COMPACT_WIDTH = 84
+
+
+class _Compact:
+    """Mixin: a spin box that asks for :data:`COMPACT_WIDTH`, not for the
+    width of its maximum value, and grows to the space it is given."""
+
+    def sizeHint(self):  # noqa: N802 — Qt override
+        s = super().sizeHint()
+        s.setWidth(min(s.width(), COMPACT_WIDTH))
+        return s
+
+    def minimumSizeHint(self):  # noqa: N802 — Qt override
+        s = super().minimumSizeHint()
+        s.setWidth(min(s.width(), COMPACT_WIDTH))
+        return s
+
+
+class CompactSpin(_Compact, QSpinBox):
+    """A whole-number box of compact width."""
+
+
+class CompactDouble(_Compact, QDoubleSpinBox):
+    """A decimal box of compact width (for values that are not lengths)."""
+
+
+class LengthSpin(_Compact, QDoubleSpinBox):
     """A length in millimetres, shown in mm or inches."""
 
     def __init__(self, maximum_mm: float = 10_000.0, minimum_mm: float = 0.0, parent=None):
@@ -79,7 +108,7 @@ class LengthSpin(QDoubleSpinBox):
         self.blockSignals(False)
 
 
-class FeedSpin(QDoubleSpinBox):
+class FeedSpin(_Compact, QDoubleSpinBox):
     """A feed in mm/min, shown in mm/min or in/min."""
 
     def __init__(self, parent=None):
@@ -108,8 +137,16 @@ class FeedSpin(QDoubleSpinBox):
         self.blockSignals(False)
 
 
-def _combo(items) -> QComboBox:
+def compact_combo() -> QComboBox:
+    """A combo that does not ask to be as wide as its longest item."""
     c = QComboBox()
+    c.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+    c.setMinimumContentsLength(8)
+    return c
+
+
+def _combo(items) -> QComboBox:
+    c = compact_combo()
     for value, label in items:
         c.addItem(label, value)
     return c
@@ -137,11 +174,11 @@ class OperationForm(QWidget):
         # A narrow dock puts the field under its label instead of clipping it.
         f.setRowWrapPolicy(QFormLayout.WrapLongRows)
         self.name = QLineEdit()
-        self.tool = QComboBox()
-        self.finishing_tool = QComboBox()
+        self.tool = compact_combo()
+        self.finishing_tool = compact_combo()
         self.depth = LengthSpin(1000.0)
         self.step_down = LengthSpin(1000.0)
-        self.stepover = QSpinBox()
+        self.stepover = CompactSpin()
         self.stepover.setRange(5, 100)
         self.stepover.setSuffix(" %")
         self.allowance = LengthSpin(50.0)
@@ -149,17 +186,19 @@ class OperationForm(QWidget):
         self.entry = _combo([("plunge", tr("Plunge")), ("ramp", tr("Ramp")),
                              ("helix", tr("Helix"))])
         self.compensation = _combo([("computer", tr("In the program")),
-                                    ("controller", tr("By the controller (G41/G42)"))])
-        self.finishing = QSpinBox()
+                                    ("controller", tr("By the controller"))])
+        self.compensation.setToolTip(tr("By the controller: G41/G42, LinuxCNC only."))
+        self.finishing = CompactSpin()
         self.finishing.setRange(0, 5)
         self.lead_in = LengthSpin(100.0)
         self.lead_out = LengthSpin(100.0)
-        self.tabs = QSpinBox()
+        self.tabs = CompactSpin()
         self.tabs.setRange(0, 16)
         self.tab_width = LengthSpin(200.0)
         self.tab_height = LengthSpin(100.0)
         self.peck = LengthSpin(200.0)
-        self.dwell = QDoubleSpinBox()
+        self.peck.setToolTip(tr("0 drills in one plunge."))
+        self.dwell = CompactDouble()
         self.dwell.setRange(0.0, 60.0)
         self.dwell.setDecimals(2)
         self.dwell.setSuffix(" s")
@@ -191,7 +230,7 @@ class OperationForm(QWidget):
             ("tabs", tr("Tabs"), self.tabs),
             ("tab_width", tr("Tab width"), self.tab_width),
             ("tab_height", tr("Tab height"), self.tab_height),
-            ("peck", tr("Peck depth (0 = none)"), self.peck),
+            ("peck", tr("Peck depth"), self.peck),
             ("dwell", tr("Dwell at the bottom"), self.dwell),
             ("nearest", "", self.nearest),
             ("closed", "", self.closed),
