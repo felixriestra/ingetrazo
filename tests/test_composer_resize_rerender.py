@@ -73,3 +73,38 @@ def test_a_released_resize_does_not_render_on_the_spot(monkeypatch):
         comp.close()
         win._saved_version = win.viewport.scene.version
         win.close()
+
+
+def test_a_resized_view_re_projects_its_snap_points():
+    """The vertices Dimension catches are projected through the frame's size
+    (page mm), so a resize must drop them -- a frame that kept the old set
+    caught its vertices where they used to be."""
+    import numpy as np
+    from views.composer import ComposerWindow, FrameItem
+    from views.main_window import MainWindow
+
+    win = MainWindow()
+    comp = ComposerWindow(win)
+    comp.show()
+    was_auto = comp._auto_render
+    try:
+        comp._auto_render = False
+        item = next(it for it in comp.canvas.items()
+                    if isinstance(it, FrameItem))
+        frame = item.model
+        comp.snap_cache[id(frame)] = (np.zeros((0, 2)), np.zeros((0, 3)))
+        comp.circle_cache[id(frame)] = []
+        comp.annot_cache[id(frame)] = []
+        comp.render_cache[id(frame)] = QImage(4, 4, QImage.Format_RGB32)
+
+        comp._on_view_resized(item)
+
+        assert comp.snap_cache.get(id(frame)) is None      # collected again
+        assert comp.circle_cache.get(id(frame)) is None
+        assert comp.annot_cache.get(id(frame)) is None
+        assert id(frame) in comp.render_cache              # but not the picture
+    finally:
+        comp._auto_render = was_auto
+        comp.close()
+        win._saved_version = win.viewport.scene.version
+        win.close()

@@ -8257,18 +8257,23 @@ class ComposerWindow(QMainWindow):
 
     def _on_view_resized(self, item: FrameItem) -> None:
         """A finished resize must not blank the frame (#80: the user was told to
-        Update after every corner drag). The picture that is there stays put,
-        cropped to the new frame by paint_frame_mm, and the frame is marked
-        stale; with Auto-render on the 400 ms timer picks the render up off
-        the mouse release, so the drag never blocks and a run of resizes
-        coalesces into one pass. The vector keeps its drawn lines and waits
-        for Update as everywhere else (its exact pass costs seconds); with
+        Update after every corner drag). Everything the frame caches in PAGE
+        millimetres -- snap points, circles, vector lines, annotations -- was
+        projected through its OLD size and has to go, or Dimension keeps
+        catching the vertices where they used to be. The picture is the one
+        exception: it stays, cropped to the new frame by paint_frame_mm, and
+        the 400 ms auto timer renders it again off the release; with
         Auto-render off the badge asks for it."""
-        self._stale.add(id(item.model))   # the picture no longer fits
-        self.refresh_items()              # the stale badge is painted here
+        frame = item.model
+        image = self.render_cache.get(id(frame))
+        self._forget_frame(frame)          # every page-mm cache is stale now
+        if image is not None:
+            self.render_cache[id(frame)] = image   # ... but not the picture
+        self._stale.add(id(frame))
+        self.refresh_items()               # the stale badge is painted here
         item.update()
         if self._auto_render and self.isVisible():
-            self._auto_timer.start()      # 400 ms: off the release, coalesced
+            self._auto_timer.start()       # 400 ms: off the release, coalesced
 
     # ---- Sheet templates (QGIS layout templates) ------------------------------
     @staticmethod
