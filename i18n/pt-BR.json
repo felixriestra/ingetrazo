@@ -652,6 +652,7 @@
  "«{name}» removed. Restart IngeTrazo to unload it.": "«{name}» removida. Reinicie o IngeTrazo para descarregá-la.",
  "The macOS package: IngeTrazo for Mac. Components that come apart: parts, cut list and exploded view.": "O pacote para macOS: IngeTrazo para Mac. Componentes que se desmontam: peças, lista de corte e vista explodida.",
  "The Back color in Styles and Edit ▸ Invert Selection.": "A Cor de trás nos Estilos e Editar ▸ Inverter seleção.",
+ "Architect and teacher of architectural representation. Two-point perspective, the current view as DXF, and the Levels extension.": "Arquiteto e professor de representação arquitetônica. Perspectiva de dois pontos, a vista atual em DXF e a extensão Níveis.",
  "Imported {name}": "Importado {name}",
  "{name} has no geometry — nothing to import.": "{name} não tem geometria: não há nada para importar.",
  "Imported {name}: {edges} edges in {groups} tagged groups": "Importado {name}: {edges} arestas em {groups} grupos etiquetados",

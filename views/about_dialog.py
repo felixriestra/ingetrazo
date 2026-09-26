@@ -49,6 +49,10 @@ CONTRIBUTORS = [
     ("Gabriel Rodríguez",
      "The Back color in Styles and Edit ▸ Invert Selection.",
      "https://github.com/canalsecuario-blip"),
+    ("José Castro Basso (FADU–UDELAR)",
+     "Architect and teacher of architectural representation. Two-point "
+     "perspective, the current view as DXF, and the Levels extension.",
+     "https://github.com/castrobasso"),
     ("Sherod Taylor",
      "The First Person tool: walk the model like a game.",
      "https://github.com/sherodtaylor"),
