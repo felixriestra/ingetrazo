@@ -10278,6 +10278,33 @@ class Viewport(QOpenGLWidget):
         parent when the group you were editing lived in another group."""
         self._leave_group_edit(todos=False)
 
+    def set_document(self, scene, history) -> tuple:
+        """Show another document: ``scene`` with its own undo ``history``
+        (host hook H5, for a plugin workspace such as CAM). Returns the
+        ``(scene, history)`` pair it replaces, untouched, to be handed back
+        later — the parked document keeps its undo steps and its selection.
+
+        The render caches remember the scene VERSION they were built for,
+        not which scene it was; two documents at the same version would
+        share stale buffers. So the incoming scene is moved past every
+        version this viewport has shown before it is drawn."""
+        self.end_group_edit()
+        old = (self.scene, self.history)
+        seen = max(getattr(self, "_versions_seen", 0), self.scene.version, scene.version)
+        scene.version = self._versions_seen = seen + 1
+        self.scene = scene
+        self.history = history
+        from core import units as _units
+        _units.bind_scene(scene)
+        self._edges_version = -1
+        self._hover_entity = None
+        self._hover_edge = None
+        self.last_snap = None
+        self.reference_edge = None
+        self.reference_mode = None
+        self.notify_scene_changed()
+        return old
+
     def end_group_edit(self) -> None:
         """Leave every open group, back to the model. What the menus and the
         save/export paths call."""
