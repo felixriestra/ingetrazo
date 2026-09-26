@@ -4,6 +4,17 @@ All notable changes to IngeTrazo are documented here.
 Format inspired by [Keep a Changelog](https://keepachangelog.com); versions
 follow [SemVer](https://semver.org).
 
+## [Sin publicar]
+
+### Corregido
+- **Modelos de SketchUp 2018 (y anteriores) que abrían incompletos**: una
+  cota anclada a un punto dentro de grupos anidados desalineaba la lectura y
+  se perdía casi todo lo que venía después en la raíz del modelo (una casa
+  abría con 2 de sus 72 objetos: solo muros y césped). Ahora abren enteros
+  (2384 colocaciones en vez de 12) y también se leen esas cotas. Arreglo
+  propuesto a OpenSKP (iamahsanmehmood/openskp#384) y aplicado en IngeTrazo
+  mientras tanto. Gracias a Juan José Noriega por los modelos.
+
 ## [0.5.3] — 2026-09-25
 
 **Lo que pidieron los usuarios, y extensiones para lo que solo algunos

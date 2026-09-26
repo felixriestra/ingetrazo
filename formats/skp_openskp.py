@@ -1302,6 +1302,8 @@ def parse(path, progress=None):
     no geometry comes out. Raises whatever OpenSKP raises on a file it cannot
     read (the caller treats that as "fall back to the converter")."""
     import openskp
+    from formats import openskp_compat
+    openskp_compat.apply()          # fixes still waiting upstream
     if progress is not None:
         progress(0.1, "Parsing .skp (OpenSKP)…")
     model = openskp.SkpFile.open(str(path)).parse()
