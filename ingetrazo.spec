@@ -118,12 +118,6 @@ hiddenimports += ['manifold3d', 'core.solids', 'tools.solid_tools']
 # Copy/Paste between windows (#76): imported lazily by the viewport and
 # the main window.
 hiddenimports += ['formats.clip']
-# Polygon offsets and booleans for the CAM plugin (plugins/cam/, a package
-# plugin loaded BY PATH at run time, so analysis never follows its
-# imports). A native extension (pyclipper._pyclipper) behind a pure-Python
-# __init__ — the mapbox_earcut shape of failure if it goes missing, so it
-# is named here and ``main.py --check`` asserts it imports.
-hiddenimports += collect_submodules('pyclipper')
 # The CAM tool library (plugins/cam/toollib) keeps its data in SQLite. Nothing
 # else imports sqlite3, and the plugin is loaded by path, so without this
 # the frozen builds would ship without it and the library could not open.

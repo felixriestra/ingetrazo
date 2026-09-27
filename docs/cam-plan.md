@@ -93,7 +93,7 @@ tracing with the `vtracer` wheel.
 | `Postprocessing/` | 555 | base only | Post protocol and capabilities; the dialects are new (GRBL, LinuxCNC) |
 | `Verification/` | 1,194 | yes | Verifier, G-code parser, round-trip check |
 | `Models/` (stock, tool, operation, strategy, machine) | ~1,100 | yes | Codable → dataclasses |
-| `CAD/ContourOffset`, `PolygonBoolean`, `GeometryKernel` | ~450 | replaced | Replaced by `pyclipper` (fewer lines in Python) |
+| `CAD/ContourOffset`, `PolygonBoolean`, `GeometryKernel` | ~450 | replaced | Replaced by `manifold3d.CrossSection` (first `pyclipper`; see deviation 30) |
 | `Simulation/` (excluding relief) | ~490 | v1.x | numpy heightfield |
 | `ToolLibrary/` | ~3,800 | v1.x | Only the schema and validator in v1 |
 
@@ -110,9 +110,9 @@ IngeTrazo scene (metres, QVector3D float32)
 plugins/cam/extract.py ── project onto the machining plane, convert to float64 mm,
    │                      orient loops (outer CCW, holes CW), note the plane frame
    ▼
-plugins/cam/engine/   (pure Python + pyclipper + numpy — NO Qt, NO i18n imports)
+plugins/cam/engine/   (pure Python + manifold3d + numpy — NO Qt, NO i18n imports)
    models.py        Stock, MachineSetup, Tool, Operation(+params), Strategy, Region, Tab
-   geometry.py      pyclipper offset/boolean, arc flattening, loop chaining, orientation
+   geometry.py      manifold3d offset/boolean, arc flattening, loop chaining, orientation
    toolpath.py      CanonicalToolpath, commands, sections, statistics, time estimate
    ops/             facing, profile, pocket, drill, engrave  (later bore, slot, chamfer)
    compiler.py      Operation list → one CanonicalToolpath (ordering, tool changes)
@@ -240,14 +240,16 @@ later, since all four are already on their roadmap in `docs/plugins.md`):
 
 | # | Change | Where | Size |
 |---|---|---|---|
-| H1 | **Bundle package plugins.** `ingetrazo.spec` only copies `plugins/*.py`; add package dirs (with their `i18n/*.json`) and the `pyclipper` hidden import. Mirror this in the AppImage build and the Windows installer. | `ingetrazo.spec`, `packaging/`, `installer/` | ~20 lines |
+| H1 | **Bundle package plugins.** `ingetrazo.spec` only copies `plugins/*.py`; add package dirs (with their `i18n/*.json`) (and, while the engine used it, the `pyclipper` hidden import). Mirror this in the AppImage build and the Windows installer. | `ingetrazo.spec`, `packaging/`, `installer/` | ~20 lines |
 | H2 | **Dock registration.** `main_window.add_plugin_dock(dock, area)` with the dock's state kept in the window-state save. | `views/main_window.py` | ~40 lines |
 | H3 | **Viewport overlay hook.** `viewport.overlay_painters: list[callable(painter, viewport)]`, called next to `_draw_geo_paths` in `_draw_overlay` (`views/viewport.py:5516` on the `cam-plugin` base); `_world_to_pixel` exposed as public API. | `views/viewport.py` | ~30 lines |
 | H4 | **Plugin data persistence.** `scene.plugin_data: dict[str, dict]` saved as `payload["plugin_data"]` in `.igz` and ignored gracefully by older readers (the same pattern `igz.py` already uses for optional keys). Undo goes through `SnapshotImport`. | `formats/igz.py`, `core/scene` | ~40 lines + tests |
 
-Dependencies: add **`pyclipper>=1.4`** to `requirements.txt`. Verified
-2026-09-25: cp314 wheels exist for manylinux x86_64/aarch64, win_amd64 and
-macOS. `numpy` is already present. Hold off on `shapely` and `vtracer`
+Dependencies: none new. The engine first used `pyclipper`; since
+2026-09-27 it uses `manifold3d.CrossSection` (Clipper2 inside), which
+IngeTrazo already requires, as the IngeTrazo maintainers asked — measured
+on the whole parity corpus and the controller checks first (deviation 30).
+`numpy` is already present. Hold off on `shapely` and `vtracer`
 until a v1.x feature needs them, in keeping with the repo's "deliberately
 minimal" dependency stance.
 
@@ -273,7 +275,7 @@ corpus**:
 3. `tests/test_cam_parity.py` runs the Python engine on every `job.json`
    and checks:
    - **Toolpath geometry within tolerance, not byte-identical.**
-     `pyclipper` offsets differ from 2DCam's own offset + iOverlay in
+     `manifold3d` offsets differ from 2DCam's own offset + iOverlay in
      vertex placement. Compare cut-motion polylines by Hausdorff distance
      ≤ 0.02 mm per section, with the same section kinds and order, and
      depth levels exactly equal.
@@ -392,7 +394,7 @@ templates.
 | M | Deliverable | Estimate | Done when |
 |---|---|---|---|
 | **M0** | **Preparation.** Build `IGTCam/twodcam-fixtures` (2DCam untouched) and generate the first corpus. Land H1–H4 in the fork. Write the CAM glossary (es/en/pt-BR). | 4–5 days | Corpus committed; a hello-world package plugin opens a dock with a translated title in all three languages, draws an overlay line, and its `plugin_data` survives save/reopen in a Flatpak build |
-| **M1** | **Engine foundation.** `models`, `io`, `issues`, `geometry` (pyclipper), `toolpath` (statistics + time estimate), `post/base`, and `verify` (verifier, parser, round-trip). | 1.5 weeks | Verifier tests ported and green; round-trip works on the Swift `toolpath.json` fixtures |
+| **M1** | **Engine foundation.** `models`, `io`, `issues`, `geometry` (manifold3d; first pyclipper), `toolpath` (statistics + time estimate), `post/base`, and `verify` (verifier, parser, round-trip). | 1.5 weeks | Verifier tests ported and green; round-trip works on the Swift `toolpath.json` fixtures |
 | **M2** | **v1 operations + posts.** Facing, profile (in/out/on, tabs, leads, ramp/helix), pocket with islands, drill with peck, engrave; the operation compiler with nearest-neighbour ordering and tool changes; the **GRBL and LinuxCNC posts** (including GRBL's one-file-per-tool split and LinuxCNC's canned cycles). | 2 weeks | Geometry parity on all v1 fixtures; goldens reviewed and frozen for both dialects |
 | **M3** | **Plugin UI.** Extraction (faces, edges, parts), the dock, operation forms, worker thread, overlay, persistence in `.igz`, and the issue-code → message layer. English strings only while the UI settles. | 1.5 weeks | End to end: model a board with holes, then Part → CAM → Calculate → Export for GRBL and for LinuxCNC; reopen the file with the job intact |
 | **M4** | **Translation and hardening.** Fill `es.json` and `pt-BR.json` from the glossary, with a review by a native speaker. Performance pass (numpy in the hot loops; target < 2 s for a 1,000-segment pocket), user docs in three languages, simulator checks, packaging on every channel, and **test cuts on a real GRBL machine and a real LinuxCNC machine**. | 1–1.5 weeks | i18n coverage test green; Flatpak, AppImage and Windows installer all run the smoke job in es/en/pt-BR; both machines cut a test part matching the model within tolerance |
@@ -429,7 +431,7 @@ people work on it.
 |---|---|
 | **Machine safety.** Wrong G-code breaks tools, machines and people. | Export is blocked on verifier errors. The G-code header states the controller, units and origin. The first run is a mandatory "air cut" check in the docs. The v1 release is labelled experimental. |
 | **GRBL variants** (GRBL 1.1, grblHAL, FluidNC) disagree at the edges. | Target the common GRBL 1.1 subset only (no `G43`, no canned cycles, no `M6`). Anything beyond it is opt-in later. Check against a real controller in M4. |
-| **pyclipper vs 2DCam geometry differences.** | Tolerance-based parity with invariants (above), not byte-equality. Keep the integer scale fixed (1 unit = 0.1 µm) and document it. |
+| **manifold3d (first pyclipper) vs 2DCam geometry differences.** | Tolerance-based parity with invariants (above), not byte-equality. Round joins get their segment count from the operation's arc tolerance. |
 | **Terminology drift across three languages.** | Glossary before catalogues; coverage and placeholder test; one native-speaker review per language. |
 | **Python performance** on dense pockets and simulation. | Clipper does the heavy geometry in C++. Keep per-point Python loops out of hot paths; numpy for simulation; calculation runs on a worker thread, cancellable. |
 | **Upstream drift** while the fork carries H1–H4 and the plugin. | Keep the host changes as four small, separate commits; rebase on `origin/main` regularly. The plugin itself touches no host files beyond those. |

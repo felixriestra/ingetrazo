@@ -227,17 +227,6 @@ def _self_check() -> int:
     if not ok:
         problems.append("manifold3d")
 
-    # The CAM plugin's offset/boolean kernel: native too, and imported only
-    # from a package plugin loaded by path, so PyInstaller never sees it.
-    try:
-        import pyclipper  # noqa: F401
-        ok, where = True, getattr(pyclipper, "__file__", "?")
-    except Exception as exc:  # noqa: BLE001
-        ok, where = False, f"({exc})"
-    print(f"  pyclipper      : {'found' if ok else 'MISSING'}  {where}")
-    if not ok:
-        problems.append("pyclipper")
-
     # The CAM tool library's store (plugins/cam/toollib). Standard library,
     # but nothing else in the app imports it, so a frozen build only has it
     # because the spec names it — and without it the library cannot open.

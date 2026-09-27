@@ -1,15 +1,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Felix Riestra (2DCam engine port).
 # Copyright (C) 2026 Marco Sumari Tellez and IngeTrazo contributors.
-"""2D geometry for the generators: offsets and booleans through pyclipper,
-plus the small polygon helpers 2DCam's ``GeometryKernel`` provides.
+"""2D geometry for the generators: offsets and booleans through
+``manifold3d.CrossSection``, plus the small polygon helpers 2DCam's
+``GeometryKernel`` provides.
 
-Offsets replace 2DCam's ``ContourOffset`` + iOverlay union. Clipper works
-on integers, so every coordinate is scaled by :data:`SCALE` on the way in
-and back on the way out: **1 unit = 0.1 µm**, fixed. That is three orders
-of magnitude below any tolerance the job uses and leaves ~9 × 10¹¹ mm of
-range in an int64 — a board of any size, re-based on its own origin by
-``plugins/cam/extract.py`` first.
+Offsets replace 2DCam's ``ContourOffset`` + iOverlay union. The library is
+manifold3d — Clipper2 inside, working in doubles — which IngeTrazo already
+ships for its solid booleans, so CAM adds no native dependency. (The port
+first used pyclipper; the switch was measured on the whole parity corpus
+before it was made: 33 of 39 jobs give the identical toolpath, the others
+differ by at most 0.09 mm in roughing and 0.05 mm in finishing, where
+both stay 0.001–0.010 mm outside the exact tool radius, and every program
+still passes LinuxCNC's and GRBL's own readers. See
+docs/cam-2dcam-deviations.md, item 30.)
+
+Round joins take manifold's ``circular_segments`` (segments per full
+circle), computed from the arc tolerance the operation asks for
+(:func:`segments`), so a chord never strays further from the true arc.
 
 Conventions (the whole engine relies on them):
 
@@ -22,13 +30,15 @@ from __future__ import annotations
 
 import math
 
-import pyclipper
+import manifold3d
 
-SCALE = 10_000.0
 #: Miter joins are effectively unbounded (2DCam intersects the offset edges
 #: with no limit): a sharp outside corner keeps its sharp tool path. The
 #: cap only guards against a near-zero angle shooting a vertex to infinity.
 MITER_LIMIT = 100.0
+
+_JOINS = {"miter": manifold3d.JoinType.Miter, "round": manifold3d.JoinType.Round,
+          "square": manifold3d.JoinType.Square}
 
 
 # ---- basics ------------------------------------------------------------------
@@ -186,23 +196,40 @@ def cleanup_tolerance(tool_diameter: float) -> float:
     return min(0.4, max(0.05, tool_diameter * 0.2))
 
 
-# ---- clipper bridge ----------------------------------------------------------
+# ---- offsets and booleans ----------------------------------------------------
 
-def _to_clipper(loop):
-    return [(int(round(p[0] * SCALE)), int(round(p[1] * SCALE))) for p in loop]
+def segments(radius: float, arc_tolerance: float) -> int:
+    """Segments for a FULL circle of ``radius`` whose chords stay within
+    ``arc_tolerance`` of the arc — the arc tolerance as manifold's
+    ``circular_segments``."""
+    r = abs(radius)
+    tol = max(arc_tolerance, 1e-6)
+    if r <= tol:
+        return 4
+    step = 2.0 * math.acos(max(-1.0, 1.0 - tol / r))
+    return max(4, int(math.ceil(2.0 * math.pi / step)))
 
 
-def _from_clipper(path):
-    return [(x / SCALE, y / SCALE) for x, y in path]
+def _section(loops, fill) -> "manifold3d.CrossSection":
+    return manifold3d.CrossSection([[[p[0], p[1]] for p in lp] for lp in loops
+                                    if len(lp) >= 3], fill)
 
 
-def _offsetter(join: str, arc_tolerance: float):
-    o = pyclipper.PyclipperOffset()
-    o.MiterLimit = MITER_LIMIT
-    o.ArcTolerance = max(1.0, arc_tolerance * SCALE)
-    jt = {"miter": pyclipper.JT_MITER, "round": pyclipper.JT_ROUND,
-          "square": pyclipper.JT_SQUARE}[join]
-    return o, jt
+def _pieces(cs) -> list:
+    """A CrossSection as ``[(outer CCW, [holes CW])]``: ``decompose()``
+    gives one piece per outer contour with its own holes; an island inside
+    a hole is a piece of its own."""
+    out = []
+    for part in cs.decompose():
+        loops = [[(float(x), float(y)) for x, y in poly] for poly in part.to_polygons()]
+        outers = [lp for lp in loops if len(lp) >= 3 and signed_area(lp) > 0]
+        holes = [oriented(lp, False) for lp in loops if len(lp) >= 3 and signed_area(lp) < 0]
+        if not outers:
+            continue
+        outers.sort(key=lambda lp: -signed_area(lp))
+        out.append((oriented(outers[0], True), holes))
+        out.extend((oriented(extra, True), []) for extra in outers[1:])
+    return out
 
 
 def offset(outer, holes, delta: float, join: str = "round",
@@ -210,28 +237,12 @@ def offset(outer, holes, delta: float, join: str = "round",
     """Offset the region ``outer`` minus ``holes`` by ``delta`` (grow when
     positive). Returns ``[(outer_loop, [hole_loops])]`` — possibly several
     pieces when a narrow waist pinches off, possibly none when the region
-    vanishes. Outer loops come back CCW, holes CW."""
-    o, jt = _offsetter(join, arc_tolerance)
-    o.AddPath(_to_clipper(oriented(outer, True)), jt, pyclipper.ET_CLOSEDPOLYGON)
-    for h in holes:
-        o.AddPath(_to_clipper(oriented(h, False)), jt, pyclipper.ET_CLOSEDPOLYGON)
-    tree = o.Execute2(delta * SCALE)
-    return _pieces(tree)
-
-
-def _pieces(tree) -> list:
-    out = []
-
-    def walk(node):
-        for child in node.Childs:          # outer contours
-            loop = _from_clipper(child.Contour)
-            holes = []
-            for h in child.Childs:
-                holes.append(oriented(_from_clipper(h.Contour), False))
-                walk(h)                      # islands inside holes
-            out.append((oriented(loop, True), holes))
-    walk(tree)
-    return out
+    vanishes (a loop with no area is no region: nothing comes back). Outer
+    loops come back CCW, holes CW."""
+    contours = [oriented(outer, True)] + [oriented(h, False) for h in holes]
+    cs = _section(contours, manifold3d.FillRule.Positive)
+    return _pieces(cs.offset(delta, _JOINS[join], max(2.0, MITER_LIMIT),
+                             segments(delta, arc_tolerance)))
 
 
 def offset_loop(loop, delta: float, join: str = "round",
@@ -248,22 +259,16 @@ def offset_loop(loop, delta: float, join: str = "round",
 
 def union(loops) -> list:
     """Union of closed loops (non-zero fill) as ``[(outer, [holes])]``."""
-    pc = pyclipper.Pyclipper()
-    for lp in loops:
-        if len(lp) >= 3:
-            pc.AddPath(_to_clipper(lp), pyclipper.PT_SUBJECT, True)
-    tree = pc.Execute2(pyclipper.CT_UNION, pyclipper.PFT_NONZERO, pyclipper.PFT_NONZERO)
-    return _pieces(tree)
+    if not any(len(lp) >= 3 for lp in loops):
+        return []
+    return _pieces(_section(loops, manifold3d.FillRule.NonZero))
 
 
 def difference(subject_loops, clip_loops) -> list:
-    pc = pyclipper.Pyclipper()
-    for lp in subject_loops:
-        pc.AddPath(_to_clipper(lp), pyclipper.PT_SUBJECT, True)
-    for lp in clip_loops:
-        pc.AddPath(_to_clipper(lp), pyclipper.PT_CLIP, True)
-    tree = pc.Execute2(pyclipper.CT_DIFFERENCE, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
-    return _pieces(tree)
+    """``subject_loops`` minus ``clip_loops`` (each read even-odd)."""
+    subject = _section(subject_loops, manifold3d.FillRule.EvenOdd)
+    clip = _section(clip_loops, manifold3d.FillRule.EvenOdd)
+    return _pieces(subject - clip)
 
 
 # ---- scanlines (pocket roughing rows) ---------------------------------------

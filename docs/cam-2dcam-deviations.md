@@ -196,6 +196,25 @@ draws 2DCam's A4 layout and pagination on `QPdfWriter`.
     every other as an island, which is wrong for a logo's separate letters.
     Outside profiles go round shapes only, inside profiles round holes.
 
+## Geometry library
+
+30. **manifold3d, not pyclipper.** 2DCam offsets with its own
+    `ContourOffset` and iOverlay; the port first used pyclipper (Clipper
+    1) and since 2026-09-27 uses `manifold3d.CrossSection` (Clipper 2),
+    which IngeTrazo already ships, so CAM brings no native dependency.
+    Measured before switching: on the 45-job parity corpus 33 jobs give
+    the identical toolpath and 6 error jobs fail the same way; the others
+    move by 0.001–0.012 mm, and two pockets by up to 0.09 mm in roughing
+    and 0.05 mm in finishing — two equally valid paths: with either
+    library the finishing pass stays 0.001–0.010 mm outside the exact
+    tool radius, never inside. All 251 posted programs still pass
+    LinuxCNC's `rs274` and GRBL's `gvalidate`, with LinuxCNC's moves
+    matching ours. Round joins take manifold's segments per circle,
+    computed from the operation's arc tolerance. Two G-code snapshots
+    (`pocket_island`) were regenerated. On invalid input the libraries
+    differ (a loop with no area now gives nothing; a self-crossing
+    "bow-tie" one piece, not three); the plugin flags such paths first.
+
 ## Additions that keep parity when unused
 
 - **Peck drilling and dwell** (`peckDepth`, `dwellSeconds`). 2DCam drills

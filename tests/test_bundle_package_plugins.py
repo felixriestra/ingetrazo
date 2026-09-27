@@ -7,9 +7,9 @@ directory with ``__init__.py``, submodules and its own ``i18n/*.json``) ran
 from the repo and the Flatpak — which copies the whole tree — and was
 silently missing from the AppImage, the tarball, the snap, the macOS app
 and the Windows installer, all of which are the one PyInstaller bundle.
-The CAM plugin is the first package plugin, and its offset kernel
-(``pyclipper``) is a native extension imported only from that plugin, so
-analysis never sees it either.
+The CAM plugin is the first package plugin. Its offsets and booleans go
+through manifold3d, which IngeTrazo itself already needs, so the plugin
+brings no native dependency of its own.
 """
 from __future__ import annotations
 
@@ -66,40 +66,32 @@ def test_no_plugins_folder_means_nothing_to_bundle(tmp_path):
     assert bundled_package_files(tmp_path / "absent") == []
 
 
-def test_the_spec_bundles_package_plugins_and_pyclipper():
+def test_the_spec_bundles_package_plugins():
     spec = (ROOT / "ingetrazo.spec").read_text(encoding="utf-8")
     assert "('plugins/*.py'" in spec                    # loose plugins still
     assert "bundled_package_files(ROOT / 'plugins')" in spec
     assert "datas += _plugin_pkg_files" in spec
-    assert "collect_submodules('pyclipper')" in spec
 
 
-def test_pyclipper_is_a_declared_runtime_dependency():
+def test_the_cam_engine_needs_no_dependency_of_its_own():
+    """Its third-party imports are numpy and manifold3d, which IngeTrazo
+    already requires — nothing to add to the installers."""
+    import ast
+    engine = ROOT / "plugins" / "cam" / "engine"
+    found = set()
+    for path in engine.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                found |= {a.name.split(".")[0] for a in node.names}
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                found.add(node.module.split(".")[0])
+    import sys
+    third_party = {m for m in found if m not in sys.stdlib_module_names}
+    assert third_party <= {"numpy", "manifold3d"}, third_party
     reqs = (ROOT / "requirements.txt").read_text(encoding="utf-8")
-    assert re.search(r"^pyclipper>=1\.4\s*$", reqs, re.M)
-
-
-def test_every_workflow_that_lists_its_deps_by_hand_installs_pyclipper():
-    """release.yml (AppImage, tarball, snap) and build-windows.yml install
-    their packages by name instead of from requirements.txt; each such
-    line must not drift from it."""
-    lines = [
-        (wf.name, line)
-        for wf in sorted((ROOT / ".github" / "workflows").glob("*.yml"))
-        for line in wf.read_text(encoding="utf-8").splitlines()
-        if "pip install" in line and "manifold3d" in line
-    ]
-    assert len(lines) >= 3, lines
-    for name, line in lines:
-        assert "pyclipper>=1.4" in line, (name, line)
-
-
-def test_the_self_check_reports_pyclipper(capsys):
-    import main
-
-    main._self_check()
-    out = capsys.readouterr().out
-    assert re.search(r"pyclipper\s*: found", out), out
+    for dep in third_party:
+        assert re.search(rf"^{dep}\b", reqs, re.M), dep
+    assert "pyclipper" not in reqs
 
 
 def test_the_spec_and_the_self_check_carry_sqlite_for_the_tool_library(capsys):

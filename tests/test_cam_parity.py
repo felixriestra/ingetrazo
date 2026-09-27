@@ -11,7 +11,7 @@ own public API, see the README there). For each one the port must:
 - cut at the SAME depth levels, exactly;
 - cut the same places: every horizontal cutting move of one lies within
   0.02 mm of the other's and vice versa (a symmetric Hausdorff distance on
-  sampled points — pyclipper and iOverlay place offset vertices a little
+  sampled points — manifold3d and iOverlay place offset vertices a little
   differently, so byte equality is neither possible nor wanted);
 - change tools as often, and verify clean.
 
